@@ -762,8 +762,8 @@ nav.scrolled {
 .player-main::before {
   content: '';
   position: absolute; top: 0; right: 0;
-  width: 120px; height: 44px;
-  background: linear-gradient(90deg, transparent, #000 40%);
+  width: 160px; height: 52px;
+  background: linear-gradient(90deg, transparent, #000 50%);
   z-index: 2;
 }
 
@@ -1369,6 +1369,11 @@ footer {
   .footer-bottom { flex-direction: column; gap: 8px; text-align: center; }
   .player-nav { padding: 12px 16px; }
   .player-main iframe { height: 50vh; }
+  .player-main::before {
+    left: 0; right: 0; width: auto;
+    height: 56px;
+    background: linear-gradient(180deg, #000 30%, transparent);
+  }
   .cast-card { flex: 0 0 70px; }
   .cast-card img { width: 48px; height: 48px; }
   .trailer-modal iframe { width: 98vw; }
