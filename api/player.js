@@ -17,7 +17,7 @@ async function resolveImdb(tmdbId, type) {
 }
 
 module.exports = async (req, res) => {
-  const { tmdb, imdb, type = 'movie', season, episode } = req.query;
+  const { tmdb, imdb, type = 'movie', season, episode, subs } = req.query;
 
   if (!imdb && !tmdb) {
     res.status(400).json({ error: 'Missing tmdb or imdb parameter' });
@@ -90,6 +90,8 @@ module.exports = async (req, res) => {
     );
 
     const fallbackImdb = imdbId ? `'${imdbId}'` : 'null';
+    const subLang = subs || '';
+    const subImdb = (imdbId || imdb || '').replace(/^tt/, '').replace(/^0+/, '') || '';
 
     html = html.replace(
       '</head>',
@@ -122,6 +124,8 @@ input[type=range]::-webkit-slider-thumb{background:#FF94CA!important}
 .ctrl-btn{color:#fff!important}
 .ctrl-btn:hover{color:#FF94CA!important}
 .time-display{color:#fff!important}
+${subLang ? `#subtitle-overlay{position:absolute;bottom:70px;left:0;right:0;text-align:center;pointer-events:none;z-index:20;padding:0 20px;font-size:1.2em;color:#fff;font-family:'Noto Sans Ethiopic',sans-serif;text-shadow:0 2px 6px rgba(0,0,0,0.9);line-height:1.5;transition:opacity .15s}
+#subtitle-overlay .sub-inner{display:inline-block;background:rgba(0,0,0,0.7);padding:6px 14px;border-radius:4px;max-width:90%;backdrop-filter:blur(2px)}` : ''}
 </style>
 <script>
 try{
@@ -155,6 +159,47 @@ return _origFetch.apply(this,a);
 </script>
 </head>`
     );
+
+    if (subLang && subImdb) {
+      const subUrl = `/api/subtitle?imdb=tt${subImdb}&lang=${encodeURIComponent(subLang)}&from=en`;
+      html = html.replace(
+        '</body>',
+        `<div id="subtitle-overlay"><span class="sub-inner"></span></div>
+<script>
+(function(){
+var lang='${subLang}',imdb='tt${subImdb}';
+var vtt='',cues=[];
+var overlay=document.getElementById('subtitle-overlay');
+var inner=overlay&&overlay.querySelector('.sub-inner');
+function parseVTT(t){
+var parts=t.split(/[:.]/);return(+parts[0])*3600+(+parts[1])*60+(+parts[2])+(+(parts[3]||0))/1000;
+}
+fetch('/api/subtitle?imdb='+encodeURIComponent(imdb)+'&lang='+encodeURIComponent(lang)+'&from=en').then(function(r){
+if(!r.ok)return r.text().then(function(t){overlay&&(overlay.style.display='none');return});
+return r.text();
+}).then(function(t){
+if(!t||t.startsWith('{')){overlay&&(overlay.style.display='none');return}
+vtt=t;
+var lines=vtt.split('\\n'),cue=null;
+for(var i=0;i<lines.length;i++){
+var m=lines[i].match(/(\\d{2}:\\d{2}:\\d{2}\\.\\d{3})\\s*-->\\s*(\\d{2}:\\d{2}:\\d{2}\\.\\d{3})/);
+if(m){cue={s:parseVTT(m[1]),e:parseVTT(m[2]),t:''};cues.push(cue);}
+else if(cue&&lines[i].trim()&&!lines[i].startsWith('WEBVTT')){cue.t+=(cue.t?'\\n':'')+lines[i];}
+}
+var video=document.getElementById('video');
+if(!video){overlay&&(overlay.style.display='none');return}
+video.addEventListener('timeupdate',function(){
+var time=video.currentTime,text='';
+for(var j=0;j<cues.length;j++){if(time>=cues[j].s&&time<=cues[j].e){text=cues[j].t;break;}}
+if(inner)inner.textContent=text;
+if(overlay)overlay.style.display=text?'block':'none';
+});
+}).catch(function(){overlay&&(overlay.style.display='none')});
+})();
+</script>
+</body>`
+      );
+    }
 
     res.setHeader('Content-Type', 'text/html');
     res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');

@@ -41,29 +41,12 @@ const API = {
   },
 
   /* ── Player URL ── */
-  canUseProxy() {
-    return window.location.hostname !== 'localhost' && window.location.protocol !== 'file:';
-  },
   getPlayerUrl(item, season = 1, episode = 1) {
-    const imdb = item.imdb_id || '';
-    const tmdb = item.tmdb_id || '';
-    const prefix = this.canUseProxy() ? '/api/player?' : `${this.FALLBACK_PLAYER}/embed/`;
-    if (this.canUseProxy()) {
-      const params = new URLSearchParams({ tmdb, imdb });
-      if (imdb && !tmdb) params.delete('tmdb');
-      if (tmdb && !imdb) params.delete('imdb');
-      if (item.type === 'tv') {
-        params.set('type', 'tv');
-        params.set('season', season);
-        params.set('episode', episode);
-      }
-      return `${prefix}${params.toString()}`;
-    }
-    const id = imdb || tmdb;
+    const id = item.imdb_id || item.tmdb_id;
     if (item.type === 'tv') {
-      return `${prefix}${item.type}/${id}/${season}/${episode}`;
+      return `${this.FALLBACK_PLAYER}/embed/tv/${id}/${season}/${episode}`;
     }
-    return `${prefix}movie/${id}`;
+    return `${this.FALLBACK_PLAYER}/embed/movie/${id}`;
   },
 
   /* ── Search ── */
