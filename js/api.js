@@ -1,6 +1,6 @@
 const API = {
   VIDAPI_BASE: 'https://vidapi.ru',
-  PLAYER: 'https://apiplayer.ru',
+  FALLBACK_PLAYER: 'https://apiplayer.ru',
   TMDB_BASE: 'https://api.themoviedb.org/3',
   IMG_BASE: 'https://image.tmdb.org/t/p',
   TMDB_TOKEN: 'eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJhMzQyZWNhZjBjNzNmYzU1NmI1NDk3NzQwYmJmZmE5MiIsIm5iZiI6MTc3NTIyMDE5OS42MDA5OTk4LCJzdWIiOiI2OWNmYjVlNzY4YjcwYWNmYjgyZjc2MmQiLCJzY29wZXMiOlsiYXBpX3JlYWQiXSwidmVyc2lvbiI6MX0.jxycsZVC7uLmewooOKm20BvZUZ5s5H4qPsalI3FBmok',
@@ -41,12 +41,29 @@ const API = {
   },
 
   /* ── Player URL ── */
+  canUseProxy() {
+    return window.location.hostname !== 'localhost' && window.location.protocol !== 'file:';
+  },
   getPlayerUrl(item, season = 1, episode = 1) {
-    const id = item.imdb_id || item.tmdb_id;
-    if (item.type === 'tv') {
-      return `${this.PLAYER}/embed/tv/${id}/${season}/${episode}`;
+    const imdb = item.imdb_id || '';
+    const tmdb = item.tmdb_id || '';
+    const prefix = this.canUseProxy() ? '/api/player?' : `${this.FALLBACK_PLAYER}/embed/`;
+    if (this.canUseProxy()) {
+      const params = new URLSearchParams({ tmdb, imdb });
+      if (imdb && !tmdb) params.delete('tmdb');
+      if (tmdb && !imdb) params.delete('imdb');
+      if (item.type === 'tv') {
+        params.set('type', 'tv');
+        params.set('season', season);
+        params.set('episode', episode);
+      }
+      return `${prefix}${params.toString()}`;
     }
-    return `${this.PLAYER}/embed/movie/${id}`;
+    const id = imdb || tmdb;
+    if (item.type === 'tv') {
+      return `${prefix}${item.type}/${id}/${season}/${episode}`;
+    }
+    return `${prefix}movie/${id}`;
   },
 
   /* ── Search ── */
@@ -74,7 +91,7 @@ const API = {
       poster_url: this.imgUrl(m.poster_path, 'w500'),
       popularity: m.popularity?.toFixed(2) || '0',
       type: 'movie',
-      embed_url: `${this.PLAYER}/embed/movie/${m.id}`,
+      embed_url: `${this.FALLBACK_PLAYER}/embed/movie/${m.id}`,
       _backdrop: this.imgUrl(m.backdrop_path, 'original'),
       _overview: m.overview || '',
       _poster: this.imgUrl(m.poster_path, 'w500'),
@@ -96,7 +113,7 @@ const API = {
       poster_url: this.imgUrl(t.poster_path, 'w500'),
       popularity: t.popularity?.toFixed(2) || '0',
       type: 'tv',
-      embed_url: `${this.PLAYER}/embed/tv/${t.id}/1/1`,
+      embed_url: `${this.FALLBACK_PLAYER}/embed/tv/${t.id}/1/1`,
       _backdrop: this.imgUrl(t.backdrop_path, 'original'),
       _overview: t.overview || '',
       _poster: this.imgUrl(t.poster_path, 'w500'),

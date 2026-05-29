@@ -51,7 +51,7 @@ const dom = {
   searchDropdown: $('#search-dropdown'),
   playerPage: $('#player-page'),
   playerFrame: $('#player-frame'),
-
+  playerVideo: document.getElementById('player-video'),
 
   playerSidebarContent: $('#player-sidebar-content'),
   toast: $('#toast'),
@@ -847,6 +847,29 @@ function closeYouTubePlayer() {
   unlockScroll();}
 
 /* ── Player ── */
+let hlsInstance = null;
+
+function destroyHls() {
+  if (hlsInstance) {
+    hlsInstance.destroy();
+    hlsInstance = null;
+  }
+  dom.playerVideo.removeAttribute('src');
+}
+
+function fallbackToIframe() {
+  destroyHls();
+  removeSubtitleTrack();
+  subtitleState.hlsTracks = [];
+  subtitleState.activeHlsTrack = -1;
+  subtitleState.currentLang = null;
+  const btn = document.getElementById('subtitle-btn');
+  if (btn) { btn.textContent = 'CC'; btn.classList.remove('active'); btn.style.display = 'none'; }
+  dom.playerVideo.classList.add('hidden');
+  dom.playerFrame.classList.remove('hidden');
+  dom.playerFrame.src = API.getPlayerUrl(state.currentItem, state.currentSeason, state.currentEpisode);
+}
+
 function playItem(item, season = 1, episode = 1) {
   if (!item) return showToast(__('No media selected'), true);
   state.currentItem = item;
@@ -854,10 +877,66 @@ function playItem(item, season = 1, episode = 1) {
   state.currentEpisode = episode;
   state.playerSimilarItems = null;
   state._autoPlayTriggered = false;
+
+  destroyHls();
+  removeSubtitleTrack();
+  subtitleState.hlsTracks = [];
+  subtitleState.activeHlsTrack = -1;
+  subtitleState.currentLang = null;
   dom.playerFrame.src = '';
-  setTimeout(() => {
+  dom.playerVideo.classList.add('hidden');
+  dom.playerFrame.classList.remove('hidden');
+
+  if (API.canUseProxy()) {
+    const streamUrl = `/api/stream?tmdb=${item.tmdb_id || ''}&imdb=${item.imdb_id || ''}&type=${item.type}${item.type === 'tv' ? `&season=${season}&episode=${episode}` : ''}`;
+    fetch(streamUrl).then(r => r.json()).then(data => {
+      if (data.success && data.stream_url) {
+        dom.playerFrame.classList.add('hidden');
+        dom.playerVideo.classList.remove('hidden');
+        if (typeof Hls !== 'undefined' && Hls.isSupported()) {
+          hlsInstance = new Hls();
+          hlsInstance.on(Hls.Events.ERROR, (_, ev) => {
+            if (ev.fatal) {
+              console.warn('[VideoBet] HLS fatal error, falling back to iframe', ev);
+              fallbackToIframe();
+            }
+          });
+          hlsInstance.on(Hls.Events.SUBTITLE_TRACKS_UPDATED, () => {
+            if (hlsInstance.subtitleTracks?.length) {
+              subtitleState.hlsTracks = hlsInstance.subtitleTracks.map(t => ({ lang: t.lang, label: t.name, code: t.lang }));
+              renderSubtitleMenu();
+              document.getElementById('subtitle-btn').style.display = '';
+            }
+          });
+          hlsInstance.loadSource(data.stream_url);
+          hlsInstance.attachMedia(dom.playerVideo);
+          hlsInstance.on(Hls.Events.MANIFEST_PARSED, () => {
+            dom.playerVideo.play().catch(() => {});
+            if (item.imdb_id || item.tmdb_id) loadSubtitles(item);
+          });
+        } else if (dom.playerVideo.canPlayType('application/vnd.apple.mpegurl')) {
+          dom.playerVideo.src = data.stream_url;
+          dom.playerVideo.addEventListener('error', () => {
+            console.warn('[VideoBet] Video error, falling back to iframe');
+            fallbackToIframe();
+          }, { once: true });
+          dom.playerVideo.addEventListener('loadedmetadata', () => {
+            dom.playerVideo.play().catch(() => {});
+            if (item.imdb_id || item.tmdb_id) loadSubtitles(item);
+          }, { once: true });
+        } else {
+          fallbackToIframe();
+        }
+      } else {
+        fallbackToIframe();
+      }
+    }).catch(() => {
+      fallbackToIframe();
+    });
+  } else {
     dom.playerFrame.src = API.getPlayerUrl(item, season, episode);
-  }, 50);
+  }
+
   dom.playerPage.classList.remove('hidden');
   lockScroll();
   renderPlayerSidebar(item);
@@ -896,13 +975,235 @@ function playItem(item, season = 1, episode = 1) {
 }
 
 function closePlayer() {
+  destroyHls();
+  removeSubtitleTrack();
+  subtitleState.hlsTracks = [];
+  subtitleState.activeHlsTrack = -1;
+  subtitleState.currentLang = null;
   dom.playerFrame.src = '';
+  dom.playerVideo.classList.add('hidden');
+  dom.playerVideo.removeAttribute('src');
+  subtitleState.trackUrl = null;
+  const subBtn = document.getElementById('subtitle-btn');
+  if (subBtn) { subBtn.textContent = 'CC'; subBtn.classList.remove('active'); subBtn.style.display = ''; }
   dom.playerPage.classList.add('hidden');
   unlockScroll();  state.playerSimilarItems = null;
   if (dom.playerPage._messageHandler) window.removeEventListener('message', dom.playerPage._messageHandler);
   dom.playerPage.querySelector('.player-sidebar')?.classList.remove('mobile-open');
   dom.playerPage.querySelector('.player-sidebar-overlay')?.remove();
 }
+
+/* ── Subtitle System ── */
+let subtitleState = {
+  trackElement: null,
+  trackUrl: null,
+  currentLang: null,
+  available: [],
+  hlsTracks: [],
+  activeHlsTrack: -1,
+};
+
+function removeSubtitleTrack() {
+  if (subtitleState.trackElement) {
+    subtitleState.trackElement.remove();
+    subtitleState.trackElement = null;
+  }
+  subtitleState.trackUrl = null;
+}
+
+function addSubtitleTrack(url, lang) {
+  removeSubtitleTrack();
+  const track = document.createElement('track');
+  track.kind = 'subtitles';
+  track.label = lang || 'Subtitles';
+  track.srclang = lang?.slice(0, 2) || 'en';
+  track.src = url;
+  track.default = true;
+  dom.playerVideo.appendChild(track);
+  subtitleState.trackElement = track;
+  subtitleState.trackUrl = url;
+  subtitleState.currentLang = lang;
+  dom.playerVideo.textTracks[0].mode = 'showing';
+}
+
+async function loadSubtitles(item) {
+  const imdb = item.imdb_id || '';
+  const list = document.getElementById('subtitle-list');
+  const footer = document.getElementById('subtitle-footer');
+  const btn = document.getElementById('subtitle-btn');
+  if (!list || !btn) return;
+
+  list.innerHTML = '<div class="subtitle-menu-item" style="cursor:default;opacity:0.5">Loading...</div>';
+  btn.style.display = '';
+
+  try {
+    const url = `/api/subtitle?imdb=${encodeURIComponent(imdb)}&list=1`;
+    const res = await fetch(url);
+    const data = await res.json();
+    if (!data.success || !data.subtitles?.length) {
+      list.innerHTML = '';
+      if (subtitleState.hlsTracks.length === 0) btn.style.display = 'none';
+      return;
+    }
+    subtitleState.available = data.subtitles;
+    renderSubtitleMenu();
+  } catch {
+    list.innerHTML = '';
+    if (subtitleState.hlsTracks.length === 0) btn.style.display = 'none';
+  }
+}
+
+function renderSubtitleMenu() {
+  const list = document.getElementById('subtitle-list');
+  const footer = document.getElementById('subtitle-footer');
+  if (!list) return;
+
+  const hasActiveSub = subtitleState.activeHlsTrack >= 0 || subtitleState.trackElement !== null;
+  const isTranslated = subtitleState.trackUrl && (subtitleState.trackUrl.startsWith('blob:') || subtitleState.currentLang === 'am');
+
+  let html = '';
+  html += `<button class="subtitle-menu-item${!hasActiveSub ? ' active' : ''}" onclick="selectSubtitle('off')" data-lang="off"><span class="check">✓</span><span class="label">Off</span></button>`;
+
+  if (subtitleState.hlsTracks.length > 0) {
+    html += '<div class="subtitle-menu-header" style="font-size:11px;padding:6px 14px">Stream Subtitles</div>';
+    subtitleState.hlsTracks.forEach((track, i) => {
+      html += `<button class="subtitle-menu-item${subtitleState.activeHlsTrack === i ? ' active' : ''}" onclick="selectHlsSubtitle(${i})" data-lang="hls-${i}"><span class="check">✓</span><span class="label">${track.label || 'Track ' + (i + 1)}</span></button>`;
+    });
+  }
+
+  if (subtitleState.available.length > 0) {
+    html += '<div class="subtitle-menu-header" style="font-size:11px;padding:6px 14px">External Subtitles</div>';
+    subtitleState.available.forEach(sub => {
+      const active = subtitleState.currentLang === sub.code && subtitleState.activeHlsTrack < 0 && subtitleState.trackElement !== null && !isTranslated;
+      html += `<button class="subtitle-menu-item${active ? ' active' : ''}" onclick="selectSubtitle('${sub.code}')" data-lang="${sub.code}"><span class="check">✓</span><span class="label">${sub.lang}</span></button>`;
+    });
+  }
+
+  list.innerHTML = html;
+
+  if (footer) {
+    const translateActive = isTranslated && subtitleState.currentLang === 'am';
+    footer.innerHTML = `<button class="subtitle-menu-item${translateActive ? ' active' : ''}" onclick="selectSubtitle('translate')"><span class="check">✓</span><span class="label">🌐 Translate to Amharic</span></button>`;
+  }
+}
+
+function selectSubtitle(lang) {
+  if (lang === 'off') {
+    subtitleState.activeHlsTrack = -1;
+    subtitleState.currentLang = null;
+    subtitleState.trackUrl = null;
+    if (hlsInstance && typeof hlsInstance.subtitleTrack !== 'undefined') {
+      hlsInstance.subtitleTrack = -1;
+    }
+    removeSubtitleTrack();
+    dom.playerVideo.textTracks.forEach(t => t.mode = 'hidden');
+    document.getElementById('subtitle-btn').textContent = 'CC';
+    document.getElementById('subtitle-btn').classList.remove('active');
+    renderSubtitleMenu();
+    closeSubtitleMenu();
+    return;
+  }
+
+  if (lang === 'translate') {
+    closeSubtitleMenu();
+    translateSubtitles();
+    return;
+  }
+
+  subtitleState.activeHlsTrack = -1;
+  if (hlsInstance && typeof hlsInstance.subtitleTrack !== 'undefined') {
+    hlsInstance.subtitleTrack = -1;
+  }
+
+  const sub = subtitleState.available.find(s => s.code === lang);
+  if (!sub) return;
+
+  const item = state.currentItem;
+  const imdb = item?.imdb_id || '';
+  const url = `/api/subtitle?imdb=${encodeURIComponent(imdb)}&lang=${sub.code}`;
+  addSubtitleTrack(url, sub.lang);
+  subtitleState.currentLang = sub.code;
+  document.getElementById('subtitle-btn').textContent = sub.lang.slice(0, 3);
+  document.getElementById('subtitle-btn').classList.add('active');
+  renderSubtitleMenu();
+  closeSubtitleMenu();
+}
+
+function selectHlsSubtitle(index) {
+  subtitleState.activeHlsTrack = index;
+  subtitleState.currentLang = null;
+  removeSubtitleTrack();
+  if (hlsInstance && typeof hlsInstance.subtitleTrack !== 'undefined') {
+    hlsInstance.subtitleTrack = index;
+  }
+  const track = subtitleState.hlsTracks[index];
+  const label = track?.label || 'CC';
+  document.getElementById('subtitle-btn').textContent = label.slice(0, 3);
+  document.getElementById('subtitle-btn').classList.add('active');
+  renderSubtitleMenu();
+  closeSubtitleMenu();
+}
+
+async function translateSubtitles() {
+  const item = state.currentItem;
+  const imdb = item?.imdb_id || '';
+  if (!imdb) {
+    showToast('No IMDB ID available for translation', true);
+    return;
+  }
+
+  const btn = document.getElementById('subtitle-btn');
+  const originalText = btn.textContent;
+  btn.textContent = '...';
+  btn.classList.add('active');
+
+  const url = `/api/subtitle?imdb=${encodeURIComponent(imdb)}&lang=am&from=en`;
+  try {
+    const res = await fetch(url, { signal: AbortSignal.timeout(25000) });
+    if (!res.ok) {
+      if (res.status === 404) throw new Error('No English subtitles found to translate');
+      throw new Error(`Translation API returned ${res.status}`);
+    }
+    const blob = await res.blob();
+    if (blob.size < 10) throw new Error('Translation returned empty result');
+    const blobUrl = URL.createObjectURL(blob);
+    subtitleState.activeHlsTrack = -1;
+    if (hlsInstance && typeof hlsInstance.subtitleTrack !== 'undefined') {
+      hlsInstance.subtitleTrack = -1;
+    }
+    addSubtitleTrack(blobUrl, 'Amharic (Translated)');
+    subtitleState.currentLang = 'am';
+    renderSubtitleMenu();
+    showToast('Amharic subtitles ready');
+  } catch (e) {
+    if (e.name === 'TimeoutError' || e.name === 'AbortError') {
+      showToast('Translation timed out. Try a shorter film.', true);
+    } else {
+      showToast('Translation failed: ' + e.message, true);
+    }
+    btn.textContent = originalText;
+    btn.classList.remove('active');
+    return;
+  }
+  btn.textContent = 'AMH';
+}
+
+function toggleSubtitleMenu() {
+  const menu = document.getElementById('subtitle-menu');
+  if (!menu) return;
+  const hidden = menu.classList.toggle('hidden');
+  if (!hidden) renderSubtitleMenu();
+}
+
+function closeSubtitleMenu() {
+  const menu = document.getElementById('subtitle-menu');
+  if (menu) menu.classList.add('hidden');
+}
+
+document.addEventListener('click', (e) => {
+  const wrap = document.getElementById('subtitle-wrap');
+  if (wrap && !wrap.contains(e.target)) closeSubtitleMenu();
+});
 
 function renderPlayerSidebar(item) {
   if (!item) return;
@@ -1066,11 +1367,7 @@ function listenPlayerProgress() {
 
 /* ── Player TV Controls ── */
 function updatePlayerTV(season, episode) {
-  state.currentSeason = season;
-  state.currentEpisode = episode;
-  state._autoPlayTriggered = false;
-  dom.playerFrame.src = API.getPlayerUrl(state.currentItem, season, episode);
-  renderPlayerSidebar(state.currentItem);
+  playItem(state.currentItem, season, episode);
 }
 
 function nextEpisode() {

@@ -335,12 +335,21 @@
       </a>
       <div>
         <button class="player-sidebar-btn" onclick="togglePlayerSidebar()" title="Show Info">☰</button>
+        <div class="player-subtitle-wrap" id="subtitle-wrap">
+          <button class="player-subtitle-btn" id="subtitle-btn" onclick="toggleSubtitleMenu()" title="Subtitles">CC</button>
+          <div class="player-subtitle-menu hidden" id="subtitle-menu">
+            <div class="subtitle-menu-header">Subtitles</div>
+            <div class="subtitle-menu-list" id="subtitle-list"></div>
+            <div class="subtitle-menu-footer" id="subtitle-footer"></div>
+          </div>
+        </div>
         <button class="player-fs-btn" onclick="togglePlayerFullscreen()" title="Fullscreen">⛶</button>
         <button class="player-close" onclick="closePlayer()" title="Close Player (Esc)">✕</button>
       </div>
     </div>
     <div class="player-container">
       <div class="player-main">
+        <video id="player-video" class="player-video hidden" controls playsinline webkit-playsinline crossorigin="anonymous"></video>
         <iframe id="player-frame" allow="autoplay; fullscreen; encrypted-media" allowfullscreen></iframe>
       </div>
       <div class="player-sidebar">
@@ -359,6 +368,7 @@
   <!-- Toast -->
   <div class="toast" id="toast"></div>
 
+  <script src="https://cdn.jsdelivr.net/npm/hls.js@0.14.17/dist/hls.min.js"></script>
   <script src="js/i18n.js"></script>
   <script src="js/api.js"></script>
   <script src="js/translator.js"></script>
