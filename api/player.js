@@ -156,6 +156,16 @@ return r;
 return _origFetch.apply(this,a);
 };
 }catch(e){console.warn('[VideoBet] Fetch override failed:',e);}
+(function(){
+function replaceText(n){
+if(n.nodeType===3){var t=n.textContent;if(/Phantom|vidphantom/i.test(t)){n.textContent=t.replace(/VidPhantom/gi,'VideoBet').replace(/Phantom/gi,'VideoBet')}}
+else if(n.nodeType===1&&!['SCRIPT','STYLE'].includes(n.tagName)){if(n.title&&/Phantom|vidphantom/i.test(n.title)){n.title=n.title.replace(/VidPhantom/gi,'VideoBet').replace(/Phantom/gi,'VideoBet')}
+for(var c=0;c<n.childNodes.length;c++)replaceText(n.childNodes[c])}
+}
+document.addEventListener('DOMContentLoaded',function(){replaceText(document.body)});
+var mo=new MutationObserver(function(m){m.forEach(function(mut){mut.addedNodes.forEach(function(n){if(n.nodeType===1||n.nodeType===3)replaceText(n)})})});
+mo.observe(document.documentElement,{childList:true,subtree:true});
+})();
 </script>
 </head>`
     );
