@@ -762,8 +762,8 @@ nav.scrolled {
 .player-main::before {
   content: '';
   position: absolute; top: 0; right: 0;
-  width: 160px; height: 52px;
-  background: linear-gradient(90deg, transparent, #000 50%);
+  width: 280px; height: 72px;
+  background: linear-gradient(90deg, transparent, #000 55%);
   z-index: 2;
 }
 
@@ -1371,8 +1371,8 @@ footer {
   .player-main iframe { height: 50vh; }
   .player-main::before {
     left: 0; right: 0; width: auto;
-    height: 56px;
-    background: linear-gradient(180deg, #000 30%, transparent);
+    height: 80px;
+    background: linear-gradient(180deg, #000 45%, transparent);
   }
   .cast-card { flex: 0 0 70px; }
   .cast-card img { width: 48px; height: 48px; }

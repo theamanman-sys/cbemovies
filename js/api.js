@@ -42,7 +42,7 @@ const API = {
 
   /* ── Player URL ── */
   getPlayerUrl(item, season = 1, episode = 1) {
-    const themeParams = 'autoplay=1&theme=dark&color=ff94ca';
+    const themeParams = 'autoplay=1&theme=dark&color=ff94ca&logo=0&brand=0';
     if (item.type === 'movie' || !item.type) {
       const id = item.imdb_id || item.tmdb_id;
       return `${this.PLAYER}/embed/movie/${id}?${themeParams}`;
