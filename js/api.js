@@ -43,10 +43,11 @@ const API = {
   /* ── Player URL ── */
   getPlayerUrl(item, season = 1, episode = 1) {
     const id = item.imdb_id || item.tmdb_id;
+    const theme = 'primaryColor=FF94CA&accentColor=FFB0D8&iconColor=FFFFFF&borderRadius=8';
     if (item.type === 'tv') {
-      return `${this.PLAYER}/tv/${id}/${season}/${episode}`;
+      return `${this.PLAYER}/tv/${id}/${season}/${episode}?${theme}`;
     }
-    return `${this.PLAYER}/movie/${id}`;
+    return `${this.PLAYER}/movie/${id}?${theme}`;
   },
 
   /* ── Search ── */
