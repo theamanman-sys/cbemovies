@@ -54,7 +54,7 @@ module.exports = async (req, res) => {
         return;
       }
       let html = await vpRes.text();
-      html = html.replace(/(href|src)="\/(?!\/)/g, '$1="https://vidphantom.com/');
+      html = html.replace(/(href|src)="\/(?!\/)/g, '$1="/api/vp?path=/');
       html = html.replace(/VidPhantom/gi, 'VideoBet');
       html = html.replace(/>Phantom\b/gi, '>VideoBet');
       res.setHeader('Content-Type', 'text/html');
