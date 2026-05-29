@@ -423,7 +423,7 @@ function createYTPlayer(div, key) {
     height: '100%', width: '100%',
     videoId: key,
     playerVars: {
-      autoplay: 1, mute: 1, playsinline: 1,
+      playsinline: 1,
       controls: 0, rel: 0, modestbranding: 1,
       iv_load_policy: 3, cc_load_policy: 0,
       loop: 1, playlist: key, hl: 'en'
