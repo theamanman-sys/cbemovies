@@ -435,17 +435,17 @@ function createYTPlayer(div, key) {
       onReady: (e) => {
         e.target.mute();
         e.target.playVideo();
-        if (btn) btn.dataset.muted = '1';
-        setTimeout(() => {
-          try {
-            e.target.unMute();
-            if (btn && btn.isConnected) {
-              btn.dataset.muted = '0';
-              btn.textContent = '🔊';
-              btn.title = 'Mute';
-            }
-          } catch {}
-        }, 800);
+      },
+      onStateChange: (e) => {
+        if (e.data === YT.PlayerState.PLAYING && !div._unmuted) {
+          div._unmuted = true;
+          try { e.target.unMute(); } catch {}
+          if (btn && btn.isConnected) {
+            btn.dataset.muted = '0';
+            btn.textContent = '🔊';
+            btn.title = 'Mute';
+          }
+        }
       }
     }
   });
