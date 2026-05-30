@@ -85,9 +85,6 @@ module.exports = async (req, res) => {
 
       if (subs && imdbId) {
         const subImdb = imdbId.replace(/^tt/, '');
-        html = html.replace(/"url":"(https?:\/\/[^"]+)"/g, function(m, url) {
-          return '"url":"/api/player?subs=' + subs + '&url=' + encodeURIComponent(url) + '"';
-        });
         html = html.replace(
           '</body>',
           `<div id="subtitle-overlay" style="position:absolute;bottom:70px;left:0;right:0;text-align:center;pointer-events:none;z-index:20;padding:0 20px;color:#fff;font-family:'Noto Sans Ethiopic',sans-serif;text-shadow:0 2px 6px rgba(0,0,0,0.9);line-height:1.5"><span class="sub-inner" style="display:inline-block;background:rgba(0,0,0,0.7);padding:6px 14px;border-radius:4px;max-width:90%;backdrop-filter:blur(2px)"></span></div>
@@ -96,6 +93,11 @@ module.exports = async (req, res) => {
 var lang='${subs}',imdb='tt${subImdb}';
 var iframe=document.getElementById('embed-iframe');
 if(!iframe)return;
+var _mo=new MutationObserver(function(){
+var s=iframe.getAttribute('src');
+if(s&&!s.includes('/api/player?subs=')){iframe.setAttribute('src','/api/player?subs='+encodeURIComponent(lang)+'&url='+encodeURIComponent(s))}
+});
+_mo.observe(iframe,{attributes:true,attributeFilter:['src']});
 var vtt='',cues=[];
 function parseVTT(t){var p=t.split(/[:.]/);return(+p[0])*3600+(+p[1])*60+(+p[2])+(+(p[3]||0))/1000}
 fetch('/api/subtitle?imdb='+encodeURIComponent(imdb)+'&lang='+encodeURIComponent(lang)+'&from=en').then(function(r){
