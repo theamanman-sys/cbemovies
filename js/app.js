@@ -871,6 +871,8 @@ function playItem(item, season = 1, episode = 1) {
   hideSubtitleOverlay();
   subState.cues = [];
   subState.currentTime = 0;
+  subState.gotEvent = false;
+  subState.fallbackStart = 0;
   dom.playerFrame.src = '';
   _currentPlayerUrl = API.getPlayerUrl(item, season, episode);
   setTimeout(() => {
@@ -924,6 +926,8 @@ function closePlayer() {
   hideSubtitleOverlay();
   subState.cues = [];
   subState.currentTime = 0;
+  subState.gotEvent = false;
+  subState.fallbackStart = 0;
   const subBtn = document.getElementById('subtitle-btn');
   if (subBtn) { subBtn.textContent = 'CC'; subBtn.classList.remove('active'); }
   dom.playerPage.classList.add('hidden');
@@ -942,8 +946,10 @@ let subtitleState = {
 /* ── Subtitle overlay synced via Cinezo progress events ── */
 const subState = {
   cues: [],          // [{s,e,t}] parsed VTT cues
-  currentTime: 0,    // latest progress from PLAYER_EVENT
+  currentTime: 0,    // latest progress from PLAYER_EVENT (or fallback timer)
   timerId: null,
+  fallbackStart: 0,  // performance.now() when fallback timer started
+  gotEvent: false,   // true once a PLAYER_EVENT is received
 };
 
 function parseVTT(text) {
@@ -965,6 +971,9 @@ function parseVTT(text) {
 
 function subLoop() {
   if (!subState.cues.length) { subState.timerId = null; return; }
+  if (!subState.gotEvent && subState.fallbackStart) {
+    subState.currentTime = (performance.now() - subState.fallbackStart) / 1000;
+  }
   let text = '';
   for (const c of subState.cues) {
     if (subState.currentTime >= c.s && subState.currentTime < c.e) { text = c.t; break; }
@@ -1094,6 +1103,8 @@ async function selectSubtitle(lang) {
 
     subState.cues = cues;
     subState.currentTime = 0;
+    subState.gotEvent = false;
+    subState.fallbackStart = performance.now();
     showSubtitleOverlay();
     subLoop();
     renderSubtitleMenu();
@@ -1268,10 +1279,13 @@ function listenPlayerProgress() {
   const handler = (e) => {
     if (e.data?.type === 'PLAYER_EVENT') {
       const d = e.data.data;
-      if (d.player_duration != null && d.player_progress != null) {
-        subState.currentTime = d.player_progress;
-        if (state.autoPlayNext && state.currentItem?.type === 'tv' && !state._autoPlayTriggered) {
-          const ratio = d.player_progress / d.player_duration;
+      const t = d.currentTime ?? d.player_progress ?? d.time;
+      const dur = d.duration ?? d.player_duration;
+      if (t != null) {
+        subState.gotEvent = true;
+        subState.currentTime = t;
+        if (dur != null && state.autoPlayNext && state.currentItem?.type === 'tv' && !state._autoPlayTriggered) {
+          const ratio = t / dur;
           if (ratio >= 0.95) {
             state._autoPlayTriggered = true;
             nextEpisode();
