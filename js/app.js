@@ -874,6 +874,7 @@ function playItem(item, season = 1, episode = 1) {
   subState.currentTime = 0;
   subState.gotEvent = false;
   subState.fallbackStart = 0;
+  subState.duration = 0;
   dom.playerFrame.src = '';
   _currentPlayerUrl = API.getPlayerUrl(item, season, episode);
   state.playerStartTime = 0;
@@ -931,6 +932,7 @@ function closePlayer() {
   subState.currentTime = 0;
   subState.gotEvent = false;
   subState.fallbackStart = 0;
+  subState.duration = 0;
   state.playerStartTime = 0;
   const subBtn = document.getElementById('subtitle-btn');
   if (subBtn) { subBtn.textContent = 'CC'; subBtn.classList.remove('active'); }
@@ -954,6 +956,7 @@ const subState = {
   timerId: null,
   fallbackStart: 0,  // performance.now() when fallback timer started
   gotEvent: false,   // always false (Cinezo doesn't send progress events)
+  duration: 0,       // total subtitle duration (last cue end time)
 };
 
 function parseVTT(text) {
@@ -1005,7 +1008,61 @@ function subLoop() {
     const s = Math.floor(t % 60);
     timeEl.textContent = `${m}:${s.toString().padStart(2, '0')}`;
   }
+  updateSubProgress(subState.currentTime);
   subState.timerId = requestAnimationFrame(subLoop);
+}
+
+function updateSubProgress(time) {
+  const fill = document.getElementById('subtitle-progress-fill');
+  const thumb = document.getElementById('subtitle-progress-thumb');
+  if (!fill || !thumb) return;
+  const dur = subState.duration || 1;
+  const pct = Math.min(100, Math.max(0, (time / dur) * 100));
+  fill.style.width = pct + '%';
+  thumb.style.left = pct + '%';
+}
+
+function setupSubProgress() {
+  const track = document.getElementById('subtitle-progress-track');
+  if (!track) return;
+
+  let dragging = false;
+
+  const seekFromEvent = (clientX) => {
+    const rect = track.getBoundingClientRect();
+    const pct = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+    const dur = subState.duration || 1;
+    subState.currentTime = pct * dur;
+    subState.fallbackStart = performance.now() - subState.currentTime * 1000;
+    subState.gotEvent = false;
+    updateSubProgress(subState.currentTime);
+  };
+
+  const onPointerDown = (e) => {
+    e.preventDefault();
+    dragging = true;
+    track.setPointerCapture(e.pointerId);
+    seekFromEvent(e.clientX);
+  };
+
+  const onPointerMove = (e) => {
+    e.preventDefault();
+    if (dragging) seekFromEvent(e.clientX);
+  };
+
+  const onPointerUp = (e) => {
+    if (!dragging) return;
+    dragging = false;
+    track.releasePointerCapture(e.pointerId);
+    seekFromEvent(e.clientX);
+  };
+
+  track.addEventListener('pointerdown', onPointerDown);
+  track.addEventListener('pointermove', onPointerMove);
+  track.addEventListener('pointerup', onPointerUp);
+  track.addEventListener('pointerleave', (e) => {
+    if (dragging) { dragging = false; track.releasePointerCapture(e.pointerId); }
+  });
 }
 
 function showSubtitleOverlay() {
@@ -1019,6 +1076,10 @@ function hideSubtitleOverlay() {
   if (ov) ov.classList.add('hidden');
   const el = document.getElementById('subtitle-text');
   if (el) el.textContent = '';
+  const fill = document.getElementById('subtitle-progress-fill');
+  if (fill) fill.style.width = '0%';
+  const thumb = document.getElementById('subtitle-progress-thumb');
+  if (thumb) thumb.style.left = '0%';
 }
 
 async function loadSubtitles(item) {
@@ -1127,6 +1188,7 @@ async function selectSubtitle(lang) {
     btn.textContent = label;
 
     subState.cues = cues;
+    subState.duration = cues.reduce((max, c) => Math.max(max, c.e), 0);
     subState.gotEvent = false;
     if (state.playerStartTime) {
       subState.currentTime = (performance.now() - state.playerStartTime) / 1000;
@@ -1137,6 +1199,7 @@ async function selectSubtitle(lang) {
     }
     tryReadVideoTime();
     showSubtitleOverlay();
+    setupSubProgress();
     subLoop();
     renderSubtitleMenu();
     closeSubtitleMenu();
