@@ -887,6 +887,7 @@ function playItem(item, season = 1, episode = 1) {
   lockScroll();
   renderPlayerSidebar(item);
   listenPlayerProgress();
+  setupSubtitleIdle();
   loadPlayerSimilar(item);
   loadSubtitles(item);
   if (item.type === 'tv' && item.tmdb_id) {
@@ -954,6 +955,7 @@ const subState = {
   cues: [],          // [{s,e,t}] parsed VTT cues
   currentTime: 0,    // fallback timer (elapsed since subtitle load) + user nudges
   timerId: null,
+  idleTimer: null,   // mouse idle timeout for auto-hide
   fallbackStart: 0,  // performance.now() when fallback timer started
   gotEvent: false,   // always false (Cinezo doesn't send progress events)
   duration: 0,       // total subtitle duration (last cue end time)
@@ -1000,7 +1002,13 @@ function subLoop() {
     if (subState.currentTime >= c.s && subState.currentTime < c.e) { text = c.t; break; }
   }
   const el = document.getElementById('subtitle-text');
-  if (el) el.textContent = text;
+  if (el) {
+    if (text) {
+      el.innerHTML = '<span class="sub-inner">' + text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;') + '</span>';
+    } else if (el.firstChild) {
+      el.textContent = '';
+    }
+  }
   const timeEl = document.getElementById('subtitle-time');
   if (timeEl) {
     const t = subState.currentTime;
@@ -1067,11 +1075,35 @@ function setupSubProgress() {
 
 function showSubtitleOverlay() {
   const ov = document.getElementById('subtitle-overlay');
-  if (ov) ov.classList.remove('hidden');
+  if (!ov) return;
+  ov.classList.remove('hidden');
+  ov.classList.remove('idle');
+  startSubtitleIdleTimer();
+}
+
+function startSubtitleIdleTimer() {
+  if (subState.idleTimer) clearTimeout(subState.idleTimer);
+  subState.idleTimer = setTimeout(() => {
+    const ov = document.getElementById('subtitle-overlay');
+    if (ov && !ov.classList.contains('hidden')) ov.classList.add('idle');
+  }, 3000);
+}
+
+function setupSubtitleIdle() {
+  const container = document.querySelector('.player-container');
+  if (!container || container._subtitleIdleSetup) return;
+  container._subtitleIdleSetup = true;
+  container.addEventListener('mousemove', () => {
+    const ov = document.getElementById('subtitle-overlay');
+    if (!ov || ov.classList.contains('hidden')) return;
+    ov.classList.remove('idle');
+    startSubtitleIdleTimer();
+  });
 }
 
 function hideSubtitleOverlay() {
   if (subState.timerId) { cancelAnimationFrame(subState.timerId); subState.timerId = null; }
+  if (subState.idleTimer) { clearTimeout(subState.idleTimer); subState.idleTimer = null; }
   const ov = document.getElementById('subtitle-overlay');
   if (ov) ov.classList.add('hidden');
   const el = document.getElementById('subtitle-text');

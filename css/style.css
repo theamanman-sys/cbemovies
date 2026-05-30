@@ -830,6 +830,13 @@ nav.scrolled {
 }
 .substep-btn:hover { background: rgba(255,148,202,0.2); border-color: var(--accent); }
 
+.subtitle-overlay.idle .subtitle-time,
+.subtitle-overlay.idle .subtitle-progress,
+.subtitle-overlay.idle .subtitle-step-group {
+  opacity: 0; pointer-events: none;
+  transition: opacity 0.3s;
+}
+
 .player-sidebar-btn { display: none; }
 .ps-close-btn { display: none; }
 .player-sidebar.mobile-open {
