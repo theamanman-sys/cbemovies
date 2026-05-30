@@ -948,6 +948,7 @@ function closePlayer() {
 let subtitleState = {
   currentLang: null,
   available: [],
+  saved: [],
 };
 
 /* ── Subtitle overlay synced via fallback timer + user steps ── */
@@ -1124,6 +1125,16 @@ async function loadSubtitles(item) {
 
   list.innerHTML = '<div class="subtitle-menu-item" style="cursor:default;opacity:0.5">Loading...</div>';
 
+  // Load saved subtitles from IndexedDB
+  if (typeof getSubtitlesByImdb === 'function') {
+    try {
+      const saved = await getSubtitlesByImdb(imdb);
+      subtitleState.saved = saved.map(s => ({ code: s.lang, lang: s.label, _internal: true }));
+    } catch { subtitleState.saved = []; }
+  } else {
+    subtitleState.saved = [];
+  }
+
   try {
     const res = await fetch(`/api/subtitle?imdb=${encodeURIComponent(imdb)}&list=1`);
     const data = await res.json();
@@ -1135,6 +1146,7 @@ async function loadSubtitles(item) {
   } catch {
     subtitleState.available = [];
   }
+  renderSubtitleMenu();
 }
 
 function renderSubtitleMenu() {
@@ -1147,13 +1159,23 @@ function renderSubtitleMenu() {
   let html = '';
   html += `<button class="subtitle-menu-item${!hasActive ? ' active' : ''}" onclick="selectSubtitle('off')"><span class="check">✓</span><span class="label">Off</span></button>`;
 
+  const savedItems = subtitleState.saved || [];
+  if (savedItems.length) {
+    html += '<div class="subtitle-menu-header" style="font-size:11px;padding:6px 14px">Saved</div>';
+    savedItems.forEach(sub => {
+      const active = subtitleState.currentLang === sub.code;
+      const label = sub.label || sub.lang.toUpperCase();
+      html += `<button class="subtitle-menu-item${active ? ' active' : ''}" onclick="selectSubtitle('saved:${sub.code}')"><span class="check">✓</span><span class="label">💾 ${label}</span></button>`;
+    });
+  }
+
   if (subtitleState.available.length > 0) {
-    html += '<div class="subtitle-menu-header" style="font-size:11px;padding:6px 14px">Subtitles</div>';
+    html += '<div class="subtitle-menu-header" style="font-size:11px;padding:6px 14px">Online</div>';
     subtitleState.available.forEach(sub => {
       const active = subtitleState.currentLang === sub.code;
       html += `<button class="subtitle-menu-item${active ? ' active' : ''}" onclick="selectSubtitle('${sub.code}')"><span class="check">✓</span><span class="label">${sub.lang}</span></button>`;
     });
-  } else {
+  } else if (!savedItems.length) {
     html += '<div class="subtitle-menu-item" style="cursor:default;opacity:0.4;font-size:12px">No subtitles available</div>';
   }
 
@@ -1193,17 +1215,50 @@ async function selectSubtitle(lang) {
     return;
   }
 
-  const langCode = lang === 'translate' ? 'am' : lang;
+  const isSaved = lang.startsWith('saved:');
+  const langCode = isSaved ? lang.slice(6) : (lang === 'translate' ? 'am' : lang);
 
   try {
-    const res = await fetch(`/api/subtitle?imdb=${encodeURIComponent(imdb)}&lang=${langCode}&from=en`);
-    if (!res.ok) {
-      showToast(`Subtitles unavailable (${res.status})`, true);
-      btn.textContent = 'CC';
-      btn.classList.remove('active');
-      return;
+    let vtt;
+
+    if (isSaved) {
+      // Load from IndexedDB
+      if (typeof getSubtitle === 'function') {
+        const saved = await getSubtitle(imdb, langCode);
+        if (saved) vtt = saved.vtt;
+      }
+      if (!vtt) {
+        showToast('Saved subtitle not found', true);
+        btn.textContent = 'CC';
+        btn.classList.remove('active');
+        return;
+      }
+    } else {
+      // Check IndexedDB cache first
+      if (typeof getSubtitle === 'function') {
+        const cached = await getSubtitle(imdb, langCode);
+        if (cached) vtt = cached.vtt;
+      }
+
+      if (!vtt) {
+        const url = `/api/subtitle?imdb=${encodeURIComponent(imdb)}&lang=${langCode}&from=en`;
+        const res = await fetch(url);
+        if (!res.ok) {
+          showToast(`Subtitles unavailable (${res.status})`, true);
+          btn.textContent = 'CC';
+          btn.classList.remove('active');
+          return;
+        }
+        vtt = await res.text();
+
+        // Cache in IndexedDB
+        if (typeof saveSubtitle === 'function') {
+          const label = lang === 'translate' ? 'AMH (Amharic)'
+            : (subtitleState.available.find(s => s.code === langCode)?.lang || langCode.toUpperCase().slice(0, 3));
+          saveSubtitle(imdb, langCode, vtt, label).catch(() => {});
+        }
+      }
     }
-    const vtt = await res.text();
     const cues = parseVTT(vtt);
     if (!cues.length) {
       showToast('No subtitle cues found', true);
@@ -1243,6 +1298,76 @@ async function selectSubtitle(lang) {
 
 async function translateSubtitles() {
   await selectSubtitle('translate');
+}
+
+async function uploadSubtitleFile(file) {
+  const text = await file.text();
+  const imdb = state.currentItem?.imdb_id || '';
+  const btn = document.getElementById('subtitle-btn');
+  if (!btn) return;
+  btn.textContent = '...';
+  btn.classList.add('active');
+
+  try {
+    const res = await fetch('/api/subtitle', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ content: text, imdb, from: 'en' }),
+    });
+    if (!res.ok) {
+      showToast(`Upload failed (${res.status})`, true);
+      btn.textContent = 'CC';
+      btn.classList.remove('active');
+      return;
+    }
+    const vtt = await res.text();
+    const cues = parseVTT(vtt);
+    if (!cues.length) {
+      showToast('No cues found in uploaded file', true);
+      btn.textContent = 'CC';
+      btn.classList.remove('active');
+      return;
+    }
+
+    const label = 'Uploaded (Amharic)';
+    if (imdb && typeof saveSubtitle === 'function') {
+      saveSubtitle(imdb, 'am', vtt, label).catch(() => {});
+    }
+
+    subtitleState.currentLang = 'am';
+    btn.textContent = 'AMH';
+
+    subState.cues = cues;
+    subState.duration = cues.reduce((max, c) => Math.max(max, c.e), 0);
+    subState.gotEvent = false;
+    if (state.playerStartTime) {
+      subState.currentTime = (performance.now() - state.playerStartTime) / 1000;
+      subState.fallbackStart = state.playerStartTime;
+    } else {
+      subState.currentTime = 0;
+      subState.fallbackStart = performance.now();
+    }
+    tryReadVideoTime();
+    showSubtitleOverlay();
+    setupSubProgress();
+    subLoop();
+    showToast('Uploaded & translated to Amharic');
+  } catch (err) {
+    showToast('Upload failed', true);
+    btn.textContent = 'CC';
+    btn.classList.remove('active');
+  }
+}
+
+function setupSubtitleUpload() {
+  const input = document.getElementById('srt-upload-input');
+  if (input) {
+    input.addEventListener('change', (e) => {
+      const file = e.target.files?.[0];
+      if (file) uploadSubtitleFile(file);
+      input.value = '';
+    });
+  }
 }
 
 function toggleSubtitleMenu() {
@@ -2052,4 +2177,5 @@ document.addEventListener('DOMContentLoaded', () => {
   window.addEventListener('resize', repositionHeroControls);
   loadContent();
   loadYTAPI();
+  setupSubtitleUpload();
 });

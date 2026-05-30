@@ -338,14 +338,18 @@
       </a>
       <div>
         <button class="player-sidebar-btn" onclick="togglePlayerSidebar()" title="Show Info">☰</button>
-        <div class="player-subtitle-wrap" id="subtitle-wrap">
-          <button class="player-subtitle-btn" id="subtitle-btn" onclick="toggleSubtitleMenu()" title="Subtitles">CC</button>
-          <div class="player-subtitle-menu hidden" id="subtitle-menu">
-            <div class="subtitle-menu-header">Subtitles</div>
-            <div class="subtitle-menu-list" id="subtitle-list"></div>
-            <div class="subtitle-menu-footer" id="subtitle-footer"></div>
+          <div class="player-subtitle-wrap" id="subtitle-wrap">
+            <button class="player-subtitle-btn" id="subtitle-btn" onclick="toggleSubtitleMenu()" title="Subtitles">CC</button>
+            <div class="player-subtitle-menu hidden" id="subtitle-menu">
+              <div class="subtitle-menu-header">Subtitles</div>
+              <div class="subtitle-menu-list" id="subtitle-list"></div>
+              <div class="subtitle-menu-footer" id="subtitle-footer"></div>
+              <div class="subtitle-menu-item upload-srt" onclick="document.getElementById('srt-upload-input').click()" style="border-top:1px solid rgba(255,255,255,0.1);cursor:pointer">
+                <span class="label">📁 Upload SRT</span>
+              </div>
+            </div>
+            <input type="file" id="srt-upload-input" accept=".srt,.vtt,text/plain" style="display:none">
           </div>
-        </div>
         <button class="player-fs-btn" onclick="togglePlayerFullscreen()" title="Fullscreen">⛶</button>
         <button class="player-close" onclick="closePlayer()" title="Close Player (Esc)">✕</button>
       </div>
@@ -391,6 +395,7 @@
   <script src="js/i18n.js"></script>
   <script src="js/api.js"></script>
   <script src="js/translator.js"></script>
+  <script src="js/subtitle-storage.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>

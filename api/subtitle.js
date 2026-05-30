@@ -198,11 +198,31 @@ function getLanguageName(code) {
 
 module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
   if (req.method === 'OPTIONS') {
     res.status(200).end();
+    return;
+  }
+
+  // POST: upload SRT content and translate to Amharic
+  if (req.method === 'POST') {
+    const { content, imdb, from: srcLang = 'en' } = req.body || {};
+    if (!content) {
+      res.status(400).json({ error: 'Missing content (SRT text)' });
+      return;
+    }
+    const entries = parseSRT(content);
+    if (!entries.length) {
+      res.status(400).json({ error: 'No subtitle entries found in content' });
+      return;
+    }
+    const translated = await translateEntries(entries, srcLang, 'am');
+    const vtt = entriesToVtt(translated);
+    res.setHeader('Content-Type', 'text/vtt; charset=utf-8');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.status(200).send(vtt);
     return;
   }
 
