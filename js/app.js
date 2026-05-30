@@ -1002,13 +1002,7 @@ function subLoop() {
     if (subState.currentTime >= c.s && subState.currentTime < c.e) { text = c.t; break; }
   }
   const el = document.getElementById('subtitle-text');
-  if (el) {
-    if (text) {
-      el.innerHTML = '<span class="sub-inner">' + text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;') + '</span>';
-    } else if (el.firstChild) {
-      el.textContent = '';
-    }
-  }
+  if (el) el.textContent = text;
   const timeEl = document.getElementById('subtitle-time');
   if (timeEl) {
     const t = subState.currentTime;
