@@ -1155,9 +1155,11 @@ function renderSubtitleMenu() {
   if (!list) return;
 
   const hasActive = subtitleState.currentLang !== null;
+  const amActive = subtitleState.currentLang === 'am';
 
   let html = '';
   html += `<button class="subtitle-menu-item${!hasActive ? ' active' : ''}" onclick="selectSubtitle('off')"><span class="check">✓</span><span class="label">Off</span></button>`;
+  html += `<button class="subtitle-menu-item${amActive ? ' active' : ''}" onclick="selectSubtitle('translate')"><span class="check">✓</span><span class="label">🇪🇹 Amharic (ትርጉም)</span></button>`;
 
   const savedItems = subtitleState.saved || [];
   if (savedItems.length) {
@@ -1180,11 +1182,7 @@ function renderSubtitleMenu() {
   }
 
   list.innerHTML = html;
-
-  if (footer) {
-    const amActive = subtitleState.currentLang === 'am';
-    footer.innerHTML = `<button class="subtitle-menu-item${amActive ? ' active' : ''}" onclick="selectSubtitle('translate')"><span class="check">✓</span><span class="label">🌐 Translate to Amharic</span></button>`;
-  }
+  if (footer) footer.innerHTML = '';
 }
 
 async function selectSubtitle(lang) {
@@ -1253,7 +1251,7 @@ async function selectSubtitle(lang) {
 
         // Cache in IndexedDB
         if (typeof saveSubtitle === 'function') {
-          const label = lang === 'translate' ? 'AMH (Amharic)'
+          const label = lang === 'translate' ? '🇪🇹 Amharic'
             : (subtitleState.available.find(s => s.code === langCode)?.lang || langCode.toUpperCase().slice(0, 3));
           saveSubtitle(imdb, langCode, vtt, label).catch(() => {});
         }
@@ -1268,7 +1266,7 @@ async function selectSubtitle(lang) {
     }
 
     subtitleState.currentLang = langCode;
-    const label = lang === 'translate' ? 'AMH'
+    const label = lang === 'translate' ? 'አማ'
       : (subtitleState.available.find(s => s.code === langCode)?.lang || langCode.toUpperCase().slice(0, 3));
     btn.textContent = label;
 
@@ -1335,7 +1333,7 @@ async function uploadSubtitleFile(file) {
     }
 
     subtitleState.currentLang = 'am';
-    btn.textContent = 'AMH';
+    btn.textContent = 'አማ';
 
     subState.cues = cues;
     subState.duration = cues.reduce((max, c) => Math.max(max, c.e), 0);

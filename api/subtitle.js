@@ -2,6 +2,10 @@ const AdmZip = require('adm-zip');
 
 const YIFY_API = 'https://yifysubtitles.org/api/moviedetails';
 const MYMEMORY_API = 'https://api.mymemory.translated.net/get';
+const LIBRE_INSTANCES = [
+  'https://translate.argosopentech.com/translate',
+  'https://libretranslate.com/translate',
+];
 const CACHE_TTL = 86400;
 
 function srtToVtt(srt) {
@@ -156,23 +160,53 @@ async function downloadSubtitleZip(url) {
   } catch { return null; }
 }
 
-async function translateEntry(entry, from, to) {
-  const text = entry.text.trim();
-  if (!text) return { ...entry };
+async function translateViaMyMemory(text, from, to) {
   const params = new URLSearchParams({ q: text.slice(0, 500), langpair: `${from}|${to}` });
   try {
     const res = await fetch(`${MYMEMORY_API}?${params}`, {
       headers: { 'User-Agent': 'Mozilla/5.0' },
-      signal: AbortSignal.timeout(5000)
+      signal: AbortSignal.timeout(4000)
     });
     if (res.ok) {
       const data = await res.json();
       if (data.responseStatus === 200 && data.responseData?.translatedText) {
-        return { ...entry, text: data.responseData.translatedText };
+        const t = data.responseData.translatedText;
+        if (t !== text) return t;
       }
     }
   } catch {}
-  return { ...entry };
+  return null;
+}
+
+async function translateViaLibre(text, from, to) {
+  const body = JSON.stringify({ q: text.slice(0, 500), source: from, target: to, format: 'text' });
+  for (const url of LIBRE_INSTANCES) {
+    try {
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body,
+        signal: AbortSignal.timeout(5000)
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.translatedText) return data.translatedText;
+      }
+    } catch {}
+  }
+  return null;
+}
+
+async function translateEntry(entry, from, to) {
+  const text = entry.text.trim();
+  if (!text) return { ...entry };
+
+  // Try MyMemory first (fast, good for short text)
+  let translated = await translateViaMyMemory(text, from, to);
+  // Fall back to LibreTranslate if MyMemory returned unchanged text
+  if (!translated) translated = await translateViaLibre(text, from, to);
+
+  return { ...entry, text: translated || text };
 }
 
 async function translateEntries(entries, from, to) {
