@@ -780,6 +780,19 @@ nav.scrolled {
   padding: 6px 14px; border-radius: 4px; backdrop-filter: blur(2px);
 }
 
+.subtitle-step-group {
+  display: flex; gap: 8px;
+  pointer-events: auto;
+}
+.substep-btn {
+  background: rgba(0,0,0,0.5); border: 1px solid rgba(255,148,202,0.4);
+  color: var(--accent); font-size: 11px; font-weight: 600;
+  cursor: pointer; padding: 3px 10px; line-height: 1.4;
+  border-radius: 4px; font-family: inherit;
+  backdrop-filter: blur(4px);
+  transition: var(--transition);
+}
+.substep-btn:hover { background: rgba(255,148,202,0.2); border-color: var(--accent); }
 
 .player-sidebar-btn { display: none; }
 .ps-close-btn { display: none; }

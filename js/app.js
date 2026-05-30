@@ -943,13 +943,13 @@ let subtitleState = {
   available: [],
 };
 
-/* ── Subtitle overlay synced via Cinezo progress events ── */
+/* ── Subtitle overlay synced via fallback timer + user steps ── */
 const subState = {
   cues: [],          // [{s,e,t}] parsed VTT cues
-  currentTime: 0,    // latest progress from PLAYER_EVENT (or fallback timer)
+  currentTime: 0,    // fallback timer (elapsed since subtitle load) + user nudges
   timerId: null,
   fallbackStart: 0,  // performance.now() when fallback timer started
-  gotEvent: false,   // true once a PLAYER_EVENT is received
+  gotEvent: false,   // always false (Cinezo doesn't send progress events)
 };
 
 function parseVTT(text) {
@@ -1133,6 +1133,23 @@ function closeSubtitleMenu() {
   if (menu) menu.classList.add('hidden');
 }
 
+function subStep(delta) {
+  if (!subState.cues.length) return;
+  subState.currentTime = Math.max(0, subState.currentTime + delta);
+  if (!subState.gotEvent && subState.fallbackStart) {
+    subState.fallbackStart = performance.now() - subState.currentTime * 1000;
+  }
+  if (!subState.timerId) subLoop();
+}
+
+document.addEventListener('keydown', (e) => {
+  if (!subState.cues.length) return;
+  if (e.altKey && e.key === 'ArrowLeft') { subStep(-0.5); e.preventDefault(); }
+  if (e.altKey && e.key === 'ArrowRight') { subStep(0.5); e.preventDefault(); }
+  if (e.key === 'ArrowLeft' && e.shiftKey) { subStep(-5); e.preventDefault(); }
+  if (e.key === 'ArrowRight' && e.shiftKey) { subStep(5); e.preventDefault(); }
+});
+
 document.addEventListener('click', (e) => {
   const wrap = document.getElementById('subtitle-wrap');
   if (wrap && !wrap.contains(e.target)) closeSubtitleMenu();
@@ -1275,27 +1292,11 @@ document.addEventListener('fullscreenchange', () => {
 });
 
 function listenPlayerProgress() {
-  if (dom.playerPage._messageHandler) window.removeEventListener('message', dom.playerPage._messageHandler);
-  const handler = (e) => {
-    if (e.data?.type === 'PLAYER_EVENT') {
-      const d = e.data.data;
-      const t = d.currentTime ?? d.player_progress ?? d.time;
-      const dur = d.duration ?? d.player_duration;
-      if (t != null) {
-        subState.gotEvent = true;
-        subState.currentTime = t;
-        if (dur != null && state.autoPlayNext && state.currentItem?.type === 'tv' && !state._autoPlayTriggered) {
-          const ratio = t / dur;
-          if (ratio >= 0.95) {
-            state._autoPlayTriggered = true;
-            nextEpisode();
-          }
-        }
-      }
-    }
-  };
-  window.addEventListener('message', handler);
-  dom.playerPage._messageHandler = handler;
+  // Cinezo doesn't send progress events; subtitle sync uses fallback timer only.
+  if (dom.playerPage._messageHandler) {
+    window.removeEventListener('message', dom.playerPage._messageHandler);
+    dom.playerPage._messageHandler = null;
+  }
 }
 
 /* ── Player TV Controls ── */
