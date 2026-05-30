@@ -22,6 +22,7 @@ const state = {
   autoPlayNext: true,
   autoPlayTimer: null,
   autoPlayDone: false,
+  playerStartTime: 0,
 };
 
 const $ = (s, ctx = document) => ctx.querySelector(s);
@@ -875,9 +876,11 @@ function playItem(item, season = 1, episode = 1) {
   subState.fallbackStart = 0;
   dom.playerFrame.src = '';
   _currentPlayerUrl = API.getPlayerUrl(item, season, episode);
+  state.playerStartTime = 0;
   setTimeout(() => {
     _expectedIframeNav = true;
     dom.playerFrame.src = _currentPlayerUrl;
+    state.playerStartTime = performance.now();
   }, 50);
   dom.playerPage.classList.remove('hidden');
   lockScroll();
@@ -928,6 +931,7 @@ function closePlayer() {
   subState.currentTime = 0;
   subState.gotEvent = false;
   subState.fallbackStart = 0;
+  state.playerStartTime = 0;
   const subBtn = document.getElementById('subtitle-btn');
   if (subBtn) { subBtn.textContent = 'CC'; subBtn.classList.remove('active'); }
   dom.playerPage.classList.add('hidden');
@@ -1117,8 +1121,13 @@ async function selectSubtitle(lang) {
 
     subState.cues = cues;
     subState.gotEvent = false;
-    subState.fallbackStart = performance.now();
-    subState.currentTime = 0;
+    if (state.playerStartTime) {
+      subState.currentTime = (performance.now() - state.playerStartTime) / 1000;
+      subState.fallbackStart = state.playerStartTime;
+    } else {
+      subState.currentTime = 0;
+      subState.fallbackStart = performance.now();
+    }
     tryReadVideoTime();
     showSubtitleOverlay();
     subLoop();
@@ -1319,6 +1328,15 @@ function listenPlayerProgress() {
     if (!_currentPlayerUrl) return;
     const data = event.data;
     if (!data || typeof data !== 'object') return;
+    if (data.context === 'player.js') {
+      // embedly/player.js protocol: { context:'player.js', event:'timeupdate', value:{ seconds, duration } }
+      if (data.event === 'timeupdate' && data.value && typeof data.value.seconds === 'number') {
+        subState.currentTime = data.value.seconds;
+        subState.gotEvent = true;
+        subState.fallbackStart = performance.now() - data.value.seconds * 1000;
+      }
+      return;
+    }
     let time;
     if (data.type === 'videobet-progress' || data.type === 'timeupdate' || data.type === 'playing') {
       time = data.currentTime;
@@ -1326,6 +1344,8 @@ function listenPlayerProgress() {
       time = data.currentTime;
     } else if (data.seconds !== undefined && data.seconds !== null) {
       time = data.seconds;
+    } else if (data.event === 'timeupdate' && data.currentTime !== undefined) {
+      time = data.currentTime;
     }
     if (typeof time === 'number' && isFinite(time)) {
       subState.currentTime = time;
@@ -1337,6 +1357,18 @@ function listenPlayerProgress() {
   dom.playerPage._messageHandler = handler;
   window.addEventListener('message', handler);
   tryReadVideoTime();
+}
+
+function resyncSubtitles() {
+  if (!subState.cues.length) return;
+  if (state.playerStartTime) {
+    subState.currentTime = (performance.now() - state.playerStartTime) / 1000;
+    subState.fallbackStart = state.playerStartTime;
+    subState.gotEvent = false;
+    showToast('Subtitles resynced');
+  } else {
+    showToast('Cannot resync: no start time', true);
+  }
 }
 
 /* ── Player TV Controls ── */

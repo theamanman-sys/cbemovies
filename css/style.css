@@ -771,7 +771,7 @@ nav.scrolled {
 .subtitle-overlay.hidden { display: none; }
 .subtitle-text {
   text-align: center; font-size: 1.2em; color: #fff;
-  font-family: 'Noto Sans Ethiopic', sans-serif;
+  font-family: 'Noto Sans Ethiopic', 'Ebrima', sans-serif;
   text-shadow: 0 2px 6px rgba(0,0,0,0.9);
   line-height: 1.5; pointer-events: auto; max-width: 90%; margin-bottom: 8px;
 }
