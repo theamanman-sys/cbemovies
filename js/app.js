@@ -852,10 +852,9 @@ let _expectedIframeNav = false;
 
 if (dom.playerFrame) {
   dom.playerFrame.addEventListener('load', () => {
-    if (_expectedIframeNav) { _expectedIframeNav = false; state._playerStartTime = performance.now(); return; }
+    if (_expectedIframeNav) { _expectedIframeNav = false; return; }
     if (!_currentPlayerUrl) return;
     _expectedIframeNav = true;
-    state._playerStartTime = performance.now();
     dom.playerFrame.src = _currentPlayerUrl;
   });
 }
@@ -922,7 +921,6 @@ function closePlayer() {
   dom.playerFrame.src = '';
   _currentPlayerUrl = '';
   _expectedIframeNav = false;
-  state._playerStartTime = 0;
   subtitleState.currentLang = null;
   subtitleState.available = [];
   hideSubtitleOverlay();
@@ -1104,10 +1102,9 @@ async function selectSubtitle(lang) {
     btn.textContent = label;
 
     subState.cues = cues;
+    subState.currentTime = 0;
     subState.gotEvent = false;
-    const elapsed = state._playerStartTime ? (performance.now() - state._playerStartTime) / 1000 : 0;
-    subState.currentTime = Math.max(0, elapsed);
-    subState.fallbackStart = performance.now() - subState.currentTime * 1000;
+    subState.fallbackStart = performance.now();
     showSubtitleOverlay();
     subLoop();
     renderSubtitleMenu();
