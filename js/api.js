@@ -1,6 +1,7 @@
 const API = {
   VIDAPI_BASE: 'https://vidapi.ru',
-  FALLBACK_PLAYER: 'https://hnembed.cc',
+  FALLBACK_PLAYER: 'https://player.cinezo.live',
+  PLAYER_THEME: 'primarycolor=FF94CA',
   TMDB_BASE: 'https://api.themoviedb.org/3',
   IMG_BASE: 'https://image.tmdb.org/t/p',
   TMDB_TOKEN: 'eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJhMzQyZWNhZjBjNzNmYzU1NmI1NDk3NzQwYmJmZmE5MiIsIm5iZiI6MTc3NTIyMDE5OS42MDA5OTk4LCJzdWIiOiI2OWNmYjVlNzY4YjcwYWNmYjgyZjc2MmQiLCJzY29wZXMiOlsiYXBpX3JlYWQiXSwidmVyc2lvbiI6MX0.jxycsZVC7uLmewooOKm20BvZUZ5s5H4qPsalI3FBmok',
@@ -43,11 +44,11 @@ const API = {
   /* ── Player URL ── */
   getPlayerUrl(item, season = 1, episode = 1) {
     const id = item.tmdb_id || item.imdb_id;
-    if (!id) return `${this.FALLBACK_PLAYER}/embed/movie/550`;
+    if (!id) return `${this.FALLBACK_PLAYER}/embed/movie/550?${this.PLAYER_THEME}`;
     if (item.type === 'tv') {
-      return `${this.FALLBACK_PLAYER}/embed/tv/${id}/${season}/${episode}`;
+      return `${this.FALLBACK_PLAYER}/embed/tv/${id}/${season}/${episode}?${this.PLAYER_THEME}`;
     }
-    return `${this.FALLBACK_PLAYER}/embed/movie/${id}`;
+    return `${this.FALLBACK_PLAYER}/embed/movie/${id}?${this.PLAYER_THEME}`;
   },
 
   async fetchImdbId(tmdbId, type = 'movie') {
