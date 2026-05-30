@@ -56,7 +56,7 @@ module.exports = async (req, res) => {
       let html = await vpRes.text();
       html = html.replace(/(href|src)="\/(?!\/)/g, '$1="/api/vp?path=/');
       html = html.replace(/(url\(['"]?)\/(?!\/)/g, '$1/api/vp?path=/');
-      html = html.replace(/VidPhantom/gi, 'VideoBet');
+      html = html.replace(/VidPhantom|VidAPI|BrightPathSignals|vaplayer/gi, 'VideoBet');
       html = html.replace(/>Phantom\b/gi, '>VideoBet');
       res.setHeader('Content-Type', 'text/html');
       res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
@@ -120,6 +120,7 @@ module.exports = async (req, res) => {
       /<a\s+class="player-brand"[\s\S]*?<\/a>/g,
       ''
     );
+    html = html.replace(/VidAPI|BrightPathSignals|vaplayer/gi, 'VideoBet');
 
     const fallbackImdb = imdbId ? `'${imdbId}'` : 'null';
     const subLang = subs || '';
@@ -188,10 +189,10 @@ return r;
 return _origFetch.apply(this,a);
 };
 }catch(e){console.warn('[VideoBet] Fetch override failed:',e);}
-(function(){
-function replaceText(n){
-if(n.nodeType===3){var t=n.textContent;if(/Phantom|vidphantom/i.test(t)){n.textContent=t.replace(/VidPhantom/gi,'VideoBet').replace(/Phantom/gi,'VideoBet')}}
-else if(n.nodeType===1&&!['SCRIPT','STYLE'].includes(n.tagName)){if(n.title&&/Phantom|vidphantom/i.test(n.title)){n.title=n.title.replace(/VidPhantom/gi,'VideoBet').replace(/Phantom/gi,'VideoBet')}
+ (function(){
+ function replaceText(n){
+ if(n.nodeType===3){var t=n.textContent;if(/Phantom|vidphantom|vidapi|brightpathsignals|vaplayer/i.test(t)){n.textContent=t.replace(/VidPhantom|VidAPI|BrightPathSignals|vaplayer/gi,'VideoBet').replace(/Phantom/gi,'VideoBet')}}
+ else if(n.nodeType===1&&!['SCRIPT','STYLE'].includes(n.tagName)){if(n.title&&/Phantom|vidphantom|vidapi|brightpathsignals|vaplayer/i.test(n.title)){n.title=n.title.replace(/VidPhantom|VidAPI|BrightPathSignals|vaplayer/gi,'VideoBet').replace(/Phantom/gi,'VideoBet')}
 for(var c=0;c<n.childNodes.length;c++)replaceText(n.childNodes[c])}
 }
 document.addEventListener('DOMContentLoaded',function(){replaceText(document.body)});
