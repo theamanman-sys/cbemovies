@@ -54,7 +54,10 @@ module.exports = async (req, res) => {
         return;
       }
       let html = await vpRes.text();
-      html = html.replace(/(href|src)="\/(?!\/)/g, '$1="/api/vp?path=/');
+      html = html.replace(/(src|href)="(\/[^"]*)"/g, function(m, attr, fullpath) {
+        if (fullpath.startsWith('//') || fullpath.startsWith('/api/')) return m;
+        return attr + '="/api/vp?path=' + encodeURIComponent(fullpath) + '"';
+      });
       html = html.replace(/(url\(['"]?)\/(?!\/)/g, '$1/api/vp?path=/');
       html = html.replace(/VidPhantom|VidAPI|BrightPathSignals|vaplayer/gi, 'VideoBet');
       html = html.replace(/>Phantom\b/gi, '>VideoBet');
@@ -111,16 +114,17 @@ module.exports = async (req, res) => {
       ''
     );
 
-    html = html.replace(
-      /(src|href)="(\/embed\/)/g,
-      '$1="https://brightpathsignals.com$2'
-    );
+    html = html.replace(/(src|href)="(\/[^"]*)"/g, function(m, attr, fullpath) {
+      if (fullpath.startsWith('//') || fullpath.startsWith('/api/')) return m;
+      return attr + '="/api/bs?path=' + encodeURIComponent(fullpath) + '"';
+    });
 
     html = html.replace(
       /<a\s+class="player-brand"[\s\S]*?<\/a>/g,
       ''
     );
     html = html.replace(/VidAPI|BrightPathSignals|vaplayer/gi, 'VideoBet');
+    html = html.replace(/(url\(['"]?)\/(?!\/)/g, '$1/api/bs?path=/');
 
     const fallbackImdb = imdbId ? `'${imdbId}'` : 'null';
     const subLang = subs || '';
