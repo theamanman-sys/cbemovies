@@ -2,6 +2,36 @@ const API = {
   VIDAPI_BASE: 'https://vidapi.ru',
   FALLBACK_PLAYER: 'https://vidphantom.com',
   PLAYER_THEME: 'primaryColor=FF94CA',
+  TMDB_BASE: 'https://api.themoviedb.org/3',
+  IMG_BASE: 'https://image.tmdb.org/t/p',
+  TMDB_TOKEN: 'eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJhMzQyZWNhZjBjNzNmYzU1NmI1NDk3NzQwYmJmZmE5MiIsIm5iZiI6MTc3NTIyMDE5OS42MDA5OTk4LCJzdWIiOiI2OWNmYjVlNzY4YjcwYWNmYjgyZjc2MmQiLCJzY29wZXMiOlsiYXBpX3JlYWQiXSwidmVyc2lvbiI6MX0.jxycsZVC7uLmewooOKm20BvZUZ5s5H4qPsalI3FBmok',
+
+  tmdbCache: {},
+
+  /* ── HTTP ── */
+  async fetchJSON(url, headers = {}) {
+    const res = await fetch(url, { headers });
+    if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.url}`);
+    const text = await res.text();
+    if (!text) throw new Error(`Empty response: ${res.url}`);
+    return JSON.parse(text);
+  },
+
+  getTmdbHeaders() {
+    return { Authorization: `Bearer ${this.TMDB_TOKEN}` };
+  },
+
+  async tmdbFetch(path) {
+    const url = `${this.TMDB_BASE}${path}${path.includes('?') ? '&' : '?'}language=en-US`;
+    return this.fetchJSON(url, this.getTmdbHeaders());
+  },
+
+  /* ── Image URLs ── */
+  imgUrl(path, size = 'w500') {
+    if (!path) return '';
+    if (path.startsWith('http')) return path;
+    return `${this.IMG_BASE}/${size}${path}`;
+  },
 
   /* ── VidAPI ── */
   getMoviePage(page = 1) {
