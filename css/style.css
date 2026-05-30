@@ -831,9 +831,20 @@ nav.scrolled {
 }
 .substep-btn:hover { background: rgba(255,148,202,0.2); border-color: var(--accent); }
 
-.subtitle-overlay.idle .subtitle-time,
+.subtitle-next-banner {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  pointer-events: auto; margin-bottom: 8px;
+  background: rgba(0,0,0,0.6); backdrop-filter: blur(6px);
+  padding: 6px 14px; border-radius: 8px;
+  border: 1px solid rgba(255,148,202,0.3);
+  transition: opacity 0.3s;
+}
+.subtitle-next-banner.hidden { display: none; }
+.subtitle-next-text { font-size: 12px; color: #fff; }
+.subtitle-next-countdown { font-size: 11px; color: var(--accent); min-width: 20px; text-align: center; }
 .subtitle-overlay.idle .subtitle-progress,
-.subtitle-overlay.idle .subtitle-step-group {
+.subtitle-overlay.idle .subtitle-step-group,
+.subtitle-overlay.idle .subtitle-next-banner {
   opacity: 0; pointer-events: none;
   transition: opacity 0.3s;
 }

@@ -870,11 +870,13 @@ function playItem(item, season = 1, episode = 1) {
   subtitleState.currentLang = null;
   subtitleState.available = [];
   hideSubtitleOverlay();
+  cancelAutoNext();
   subState.cues = [];
   subState.currentTime = 0;
   subState.gotEvent = false;
   subState.fallbackStart = 0;
   subState.duration = 0;
+  subState.saveCounter = 0;
   dom.playerFrame.src = '';
   const savedPos = loadSubPos(item.imdb_id || '');
   _currentPlayerUrl = API.getPlayerUrl(item, season, episode, savedPos);
@@ -884,6 +886,8 @@ function playItem(item, season = 1, episode = 1) {
     dom.playerFrame.src = _currentPlayerUrl;
     state.playerStartTime = performance.now();
   }, 50);
+  const nextBtn = document.getElementById('substep-next-btn');
+  if (nextBtn) nextBtn.style.display = item.type === 'tv' ? '' : 'none';
   dom.playerPage.classList.remove('hidden');
   lockScroll();
   renderPlayerSidebar(item);
@@ -962,6 +966,8 @@ const subState = {
   gotEvent: false,   // always false (Cinezo doesn't send progress events)
   duration: 0,       // total subtitle duration (last cue end time)
   saveCounter: 0,    // frame counter for periodic position save
+  autoNextCountdown: null, // seconds until next episode auto-plays (or null)
+  autoNextTimer: null,     // interval ID for countdown
 };
 
 function parseVTT(text) {
@@ -1062,7 +1068,70 @@ function subLoop() {
     const imdb = state.currentItem?.imdb_id;
     if (imdb) saveSubPos(imdb, subState.currentTime);
   }
+
+  /* ── Autoplay next episode ── */
+  const isTV = state.currentItem?.type === 'tv';
+  if (isTV && state.autoPlayNext && subState.duration > 0) {
+    const nearEnd = subState.currentTime >= subState.duration - 5;
+    const pastEnd = subState.currentTime >= subState.duration;
+    if (pastEnd && subState.autoNextCountdown === null) {
+      startAutoNextCountdown(5);
+    } else if (nearEnd && subState.autoNextCountdown === null) {
+      startAutoNextCountdown(10);
+    } else if (!nearEnd && subState.autoNextCountdown !== null) {
+      cancelAutoNext();
+    }
+  }
+
   subState.timerId = requestAnimationFrame(subLoop);
+}
+
+function startAutoNextCountdown(seconds) {
+  subState.autoNextCountdown = seconds;
+  updateAutoNextBanner();
+  if (subState.autoNextTimer) clearInterval(subState.autoNextTimer);
+  subState.autoNextTimer = setInterval(() => {
+    subState.autoNextCountdown--;
+    updateAutoNextBanner();
+    if (subState.autoNextCountdown <= 0) {
+      clearInterval(subState.autoNextTimer);
+      subState.autoNextTimer = null;
+      subState.autoNextCountdown = null;
+      nextEpisode();
+    }
+  }, 1000);
+}
+
+function cancelAutoNext() {
+  if (subState.autoNextTimer) {
+    clearInterval(subState.autoNextTimer);
+    subState.autoNextTimer = null;
+  }
+  subState.autoNextCountdown = null;
+  const banner = document.getElementById('subtitle-next-banner');
+  if (banner) banner.classList.add('hidden');
+}
+
+function updateAutoNextBanner() {
+  const banner = document.getElementById('subtitle-next-banner');
+  const countdown = document.getElementById('subtitle-next-countdown');
+  const text = document.getElementById('subtitle-next-text');
+  if (!banner || !countdown || !text) return;
+  if (subState.autoNextCountdown === null) {
+    banner.classList.add('hidden');
+    return;
+  }
+  banner.classList.remove('hidden');
+  countdown.textContent = subState.autoNextCountdown + 's';
+  const item = state.currentItem;
+  if (item?.type === 'tv') {
+    const idx = state.tvEpisodes.findIndex(ep => ep.episode_number === state.currentEpisode);
+    const next = idx !== -1 && idx < state.tvEpisodes.length - 1 ? state.tvEpisodes[idx + 1]
+      : state.currentSeason < (item._seasons || 1) ? { episode_number: 1, name: `Season ${state.currentSeason + 1} Episode 1` } : null;
+    text.textContent = next ? `Next: ${displayEpisodeTitleText(next)}` : 'Next Episode';
+  } else {
+    text.textContent = 'Next Episode';
+  }
 }
 
 function updateSubProgress(time) {
@@ -1091,6 +1160,7 @@ function setupSubProgress() {
     const imdb = state.currentItem?.imdb_id;
     if (imdb) saveSubPos(imdb, subState.currentTime);
     updateSubProgress(subState.currentTime);
+    cancelAutoNext();
   };
 
   const onPointerDown = (e) => {
@@ -1484,6 +1554,7 @@ function closeSubtitleMenu() {
 
 function subStep(delta) {
   if (!subState.cues.length) return;
+  cancelAutoNext();
   tryReadVideoTime();
   subState.currentTime = Math.max(0, subState.currentTime + delta);
   if (!subState.gotEvent && subState.fallbackStart) {

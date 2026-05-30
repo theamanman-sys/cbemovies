@@ -367,12 +367,19 @@
               <div class="subtitle-progress-thumb" id="subtitle-progress-thumb"></div>
             </div>
           </div>
+          <div id="subtitle-next-banner" class="subtitle-next-banner hidden">
+            <span id="subtitle-next-text" class="subtitle-next-text"></span>
+            <span id="subtitle-next-countdown" class="subtitle-next-countdown"></span>
+            <button class="substep-btn" onclick="cancelAutoNext(); nextEpisode()" id="subtitle-next-btn">Next →</button>
+            <button class="substep-btn" onclick="cancelAutoNext()">✕</button>
+          </div>
           <div class="subtitle-step-group">
             <button class="substep-btn" onclick="subStep(-0.5)" title="-0.5s">−½</button>
             <button class="substep-btn" onclick="subStep(-5)" title="-5s">−5</button>
             <button class="substep-btn substep-resync" onclick="resyncSubtitles()" title="Resync to video">↻</button>
             <button class="substep-btn" onclick="subStep(5)" title="+5s">+5</button>
             <button class="substep-btn" onclick="subStep(0.5)" title="+0.5s">+½</button>
+            <button class="substep-btn substep-next" id="substep-next-btn" onclick="cancelAutoNext(); nextEpisode()" title="Next Episode" style="display:none">Next →</button>
           </div>
         </div>
       </div>
