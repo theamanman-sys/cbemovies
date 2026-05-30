@@ -780,8 +780,14 @@ nav.scrolled {
   padding: 6px 14px; border-radius: 4px; backdrop-filter: blur(2px);
 }
 
+.subtitle-time {
+  font-size: 12px; color: rgba(255,255,255,0.5);
+  font-family: 'Courier New', monospace;
+  pointer-events: auto; margin-bottom: 4px;
+  letter-spacing: 0.5px;
+}
 .subtitle-step-group {
-  display: flex; gap: 8px;
+  display: flex; gap: 6px;
   pointer-events: auto;
 }
 .substep-btn {

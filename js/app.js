@@ -998,6 +998,13 @@ function subLoop() {
   }
   const el = document.getElementById('subtitle-text');
   if (el) el.textContent = text;
+  const timeEl = document.getElementById('subtitle-time');
+  if (timeEl) {
+    const t = subState.currentTime;
+    const m = Math.floor(t / 60);
+    const s = Math.floor(t % 60);
+    timeEl.textContent = `${m}:${s.toString().padStart(2, '0')}`;
+  }
   subState.timerId = requestAnimationFrame(subLoop);
 }
 
