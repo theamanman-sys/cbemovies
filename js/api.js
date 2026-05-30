@@ -44,9 +44,11 @@ const API = {
   /* ── Player URL ── */
   getPlayerUrl(item, season = 1, episode = 1) {
     const id = item.tmdb_id || item.imdb_id;
-    let url = `/api/player?vidphantom=1&tmdb=${id}&type=${item.type}`;
-    if (item.type === 'tv') url += `&season=${season}&episode=${episode}`;
-    return url;
+    const color = `?${this.PLAYER_THEME}`;
+    if (item.type === 'tv') {
+      return `${this.FALLBACK_PLAYER}/tv/${id}/${season}/${episode}${color}`;
+    }
+    return `${this.FALLBACK_PLAYER}/movie/${id}${color}`;
   },
 
   async fetchImdbId(tmdbId, type = 'movie') {
