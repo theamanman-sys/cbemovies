@@ -856,6 +856,9 @@ function playItem(item, season = 1, episode = 1) {
   state._autoPlayTriggered = false;
   subtitleState.currentLang = null;
   subtitleState.available = [];
+  hideSubtitleOverlay();
+  subState.cues = [];
+  subState.playing = false;
   dom.playerFrame.src = '';
   setTimeout(() => {
     dom.playerFrame.src = API.getPlayerUrl(item, season, episode);
@@ -902,6 +905,9 @@ function closePlayer() {
   dom.playerFrame.src = '';
   subtitleState.currentLang = null;
   subtitleState.available = [];
+  hideSubtitleOverlay();
+  subState.cues = [];
+  subState.playing = false;
   const subBtn = document.getElementById('subtitle-btn');
   if (subBtn) { subBtn.textContent = 'CC'; subBtn.classList.remove('active'); }
   dom.playerPage.classList.add('hidden');
@@ -917,14 +923,97 @@ let subtitleState = {
   available: [],
 };
 
-function getSubsProxyUrl(lang) {
-  const item = state.currentItem;
-  if (!item) return '';
-  const imdb = item.imdb_id || '';
-  const tmdb = item.tmdb_id || '';
-  let url = `/api/player?imdb=${encodeURIComponent(imdb)}&tmdb=${tmdb}&type=${item.type}&subs=${lang}`;
-  if (item.type === 'tv') url += `&season=${state.currentSeason}&episode=${state.currentEpisode}`;
-  return url;
+/* ── Timer-based overlay state (no iframe access needed) ── */
+const subState = {
+  cues: [],          // [{s,e,t}] parsed VTT cues
+  playing: false,
+  timerId: null,
+  startTime: 0,
+  pausedElapsed: 0,
+};
+
+function parseVTT(text) {
+  const cues = [];
+  const lines = text.split('\n');
+  let cue = null;
+  for (const line of lines) {
+    const m = line.match(/(\d{2}):(\d{2}):(\d{2})\.(\d{3})\s*-->\s*(\d{2}):(\d{2}):(\d{2})\.(\d{3})/);
+    if (m) {
+      if (cue) cues.push(cue);
+      cue = { s: +m[1]*3600 + +m[2]*60 + +m[3] + +m[4]/1000, e: +m[5]*3600 + +m[6]*60 + +m[7] + +m[8]/1000, t: '' };
+    } else if (cue && line.trim() && !line.startsWith('WEBVTT') && !line.startsWith('NOTE')) {
+      cue.t += (cue.t ? '\n' : '') + line.trim();
+    }
+  }
+  if (cue) cues.push(cue);
+  return cues;
+}
+
+function subLoop() {
+  if (!subState.playing) return;
+  const elapsed = subState.pausedElapsed + (performance.now() - subState.startTime) / 1000;
+  let text = '';
+  for (const c of subState.cues) {
+    if (elapsed >= c.s && elapsed < c.e) { text = c.t; break; }
+  }
+  const el = document.getElementById('subtitle-text');
+  if (el) el.textContent = text;
+  subState.timerId = requestAnimationFrame(subLoop);
+}
+
+function subPlay() {
+  if (!subState.cues.length) return;
+  subState.startTime = performance.now();
+  subState.playing = true;
+  const btn = document.getElementById('sub-play-btn');
+  if (btn) btn.textContent = '⏸';
+  subLoop();
+}
+
+function subPause() {
+  subState.playing = false;
+  if (subState.timerId) { cancelAnimationFrame(subState.timerId); subState.timerId = null; }
+  subState.pausedElapsed += (performance.now() - subState.startTime) / 1000;
+  const btn = document.getElementById('sub-play-btn');
+  if (btn) btn.textContent = '▶';
+}
+
+function subToggle() { if (subState.playing) subPause(); else subPlay(); }
+
+function subSync() {
+  subState.pausedElapsed = 0;
+  if (subState.playing) subState.startTime = performance.now();
+  const el = document.getElementById('subtitle-text');
+  if (el) el.textContent = '';
+}
+
+function subStep(delta) {
+  subState.pausedElapsed = Math.max(0, subState.pausedElapsed + delta);
+  if (subState.playing) subState.startTime = performance.now();
+}
+
+function showSubtitleOverlay() {
+  const ov = document.getElementById('subtitle-overlay');
+  if (ov) ov.classList.remove('hidden');
+}
+
+function hideSubtitleOverlay() {
+  subPause();
+  const ov = document.getElementById('subtitle-overlay');
+  if (ov) ov.classList.add('hidden');
+  const el = document.getElementById('subtitle-text');
+  if (el) el.textContent = '';
+}
+
+function setupSubtitleControls() {
+  const playBtn = document.getElementById('sub-play-btn');
+  const backBtn = document.getElementById('sub-back-btn');
+  const fwdBtn = document.getElementById('sub-forward-btn');
+  const syncBtn = document.getElementById('sub-sync-btn');
+  if (playBtn) playBtn.onclick = subToggle;
+  if (backBtn) backBtn.onclick = () => subStep(-5);
+  if (fwdBtn) fwdBtn.onclick = () => subStep(5);
+  if (syncBtn) syncBtn.onclick = subSync;
 }
 
 async function loadSubtitles(item) {
@@ -980,43 +1069,14 @@ function renderSubtitleMenu() {
   }
 }
 
-function selectSubtitle(lang) {
+async function selectSubtitle(lang) {
   if (lang === 'off') {
     subtitleState.currentLang = null;
-    dom.playerFrame.src = API.getPlayerUrl(state.currentItem, state.currentSeason, state.currentEpisode);
     document.getElementById('subtitle-btn').textContent = 'CC';
     document.getElementById('subtitle-btn').classList.remove('active');
     renderSubtitleMenu();
     closeSubtitleMenu();
-    return;
-  }
-
-  if (lang === 'translate') {
-    closeSubtitleMenu();
-    translateSubtitles();
-    return;
-  }
-
-  const sub = subtitleState.available.find(s => s.code === lang);
-  if (!sub) return;
-
-  subtitleState.currentLang = sub.code;
-  dom.playerFrame.src = getSubsProxyUrl(sub.code);
-  document.getElementById('subtitle-btn').textContent = sub.lang.slice(0, 3).toUpperCase();
-  document.getElementById('subtitle-btn').classList.add('active');
-  renderSubtitleMenu();
-  closeSubtitleMenu();
-}
-
-async function translateSubtitles() {
-  const item = state.currentItem;
-  let imdb = item?.imdb_id || '';
-  if (!imdb && item?.tmdb_id) {
-    imdb = await API.fetchImdbId(item.tmdb_id, item.type) || '';
-    if (imdb) item.imdb_id = imdb;
-  }
-  if (!imdb) {
-    showToast('No IMDB ID available for translation', true);
+    hideSubtitleOverlay();
     return;
   }
 
@@ -1024,12 +1084,59 @@ async function translateSubtitles() {
   btn.textContent = '...';
   btn.classList.add('active');
 
-  const proxyUrl = getSubsProxyUrl('am');
-  subtitleState.currentLang = 'am';
-  dom.playerFrame.src = proxyUrl;
-  btn.textContent = 'AMH';
-  renderSubtitleMenu();
-  showToast('Amharic translation requested');
+  const item = state.currentItem;
+  let imdb = item?.imdb_id || '';
+  if (!imdb && item?.tmdb_id) {
+    imdb = await API.fetchImdbId(item.tmdb_id, item.type) || '';
+    if (imdb) item.imdb_id = imdb;
+  }
+  if (!imdb) {
+    showToast('No IMDB ID for subtitles', true);
+    btn.textContent = 'CC';
+    btn.classList.remove('active');
+    return;
+  }
+
+  const langCode = lang === 'translate' ? 'am' : lang;
+
+  try {
+    const res = await fetch(`/api/subtitle?imdb=${encodeURIComponent(imdb)}&lang=${langCode}&from=en`);
+    if (!res.ok) {
+      showToast(`Subtitles unavailable (${res.status})`, true);
+      btn.textContent = 'CC';
+      btn.classList.remove('active');
+      return;
+    }
+    const vtt = await res.text();
+    const cues = parseVTT(vtt);
+    if (!cues.length) {
+      showToast('No subtitle cues found', true);
+      btn.textContent = 'CC';
+      btn.classList.remove('active');
+      return;
+    }
+
+    subtitleState.currentLang = langCode;
+    const label = lang === 'translate' ? 'AMH'
+      : (subtitleState.available.find(s => s.code === langCode)?.lang || langCode.toUpperCase().slice(0, 3));
+    btn.textContent = label;
+
+    subState.cues = cues;
+    subSync();
+    showSubtitleOverlay();
+    subPlay();
+    renderSubtitleMenu();
+    closeSubtitleMenu();
+    showToast(`Subtitles: ${label}`);
+  } catch (err) {
+    showToast('Failed to load subtitles', true);
+    btn.textContent = 'CC';
+    btn.classList.remove('active');
+  }
+}
+
+async function translateSubtitles() {
+  await selectSubtitle('translate');
 }
 
 function toggleSubtitleMenu() {
@@ -1783,6 +1890,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initParallax();
   repositionHeroControls();
   window.addEventListener('resize', repositionHeroControls);
+  setupSubtitleControls();
   loadContent();
   loadYTAPI();
 });
