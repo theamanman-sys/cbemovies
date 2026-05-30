@@ -24,6 +24,7 @@ const state = {
   autoPlayDone: false,
   playerStartTime: 0,
   watchTimerId: null,
+  _autoNextFallback: null,
 };
 
 const $ = (s, ctx = document) => ctx.querySelector(s);
@@ -891,8 +892,20 @@ function playItem(item, season = 1, episode = 1) {
   const nextBtn = document.getElementById('substep-next-btn');
   if (nextBtn) nextBtn.style.display = item.type === 'tv' ? '' : 'none';
   if (item.type === 'tv') {
-    if (state.watchTimerId) { cancelAnimationFrame(state.watchTimerId); state.watchTimerId = null; }
-    state.watchTimerId = requestAnimationFrame(watchLoop);
+    if (state.watchTimerId) { clearInterval(state.watchTimerId); state.watchTimerId = null; }
+    state.watchTimerId = setInterval(watchLoop, 1000);
+    // Hard fallback: trigger autoplay after runtime + 2 min even if watchLoop never fires
+    if (state._autoNextFallback) { clearTimeout(state._autoNextFallback); state._autoNextFallback = null; }
+    let fallbackMs = 47 * 60 * 1000; // 47 min default
+    const ep = state.tvEpisodes?.find(e => e.episode_number === episode);
+    if (ep?.runtime) fallbackMs = (ep.runtime + 2) * 60 * 1000;
+    else if (item._runtime) fallbackMs = (item._runtime + 2) * 60 * 1000;
+    state._autoNextFallback = setTimeout(() => {
+      if (!state.autoPlayNext || state.currentItem?._id !== item._id) return;
+      if (subState.autoNextCountdown === null && !subState.autoNextDismissed) {
+        startAutoNextCountdown(10);
+      }
+    }, fallbackMs);
   }
   dom.playerPage.classList.remove('hidden');
   lockScroll();
@@ -946,7 +959,8 @@ function closePlayer() {
   subState.fallbackStart = 0;
   subState.duration = 0;
   state.playerStartTime = 0;
-  if (state.watchTimerId) { cancelAnimationFrame(state.watchTimerId); state.watchTimerId = null; }
+  if (state.watchTimerId) { clearInterval(state.watchTimerId); state.watchTimerId = null; }
+  if (state._autoNextFallback) { clearTimeout(state._autoNextFallback); state._autoNextFallback = null; }
   cancelAutoNext();
   const subBtn = document.getElementById('subtitle-btn');
   if (subBtn) { subBtn.textContent = 'CC'; subBtn.classList.remove('active'); }
@@ -1102,33 +1116,28 @@ function getWatchDuration() {
 }
 
 function watchLoop() {
-  if (!state.currentItem || state.currentItem.type !== 'tv') {
-    state.watchTimerId = null;
-    return;
-  }
-  if (!state.autoPlayNext) {
-    state.watchTimerId = requestAnimationFrame(watchLoop);
-    return;
-  }
-  const time = getWatchTime();
-  const dur = getWatchDuration();
-  if (dur <= 0) {
-    state.watchTimerId = requestAnimationFrame(watchLoop);
-    return;
-  }
-  const nearEnd = time >= dur - 5;
-  const pastEnd = time >= dur;
-  if (pastEnd && subState.autoNextCountdown === null && !subState.autoNextDismissed) {
-    startAutoNextCountdown(5);
-  } else if (nearEnd && subState.autoNextCountdown === null && !subState.autoNextDismissed && time >= 30) {
-    startAutoNextCountdown(10);
-  } else if (!nearEnd) {
-    if (subState.autoNextCountdown !== null || subState.autoNextDismissed) {
-      subState.autoNextDismissed = false;
-      cancelAutoNext();
+  try {
+    if (!state.currentItem || state.currentItem.type !== 'tv') {
+      if (state.watchTimerId) { clearInterval(state.watchTimerId); state.watchTimerId = null; }
+      return;
     }
-  }
-  state.watchTimerId = requestAnimationFrame(watchLoop);
+    if (!state.autoPlayNext) return;
+    const time = getWatchTime();
+    const dur = getWatchDuration();
+    if (dur <= 0) return;
+    const nearEnd = time >= dur - 5;
+    const pastEnd = time >= dur;
+    if (pastEnd && subState.autoNextCountdown === null && !subState.autoNextDismissed) {
+      startAutoNextCountdown(5);
+    } else if (nearEnd && subState.autoNextCountdown === null && !subState.autoNextDismissed && time >= 30) {
+      startAutoNextCountdown(10);
+    } else if (!nearEnd) {
+      if (subState.autoNextCountdown !== null || subState.autoNextDismissed) {
+        subState.autoNextDismissed = false;
+        cancelAutoNext();
+      }
+    }
+  } catch (e) { console.error('watchLoop err', e); }
 }
 
 function startAutoNextCountdown(seconds) {
