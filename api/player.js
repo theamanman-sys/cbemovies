@@ -19,6 +19,11 @@ module.exports = async (req, res) => {
     let html = await response.text();
     html = html.replace(/<script>[\s\S]*?(?:die\(|self\.location|top\.location|parent\.location|frameElement)[\s\S]*?<\/script>/gi, '');
     html = html.replace(/<script[\s\S]*?disable-devtool[\s\S]*?<\/script>/gi, '');
+    html = html.replace(/(src|href)="(\/[^"]*)"/g, function(m, attr, fullpath) {
+      if (fullpath.startsWith('//') || fullpath.startsWith('/api/')) return m;
+      return attr + '="/api/vp?path=' + encodeURIComponent(fullpath) + '"';
+    });
+    html = html.replace(/(url\(['"]?)\/(?!\/)/g, '$1/api/vp?path=/');
     res.setHeader('Content-Type', 'text/html');
     res.setHeader('X-Frame-Options', '');
     res.status(200).send(html);

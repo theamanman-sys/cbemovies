@@ -44,11 +44,14 @@ const API = {
   /* ── Player URL ── */
   getPlayerUrl(item, season = 1, episode = 1) {
     const id = item.tmdb_id || item.imdb_id;
-    const color = `?${this.PLAYER_THEME}`;
+    const color = `?primaryColor=FF94CA`;
+    let upstream;
     if (item.type === 'tv') {
-      return `${this.FALLBACK_PLAYER}/tv/${id}/${season}/${episode}${color}`;
+      upstream = `https://vidphantom.com/tv/${id}/${season}/${episode}${color}`;
+    } else {
+      upstream = `https://vidphantom.com/movie/${id}${color}`;
     }
-    return `${this.FALLBACK_PLAYER}/movie/${id}${color}`;
+    return `/api/player?url=${encodeURIComponent(upstream)}`;
   },
 
   async fetchImdbId(tmdbId, type = 'movie') {
