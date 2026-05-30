@@ -44,11 +44,11 @@ const API = {
   /* ── Player URL ── */
   getPlayerUrl(item, season = 1, episode = 1) {
     const id = item.tmdb_id || item.imdb_id;
-    let cinezoUrl;
-    if (!id) cinezoUrl = `${this.FALLBACK_PLAYER}/embed/movie/550?${this.PLAYER_THEME}`;
-    else if (item.type === 'tv') cinezoUrl = `${this.FALLBACK_PLAYER}/embed/tv/${id}/${season}/${episode}?${this.PLAYER_THEME}`;
-    else cinezoUrl = `${this.FALLBACK_PLAYER}/embed/movie/${id}?${this.PLAYER_THEME}`;
-    return `/api/player-proxy?url=${encodeURIComponent(cinezoUrl)}`;
+    if (!id) return `${this.FALLBACK_PLAYER}/embed/movie/550?${this.PLAYER_THEME}`;
+    if (item.type === 'tv') {
+      return `${this.FALLBACK_PLAYER}/embed/tv/${id}/${season}/${episode}?${this.PLAYER_THEME}`;
+    }
+    return `${this.FALLBACK_PLAYER}/embed/movie/${id}?${this.PLAYER_THEME}`;
   },
 
   async fetchImdbId(tmdbId, type = 'movie') {
