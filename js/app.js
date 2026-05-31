@@ -857,6 +857,12 @@ if (dom.playerFrame) {
   dom.playerFrame.addEventListener('load', () => {
     if (_expectedIframeNav) { _expectedIframeNav = false; return; }
     if (!_currentPlayerUrl) return;
+    // Cinezo navigated internally (next-ep button, autonext) — advance our state too
+    if (state.currentItem?.type === 'tv') {
+      _expectedIframeNav = true; // prevent re-entrancy from playItem's src=''
+      nextEpisode();
+      return;
+    }
     _expectedIframeNav = true;
     dom.playerFrame.src = _currentPlayerUrl;
   });
@@ -1132,8 +1138,8 @@ function watchLoop() {
     const time = getWatchTime();
     const dur = getWatchDuration();
     if (dur <= 0) return;
-    // Hard fallback: 120s past expected end — Cinezo's internal autonext has had time to fire
-    const pastEnd = time >= dur + 120;
+    // Fallback: 15s past expected end — Cinezo's internal autonext should have fired by now
+    const pastEnd = time >= dur + 15;
     const beforeEnd = time < dur - 10;
     if (pastEnd && subState.autoNextCountdown === null && !subState.autoNextDismissed) {
       startAutoNextCountdown(5);
