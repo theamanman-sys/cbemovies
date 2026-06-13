@@ -1775,14 +1775,7 @@ function togglePlayerSidebar() {
 }
 window.togglePlayerSidebar = togglePlayerSidebar;
 
-document.addEventListener('fullscreenchange', () => {
-  const inPlayer = document.fullscreenElement?.closest?.('.player-page');
-  document.querySelector('.player-fs-btn')?.setAttribute('title', inPlayer ? 'Exit Fullscreen' : 'Fullscreen');
-  if (!inPlayer && document.fullscreenElement === dom.playerFrame) {
-    document.exitFullscreen();
-    dom.playerPage.requestFullscreen();
-  }
-});
+
 
 function listenPlayerProgress() {
   if (dom.playerPage._messageHandler) {
