@@ -719,15 +719,17 @@ nav.scrolled {
 .player-nav .player-close:hover { color: var(--accent); }
 
 .player-page .player-fs-btn {
-  position: fixed; bottom: 40px; right: 40px;
+  position: fixed; bottom: 80px; right: 360px;
   z-index: 99999;
-  background: rgba(0,0,0,0.8); border: 2px solid rgba(255,255,255,0.4);
-  color: #fff; font-size: 24px; cursor: pointer;
-  padding: 12px 18px; line-height: 1;
-  border-radius: 10px;
-  transition: var(--transition);
+  width: 48px; height: 48px;
+  display: flex; align-items: center; justify-content: center;
+  background: transparent; border: none;
+  cursor: pointer;
+  padding: 0;
+  transition: opacity .2s;
+  opacity: 0.7;
 }
-.player-page .player-fs-btn:hover { border-color: var(--accent); color: var(--accent); background: #000; }
+.player-page .player-fs-btn:hover { opacity: 1; }
 .player-page.hidden .player-fs-btn { display: none; }
 
 /* ── Subtitle Controls ── */
