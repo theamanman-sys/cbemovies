@@ -719,15 +719,16 @@ nav.scrolled {
 .player-nav .player-close:hover { color: var(--accent); }
 
 .player-fs-btn {
-  position: absolute; bottom: 16px; right: 16px;
-  z-index: 10;
-  background: rgba(0,0,0,0.6); border: 1px solid rgba(255,255,255,0.2);
-  color: white; font-size: 20px; cursor: pointer;
-  padding: 8px 14px; line-height: 1;
-  border-radius: 6px;
+  position: absolute; bottom: 24px; right: 24px;
+  z-index: 100;
+  background: rgba(0,0,0,0.7); border: 1px solid rgba(255,255,255,0.3);
+  color: white; font-size: 22px; cursor: pointer;
+  padding: 10px 16px; line-height: 1;
+  border-radius: 8px;
+  opacity: 0.85;
   transition: var(--transition);
 }
-.player-fs-btn:hover { border-color: var(--accent); color: var(--accent); background: rgba(0,0,0,0.8); }
+.player-fs-btn:hover { opacity: 1; border-color: var(--accent); color: var(--accent); background: rgba(0,0,0,0.9); }
 
 /* ── Subtitle Controls ── */
 .player-subtitle-wrap {
