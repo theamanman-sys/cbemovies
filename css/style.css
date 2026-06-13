@@ -700,8 +700,7 @@ nav.scrolled {
 
 .player-page:fullscreen .player-nav { padding: 12px 24px; }
 .player-page:fullscreen .player-sidebar { display: none; }
-.player-page:fullscreen .player-main iframe { z-index: 1; }
-.player-page:fullscreen .player-main::after { z-index: 2; }
+.player-page:fullscreen .player-fs-btn { right: 24px; bottom: 16px; }
 
 .player-nav {
   display: flex; align-items: center; justify-content: space-between;
@@ -719,7 +718,7 @@ nav.scrolled {
 .player-nav .player-close:hover { color: var(--accent); }
 
 .player-page .player-fs-btn {
-  position: fixed; bottom: 80px; right: 360px;
+  position: fixed; bottom: 16px; right: 352px;
   z-index: 99999;
   width: 48px; height: 48px;
   display: flex; align-items: center; justify-content: center;
