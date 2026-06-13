@@ -53,7 +53,7 @@ body {
   display: flex; align-items: center; justify-content: center;
 }
 .preloader-logo {
-  height: 55px; width: auto;
+  height: 80px; width: auto;
   position: relative; z-index: 2;
 }
 .preloader-ring {
@@ -85,7 +85,8 @@ nav.scrolled {
   display: flex; align-items: center; gap: 10px;
   text-decoration: none; color: var(--text-primary);
 }
-.nav-logo-img { height: 80px; width: auto; display: block; }
+.nav-logo-img { height: 50px; width: auto; display: block; }
+.nav-logo-text { font-family: 'Anton', sans-serif; font-size: 22px; font-weight: 400; letter-spacing: 2px; color: #910096; text-transform: uppercase; }
 
 .nav-links { display: flex; align-items: center; gap: 32px; list-style: none; }
 .nav-links a {
@@ -960,7 +961,7 @@ footer {
   margin-bottom: 32px;
 }
 
-.footer-logo { height: 80px; width: auto; margin-bottom: 16px; }
+.footer-logo { height: 64px; width: auto; margin-bottom: 16px; }
 .footer-brand p { font-size: 14px; line-height: 1.6; color: var(--text-secondary); }
 
 .footer-col h4 { font-size: 14px; font-weight: 600; margin-bottom: 16px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-primary); }
