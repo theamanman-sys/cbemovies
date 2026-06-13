@@ -718,9 +718,9 @@ nav.scrolled {
 .player-nav .player-close:hover { color: var(--accent); }
 
 .player-page .player-fs-btn {
-  position: fixed; bottom: 16px; right: 340px;
+  position: fixed; bottom: 16px; right: 332px;
   z-index: 99999;
-  width: 56px; height: 56px;
+  width: 52px; height: 52px;
   display: flex; align-items: center; justify-content: center;
   background: transparent; border: none;
   cursor: pointer;
@@ -730,6 +730,9 @@ nav.scrolled {
 }
 .player-page .player-fs-btn:hover { opacity: 1; }
 .player-page.hidden .player-fs-btn { display: none; }
+@media (max-width: 1024px) {
+  .player-page .player-fs-btn { right: 16px; }
+}
 
 /* ── Subtitle Controls ── */
 .player-subtitle-wrap {
