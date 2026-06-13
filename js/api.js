@@ -1,6 +1,6 @@
 const API = {
   VIDAPI_BASE: 'https://vidapi.ru',
-  FALLBACK_PLAYER: 'https://player.cinezo.live',
+  FALLBACK_PLAYER: 'https://player.cbemovies.vercel.app',
   PLAYER_THEME: 'primarycolor=D4A017',
   TMDB_BASE: 'https://api.themoviedb.org/3',
   IMG_BASE: 'https://image.tmdb.org/t/p',
