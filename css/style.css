@@ -86,7 +86,7 @@ nav.scrolled {
   text-decoration: none; color: var(--text-primary);
 }
 .nav-logo-img { height: 50px; width: auto; display: block; }
-.nav-logo-text { font-family: 'Anton', sans-serif; font-size: 22px; font-weight: 400; letter-spacing: 2px; color: #910096; text-transform: uppercase; }
+.nav-logo-text { font-family: 'Anton', sans-serif; font-size: 22px; font-weight: 400; letter-spacing: 1px; color: #910096; }
 
 .nav-links { display: flex; align-items: center; gap: 32px; list-style: none; }
 .nav-links a {
