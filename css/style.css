@@ -700,7 +700,7 @@ nav.scrolled {
 
 .player-page:fullscreen .player-nav { padding: 12px 24px; }
 .player-page:fullscreen .player-sidebar { display: none; }
-.player-page:fullscreen .player-fs-btn { right: 24px; bottom: 16px; }
+.player-page:fullscreen .player-fs-btn { right: 20px; bottom: 16px; }
 
 .player-nav {
   display: flex; align-items: center; justify-content: space-between;
@@ -718,9 +718,9 @@ nav.scrolled {
 .player-nav .player-close:hover { color: var(--accent); }
 
 .player-page .player-fs-btn {
-  position: fixed; bottom: 16px; right: 352px;
+  position: fixed; bottom: 16px; right: 340px;
   z-index: 99999;
-  width: 48px; height: 48px;
+  width: 56px; height: 56px;
   display: flex; align-items: center; justify-content: center;
   background: transparent; border: none;
   cursor: pointer;
