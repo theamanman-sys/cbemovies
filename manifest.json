@@ -4,9 +4,9 @@
   "description": "Experience cinema with CBE Movies from Commercial Bank of Ethiopia. Watch movies and TV shows in HD.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#0a0a0f",
-  "theme_color": "#0a0a0f",
+  "background_color": "#0a0a0a",
+  "theme_color": "#910096",
   "icons": [
-    { "src": "data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎬</text></svg>", "sizes": "192x192", "type": "image/svg+xml" }
+    { "src": "data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><circle cx=%2250%22 cy=%2250%22 r=%2245%22 fill=%22%23910096%22/><text x=%2250%22 y=%2268%22 font-family=%22Arial%22 font-size=%2240%22 font-weight=%22900%22 fill=%22%23ffffff%22 text-anchor=%22middle%22>CBE</text></svg>", "sizes": "192x192", "type": "image/svg+xml" }
   ]
 }
