@@ -342,13 +342,12 @@
             </div>
             <input type="file" id="srt-upload-input" accept=".srt,.vtt,text/plain" style="display:none">
           </div>
-        <button class="player-fs-btn" onclick="togglePlayerFullscreen()" title="Fullscreen">⛶</button>
         <button class="player-close" onclick="closePlayer()" title="Close Player (Esc)">✕</button>
       </div>
     </div>
     <div class="player-container">
       <div class="player-main">
-        <iframe id="player-frame" allow="autoplay; encrypted-media; fullscreen" sandbox="allow-scripts allow-same-origin"></iframe>
+        <iframe id="player-frame" allow="autoplay; encrypted-media" sandbox="allow-scripts allow-same-origin"></iframe>
           <div id="subtitle-overlay" class="subtitle-overlay hidden">
             <div id="subtitle-text" class="subtitle-text"></div>
             <div id="subtitle-time" class="subtitle-time"></div>
@@ -373,6 +372,7 @@
             <button class="substep-btn" onclick="subStep(0.5)" title="+0.5s">+½</button>
             <button class="substep-btn substep-next" id="substep-next-btn" onclick="dismissAutoNext(); nextEpisode()" title="Next Episode" style="display:none">Next →</button>
           </div>
+          <button class="player-fs-btn" onclick="togglePlayerFullscreen()" title="Fullscreen">⛶</button>
         </div>
       </div>
       <div class="player-sidebar">
