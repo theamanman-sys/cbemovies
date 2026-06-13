@@ -4,9 +4,13 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>CBE Movies — YouTube Channel</title>
-  <meta name="description" content="CBE Movies YouTube channel — Film conversations, podcast episodes, and cinema discussions from Commercial Bank of Ethiopia.">
-  <meta name="theme-color" content="#0a0a0f">
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><circle cx=%2250%22 cy=%2250%22 r=%2245%22 fill=%22%23007A33%22/><text x=%2250%22 y=%2268%22 font-family=%22Arial%22 font-size=%2248%22 font-weight=%22900%22 fill=%22%23D4A017%22 text-anchor=%22middle%22>CBE</text></svg>">
+  <meta name="description" content="CBE Movies YouTube channel — Official Commercial Bank of Ethiopia videos, banking insights, and community updates.">
+  <meta name="theme-color" content="#910096">
+  <link rel="icon" href="img/cbe-logo.png">
+  <link rel="apple-touch-icon" href="img/cbe-logo.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Antonio:wght@400;700&family=Roboto+Serif:opsz,wght@8..144,400;8..144,500;8..144,600&family=Noto+Sans+Ethiopic:wght@400;600;700&display=swap">
   <link rel="stylesheet" href="css/style.css">
   <style>
     .page-hero {
@@ -23,14 +27,13 @@
       content: '';
       position: absolute;
       inset: 0;
-      background: linear-gradient(180deg, rgba(10,10,15,0.55) 0%, rgba(10,10,15,0.85) 60%, var(--bg-primary) 100%);
+      background: linear-gradient(180deg, rgba(10,10,10,0.55) 0%, rgba(10,10,10,0.85) 60%, var(--bg-primary) 100%);
       z-index: 1;
     }
     .page-hero > * { position: relative; z-index: 2; }
     .page-hero .channel-icon {
-      width: 64px; height: 64px;
+      width: 72px; height: 72px;
       border-radius: 50%;
-      border: 2px solid rgba(255,255,255,0.3);
       overflow: hidden;
       display: flex; align-items: center; justify-content: center;
       margin: 0 auto 16px;
@@ -47,7 +50,7 @@
       letter-spacing: 2px;
       text-shadow: 0 2px 12px rgba(0,0,0,0.5);
     }
-    .page-hero h1 span { color: var(--accent); }
+    .page-hero h1 span { color: #e8a029; }
     .page-hero p {
       color: rgba(255,255,255,0.8);
       font-size: 15px;
@@ -56,9 +59,7 @@
       margin-left: auto; margin-right: auto;
       text-shadow: 0 1px 8px rgba(0,0,0,0.5);
     }
-    .page-hero .btn {
-      margin-top: 20px;
-    }
+    .page-hero .btn { margin-top: 20px; }
     .page-hero .channel-stats {
       display: flex; justify-content: center;
       gap: 32px; margin-top: 20px;
@@ -100,8 +101,8 @@
       transition: var(--transition);
       font-family: inherit;
     }
-    .filter-tab:hover { border-color: var(--accent); color: var(--text-primary); }
-    .filter-tab.active { background: var(--accent); color: var(--bg-primary); border-color: var(--accent); font-weight: 600; }
+    .filter-tab:hover { border-color: #910096; color: var(--text-primary); }
+    .filter-tab.active { background: #910096; color: #fff; border-color: #910096; font-weight: 600; }
     .video-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
@@ -118,7 +119,7 @@
     }
     .video-card:hover {
       transform: translateY(-4px);
-      border-color: rgba(255,148,202,0.3);
+      border-color: rgba(145,0,150,0.3);
       box-shadow: 0 8px 24px rgba(0,0,0,0.3);
     }
     .video-thumb {
@@ -139,7 +140,7 @@
       transform: translate(-50%, -50%);
       width: 48px; height: 48px;
       border-radius: 50%;
-      background: rgba(255,0,0,0.9);
+      background: rgba(145,0,150,0.9);
       color: white;
       display: flex; align-items: center; justify-content: center;
       transition: var(--transition);
@@ -160,10 +161,11 @@
       color: var(--text-primary);
       backdrop-filter: blur(4px);
     }
-    .video-badge.podcast { background: rgba(255,0,0,0.8); }
+    .video-badge.podcast { background: rgba(145,0,150,0.8); }
     .video-badge.shorts { background: rgba(0,150,255,0.8); }
-    .video-badge.discussion { background: rgba(255,148,202,0.8); color: var(--bg-primary); }
-    .video-badge.trailer { background: rgba(255,200,0,0.8); color: var(--bg-primary); }
+    .video-badge.discussion { background: rgba(232,160,41,0.9); }
+    .video-badge.trailer { background: rgba(232,160,41,0.9); }
+    .video-badge.promotional { background: rgba(145,0,150,0.8); }
     .video-card-body {
       padding: 14px 16px 16px;
       flex: 1;
@@ -202,7 +204,7 @@
     @media (max-width: 700px) {
       .page-hero { padding: 80px 16px 40px; }
       .page-hero h1 { font-size: 30px; }
-      .page-hero .channel-icon { width: 52px; height: 52px; }
+      .page-hero .channel-icon { width: 60px; height: 60px; }
       .page-hero .channel-stats { gap: 16px; font-size: 12px; }
       .page-hero .channel-stats strong { font-size: 15px; }
       .youtube-page-section { padding: 24px 16px 48px; }
@@ -215,7 +217,7 @@
   <!-- Preloader -->
   <div class="preloader" id="preloader">
     <div class="preloader-inner">
-      <img src="img/logo.svg" alt="CBE Movies" class="preloader-logo">
+      <img src="img/cbe-logo.png" alt="CBE Movies" class="preloader-logo">
       <div class="preloader-ring"></div>
     </div>
   </div>
@@ -223,31 +225,33 @@
   <!-- Navigation -->
   <nav id="nav">
     <a href="/" class="nav-logo">
-      <span class="logo-icon">B</span>
-      CBE<span>Movies</span>
+      <img src="img/cbe-logo.png" alt="CBE Movies" class="nav-logo-img">
+      <span class="nav-logo-text">CBE Movies</span>
     </a>
     <ul class="nav-links">
       <li><a href="/">Home</a></li>
       <li><a href="youtube.html" class="active">CBE Movies</a></li>
     </ul>
     <div class="nav-actions">
-      <button class="mobile-menu-btn">☰</button>
+      <button class="mobile-menu-btn" onclick="document.getElementById('nav').classList.toggle('nav-open')">☰</button>
     </div>
   </nav>
 
   <!-- Channel Hero -->
-  <section class="page-hero" style="background:linear-gradient(135deg, #004D1A, #007A33)">
-    <div class="channel-icon" style="background:#D4A017;border:none;display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:900;color:#004D1A">CBE</div>
+  <section class="page-hero" style="background:linear-gradient(135deg, #6b1e68, #910096)">
+    <div class="channel-icon" style="border:none">
+      <img src="img/cbe-logo.png" alt="CBE">
+    </div>
     <h1><span>Commercial Bank of Ethiopia</span></h1>
     <p>Official YouTube channel of CBE — banking services, financial insights, and community updates from Ethiopia's largest bank.</p>
     <div class="channel-stats">
       <div><strong>Est. 1942</strong> Ethiopia's Leading Bank</div>
+      <div><strong>46M+</strong> Customers</div>
     </div>
     <a href="https://www.youtube.com/@CommercialBankofEthiopia" class="btn btn-primary" target="_blank" rel="noopener" style="margin-top:20px;display:inline-flex">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
       Visit Channel
     </a>
-    </div>
   </section>
 
   <!-- Video Grid -->
@@ -257,8 +261,8 @@
       <div class="filter-tabs" id="filter-tabs">
         <button class="filter-tab active" data-filter="all">All</button>
         <button class="filter-tab" data-filter="podcast">Podcast</button>
-        <button class="filter-tab" data-filter="shorts">Shorts</button>
         <button class="filter-tab" data-filter="discussion">Discussions</button>
+        <button class="filter-tab" data-filter="promotional">Promotional</button>
       </div>
     </div>
     <div class="video-grid" id="video-grid"></div>

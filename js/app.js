@@ -120,6 +120,12 @@ function formatDate(dateStr) {
   return d.toLocaleDateString(i18n.current === 'am' ? 'am-ET' : 'en-US', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' });
 }
 function displayRating(item) { return item._rating || parseFloat(item.rating || 0).toFixed(1); }
+function displayQuality(item) {
+  const r = parseFloat(item.rating || item._rating || 0);
+  if (r >= 7) return 'HD';
+  if (r >= 5) return 'SD';
+  return 'CAM';
+}
 function displayGenres(item) {
   if (item._genres?.length) return item._genres.join(', ');
   return item.genre || __('General');
@@ -287,6 +293,7 @@ function renderMovieCards(items, container, { numbered = false } = {}) {
   container.innerHTML = items.map(item => `
     <div class="movie-card" data-id="${item._id}" data-action="detail">
       <div class="card-rating">★ ${displayRating(item)}</div>
+      <span class="card-quality ${displayQuality(item).toLowerCase()}">${displayQuality(item)}</span>
       ${numbered ? `<div class="card-number">${String(items.indexOf(item) + 1).padStart(2, '0')}</div>` : ''}
       <img class="movie-card-poster" src="${posterUrl(item)}" alt="${escHtml(displayTitleText(item))}" loading="lazy" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%27300%27 height=%27450%27 fill=%27%231a1a2e%27%3E%3Crect width=%27300%27 height=%27450%27/%3E%3Ctext x=%2750%%25%27 y=%2750%%25%27 text-anchor=%27middle%27 fill=%27%23a0a0b8%27 font-size=%2716%27%3E${escHtml(displayTitleText(item)[0] || '?')}%3C/text%3E%3C/svg%3E'">
       <button class="play-btn" data-id="${item._id}" data-action="play">
@@ -1994,6 +2001,7 @@ function searchCard(item, q, i) {
   return `
     <div class="movie-card" data-id="${item._id}" data-action="detail" style="animation:fadeInScale 0.3s ease ${i * 0.03}s both">
       <div class="card-rating">★ ${displayRating(item)}</div>
+      <span class="card-quality ${displayQuality(item).toLowerCase()}">${displayQuality(item)}</span>
       <img class="movie-card-poster" src="${posterUrl(item)}" alt="${escHtml(displayTitleText(item))}" loading="lazy" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%27300%27 height=%27450%27 fill=%27%231a1a2e%27%3E%3Crect width=%27300%27 height=%27450%27/%3E%3Ctext x=%2750%%25%27 y=%2750%%25%27 text-anchor=%27middle%27 fill=%27%23a0a0b8%27 font-size=%2716%27%3E${escHtml(displayTitleText(item)[0] || '?')}%3C/text%3E%3C/svg%3E'">
       <button class="play-btn" data-id="${item._id}" data-action="play">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>

@@ -25,6 +25,51 @@ const youtubeVideos = [
     date: 'May 2019',
     views: '',
     category: 'discussion'
+  },
+  {
+    id: 'QJ5bQWcFc88',
+    title: 'Facts and Figures about CBE | ስለ ኢትዮጵያ ንግድ ባንክ እውነታዎች እና አሃዞች',
+    description: 'Key facts and figures about the Commercial Bank of Ethiopia — Ethiopia\'s largest bank.',
+    fullDescription: 'Facts and Figures about CBE — learn about the history, reach, and impact of the Commercial Bank of Ethiopia.\n\nCopyright © CBE (Commercial Bank of Ethiopia)',
+    date: '2024',
+    views: '',
+    category: 'promotional'
+  },
+  {
+    id: 'gVivmkr4Q6g',
+    title: 'CBE Iftar Program in Addis Ababa | የኢትዮጵያ ንግድ ባንክ የኢፍጣር ፕሮግራም',
+    description: 'Commercial Bank of Ethiopia Iftar program held in Addis Ababa.',
+    fullDescription: 'CBE hosted an Iftar program in Addis Ababa, bringing together communities during the holy month.\n\nCopyright © CBE (Commercial Bank of Ethiopia)',
+    date: '2024',
+    views: '',
+    category: 'discussion'
+  },
+  {
+    id: 'HOKqO75MOjM',
+    title: 'CBE Iftar Program in Dire Dawa and Jimma | የኢፍጣር ፕሮግራም በድሬዳዋ እና ጅማ',
+    description: 'Commercial Bank of Ethiopia Iftar program in Dire Dawa and Jimma cities.',
+    fullDescription: 'CBE continues its community engagement with Iftar programs in Dire Dawa and Jimma.\n\nCopyright © CBE (Commercial Bank of Ethiopia)',
+    date: '2024',
+    views: '',
+    category: 'discussion'
+  },
+  {
+    id: '9wykvM6O36Q',
+    title: 'CBE Eid Al-Fitir Special TV Program Part 1 | ልዩ የኢድ አል-ፈጥር በዓል ፕሮግራም',
+    description: 'Commercial Bank of Ethiopia special Eid Al-Fitir television program — Part 1.',
+    fullDescription: 'CBE presents a special Eid Al-Fitir television program. Join us in celebration.\n\nCopyright © CBE (Commercial Bank of Ethiopia)',
+    date: '2024',
+    views: '',
+    category: 'podcast'
+  },
+  {
+    id: 'IaLQ7x3NWQc',
+    title: 'CBE Eid Al-Fitir Special TV Program Part 2 | ልዩ የኢድ አል-ፈጥር በዓል ፕሮግራም ክፍል 2',
+    description: 'Commercial Bank of Ethiopia special Eid Al-Fitir television program — Part 2.',
+    fullDescription: 'CBE presents a special Eid Al-Fitir television program (Part 2). Join us in celebration.\n\nCopyright © CBE (Commercial Bank of Ethiopia)',
+    date: '2024',
+    views: '',
+    category: 'podcast'
   }
 ];
 
