@@ -1,8 +1,8 @@
-# VideoBet — Session Notes
+# CBE Movies — Session Notes
 
 ## Project Overview
 
-**videobet.co** — A streaming and film culture website with TMDB/VidAPI movie/TV playback and a dedicated YouTube channel section.
+**CBE Movies** — A streaming and film culture website from Commercial Bank of Ethiopia with TMDB/VidAPI movie/TV playback and a dedicated YouTube channel section.
 
 - Dark theme, glass-morphism UI, vanilla JS/CSS/HTML, SPA-style
 - Based in Ethiopia — mix of English and Amharic content
@@ -12,7 +12,8 @@
 
 ## YouTube Channel
 
-- **Handle**: `@videobet_et`
+- **Handle**: `@CommercialBankofEthiopia`
+- **Channel URL**: `https://www.youtube.com/@CommercialBankofEthiopia`
 - **Channel ID**: `UCe-dwO_r_EppHk13L_CZX_w`
 - **Uploads Playlist ID**: `UUe-dwO_r_EppHk13L_CZX_w`
 - **16 videos** — podcast episodes, film discussions, shorts, trailers
@@ -37,12 +38,16 @@ https://yt3.googleusercontent.com/ee_P4B8Suz5o19hawcGI5mWwTiAciB_oOoAiaJ4vyuNkMG
 /
 ├── index.html          # Main SPA — hero, carousels, search, modals, player
 ├── youtube.html        # Dedicated YouTube channel page
+├── img/
+│   ├── logo.svg        # CBE Movies branding logo
+│   └── logo.png        # Legacy logo (to be removed)
 ├── css/
 │   └── style.css       # All styles (shared)
 ├── js/
 │   ├── app.js          # Core logic — state, rendering, API calls, YouTube
 │   ├── youtube.js      # YouTube page logic — grid, filters, modals
-│   └── api.js          # TMDB & VidAPI integration
+│   ├── api.js          # TMDB & VidAPI integration
+│   └── i18n.js         # Internationalization (EN/AM)
 ```
 
 ---
@@ -58,13 +63,3 @@ https://yt3.googleusercontent.com/ee_P4B8Suz5o19hawcGI5mWwTiAciB_oOoAiaJ4vyuNkMG
 - Dedicated youtube.html page with channel banner hero, filterable video grid, detail modal, embedded player
 - Race condition fix for TV episode loading (per-request ID counter)
 - Modal scroll fix, episode detail enrichment, TV selector timing fix
-
----
-
-## UI Changes (Final)
-
-- **Nav link**: "YouTube" → "VideoBet"
-- **Section heading**: "Videobet YouTube" → "VideoBet"
-- **Footer link**: "YouTube Channel" → "VideoBet"
-- **Subscribe / Visit Channel buttons**: Removed from both index.html and youtube.html
-- **youtube.html hero**: Uses actual channel banner as background with dark gradient overlay + channel avatar

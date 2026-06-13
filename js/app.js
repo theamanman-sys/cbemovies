@@ -708,22 +708,9 @@ function closeModal() {
   unlockScroll();}
 
 const youtubeData = {
-  'ulCGyn4fcKI': { title: 'Videobet Podcast Episode 4: The Development of African Cinema', description: 'Films Discussed: Cairo Station, Black Girl, Yeelen, Teza, Atlantics.' },
-  'JBAPC6Hvoso': { title: 'Launching Soon', description: 'Where silence hums, frames linger, and Addis watches itself dream.' },
-  'CNtJrircaNo': { title: 'Videobet Shorts: Ep 05 — Close-Up by Abbas Kiarostami', description: 'Kiarostami\'s Close-Up concludes our film series.' },
-  'Lw8XueLnU88': { title: 'Videobet Shorts: EP 4 — Taste of Cherry by Abbas Kiarostami', description: 'Kiarostami\'s Taste of Cherry continues our film series.' },
-  'iZeBBkAOOE8': { title: 'Videobet Shorts: Ep 03 — Through the Olive Trees', description: 'Kiarostami\'s Through the Olive Trees continues our film series.' },
-  'hgfPsRhRz0g': { title: 'Videobet Shorts: Ep 02 — And Life Goes On', description: 'Kiarostami\'s And Life Goes On continues our film series.' },
-  'XezOY3I2zlc': { title: 'Videobet Shorts: Ep 01 — Where\'s the Friend\'s House?', description: 'Kiarostami\'s classic kicks off our film series.' },
-  'j0N3v4V7Xr8': { title: 'ቪዲዮቤት ክፍል 4 በቅርብ ቀን', description: 'Episode 4 — A new guest and their top 5 film picks.' },
-  'XL99u8Zqyp8': { title: 'ከልዑል ሸዋፈራው — Sexy Beast', description: 'A discussion on Jonathan Glazer\'s Sexy Beast.' },
-  'ruxJkpcbJ98': { title: 'ከልዑል ሸዋፈራው — To Sleep With Anger', description: 'A discussion on Charles Burnett\'s classic.' },
-  'HvFyZsz77vk': { title: 'ቪዲዮቤት ክፍል 3 — አምስት ፊልሞች ከልዑል ሸዋፈራው ጋር', description: 'Episode 3 — Leul Shewaferaw interview.' },
-  'A1Z-3Piz7wI': { title: 'Losing Ground Screening — Thank You', description: 'Thanks to everyone who came to the screening.' },
-  '0Yn_AlF9OJ8': { title: 'የ Losing Ground ፊልም እይታ በሴንቸሪ ሲኒማ', description: 'A screening of the 1982 classic at Century Cinema.' },
-  'JdZKvDYFzRU': { title: 'ከአብረሃም ገዛኸኝ — 12 Angry Men', description: 'A discussion on Sidney Lumet\'s 12 Angry Men.' },
-  'Jci0fu2VFto': { title: 'ቪዲዮቤት ክፍል 2 — አምስት ፊልሞች ከአብረሃም ገዛኸኝ ጋር', description: 'Episode 2 — Abraham Gezahagne interview.' },
-  'HuGynsdFTPs': { title: 'Top 10 Movies of 2024', description: 'Episode 1 — Our hosts discuss the best films of the year.' },
+  'wvTRae6Awas': { title: 'Fasika (Easter) FCY Ad', description: 'Commercial Bank of Ethiopia Easter celebration advertisement.' },
+  '44KofcrAw5I': { title: 'CBE TV Special Easter Program', description: 'Special Easter television program from CBE.' },
+  'QFeMChEqrjE': { title: 'CBE TV Program', description: 'Banking services and updates from Commercial Bank of Ethiopia.' },
 };
 
 let _tvReqId = 0;
@@ -1812,7 +1799,7 @@ function listenPlayerProgress() {
       return;
     }
     let time;
-    if (data.type === 'videobet-progress' || data.type === 'timeupdate' || data.type === 'playing') {
+    if (data.type === 'cbemovies-progress' || data.type === 'timeupdate' || data.type === 'playing') {
       time = data.currentTime;
     } else if (data.currentTime !== undefined && data.currentTime !== null) {
       time = data.currentTime;
@@ -2058,7 +2045,7 @@ function toggleMobileNav() {
     <a href="#" style="color:var(--text-secondary);font-size:16px;font-weight:500;text-decoration:none;padding:12px 0" onclick="scrollToSection('nowPlaying');return false">${__('Now Playing in Theaters')}</a>
     <a href="#" style="color:var(--text-secondary);font-size:16px;font-weight:500;text-decoration:none;padding:12px 0" onclick="scrollToSection('latest');return false">${__('Latest Movies')}</a>
     <a href="#" style="color:var(--text-secondary);font-size:16px;font-weight:500;text-decoration:none;padding:12px 0" onclick="scrollToSection('popular');return false">${__('Popular TV Shows')}</a>
-    <a href="#" style="color:var(--text-primary);font-size:16px;font-weight:500;text-decoration:none;padding:12px 0" onclick="scrollToSection('youtube');return false">🎬 ${__('VideoBet')}</a>
+    <a href="#" style="color:var(--text-primary);font-size:16px;font-weight:500;text-decoration:none;padding:12px 0" onclick="scrollToSection('youtube');return false">🎬 ${__('CBE Movies')}</a>
     <a href="#" style="color:var(--text-secondary);font-size:16px;font-weight:500;text-decoration:none;padding:12px 0" onclick="openSearch();closeMobileNav();return false">${__('Search')}</a>
   `;
   document.body.appendChild(panel);
@@ -2325,7 +2312,7 @@ async function loadContent() {
     const ethiopian = indexItems(await API.getEthiopianMovies());
     renderMovieCards(ethiopian, dom.ethiopianTrack);
 
-    showToast('VideoBet loaded');
+      showToast('CBE Movies loaded');
 
     enrichDisplayed();
 

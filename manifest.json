@@ -1,7 +1,7 @@
 {
-  "name": "VideoBet",
-  "short_name": "VideoBet",
-  "description": "Bet on the best entertainment. Watch movies and TV shows in HD.",
+  "name": "CBE Movies",
+  "short_name": "CBE Movies",
+  "description": "Experience cinema with CBE Movies from Commercial Bank of Ethiopia. Watch movies and TV shows in HD.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#0a0a0f",
