@@ -23,8 +23,8 @@
 
       <form id="login-form" class="auth-form" onsubmit="return false">
         <div class="form-group">
-          <label for="login-email">Email</label>
-          <input type="email" id="login-email" placeholder="Enter your email" required autocomplete="email">
+          <label for="login-email">Email or Username</label>
+          <input type="text" id="login-email" placeholder="Enter your email or username" required autocomplete="username">
         </div>
         <div class="form-group">
           <label for="login-password">Password</label>
@@ -88,7 +88,13 @@
     loginBtn.disabled = true;
     loginBtn.textContent = 'Signing in...';
     try {
-      const cred = await Auth.login(emailInp.value, passInp.value);
+      let email = emailInp.value.trim();
+      if (!email.includes('@')) {
+        const snap = await db.collection('users').where('username', '==', email).get();
+        if (snap.empty) throw new Error('No account found with that email or username');
+        email = snap.docs[0].data().email;
+      }
+      const cred = await Auth.login(email, passInp.value);
       window.location.href = 'home.html';
     } catch (err) {
       if (err.message === 'ACCOUNT_NOT_VERIFIED') {
