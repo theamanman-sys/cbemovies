@@ -1593,13 +1593,13 @@ footer {
 }
 .browse-card-trailer-cover-top {
   top: 0;
-  height: 56px;
+  height: 72px;
   background: var(--bg-secondary);
 }
 .browse-card-trailer-cover-bottom {
   bottom: 0;
-  height: 60px;
-  background: linear-gradient(to top, var(--bg-card), transparent);
+  height: 72px;
+  background: linear-gradient(to top, #0a0a0f, rgba(10,10,15,0.3));
 }
 .view-toggle {
   display: flex;
