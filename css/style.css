@@ -254,7 +254,7 @@ nav.scrolled {
   .nav-user-name { display: none; }
   .nav-user-caret { display: none; }
   .nav-login-btn { padding: 6px 14px; font-size: 12px; }
-  .nav-user-dropdown { right: -8px; }
+  .nav-user-dropdown { right: 0; }
 }
 
 .mobile-menu-btn {
@@ -2352,8 +2352,9 @@ footer {
   background:var(--bg-card);
   border-radius:var(--radius-lg);
   border:1px solid var(--glass-border);
-  align-self:flex-start; position:sticky; top:112px;
-  overflow:hidden;
+  position:sticky; top:112px;
+  max-height:calc(100vh - 136px);
+  overflow-y:auto;
   box-shadow:0 8px 32px rgba(0,0,0,0.3);
 }
 .profile-sidebar::before {
@@ -2540,7 +2541,7 @@ footer {
 .notif-item small { font-size:12px; color:var(--text-secondary); white-space:nowrap; }
 
 @media (max-width:1024px) {
-  .profile-sidebar { width:220px; padding:20px; }
+  .profile-sidebar { width:220px; padding:20px; max-height:calc(100vh - 136px); }
   .profile-nav-item { font-size:13px; padding:8px 12px; }
   .sub-plans { gap:14px; }
 }
@@ -2548,18 +2549,18 @@ footer {
 @media (max-width:768px) {
   .profile-page { flex-direction:column; gap:20px; }
   .profile-sidebar {
-    width:100%; position:static; padding:20px;
-    flex-direction:row; flex-wrap:wrap; justify-content:center; gap:8px;
+    width:100%; max-height:none; position:static; padding:20px;
+    flex-direction:row; flex-wrap:wrap; align-items:center; gap:8px;
   }
   .profile-sidebar::before { display:none; }
-  .profile-avatar { width:64px; height:64px; font-size:24px; }
-  .profile-sidebar h2 { font-size:16px; width:auto; }
-  .profile-email { width:100%; order:10; }
-  .profile-role-badge { order:11; }
-  .profile-nav { flex-direction:row; flex-wrap:wrap; gap:4px; width:100%; order:12; margin-top:4px; }
-  .profile-nav-item { flex:1; text-align:center; white-space:nowrap; font-size:13px; padding:8px 10px; justify-content:center; }
-  .profile-nav-item.active { box-shadow:none; }
-  .profile-sidebar > :last-child { margin-top:4px; order:13; width:100%; }
+  .profile-avatar { width:60px; height:60px; font-size:22px; }
+  .profile-sidebar h2 { font-size:16px; width:auto; margin-right:auto; }
+  .profile-email { flex:1 1 100%; order:99; text-align:center; }
+  .profile-role-badge { order:100; }
+  .profile-nav { flex:1 1 100%; order:101; flex-direction:row; flex-wrap:wrap; gap:6px; margin-top:4px; }
+  .profile-nav-item { flex:0 1 auto; text-align:center; font-size:13px; padding:8px 14px; justify-content:center; white-space:nowrap; }
+  .profile-nav-item.active { box-shadow:inset 0 -2px 0 var(--accent); background:rgba(145,0,150,0.1); }
+  .profile-sidebar > :last-child { margin-top:4px; order:102; width:100%; }
   .logout-btn { width:100%; }
   .profile-card { padding:20px; }
   .profile-tab h2 { font-size:20px; }
@@ -2574,18 +2575,29 @@ footer {
   .auth-card { padding:24px; }
 }
 @media (max-width: 480px) {
-  .profile-page { padding:16px; gap:16px; }
-  .profile-sidebar { padding:16px; gap:6px; }
-  .profile-avatar { width:56px; height:56px; font-size:22px; box-shadow:0 0 0 2px rgba(145,0,150,0.3); }
-  .profile-sidebar h2 { font-size:15px; }
-  .profile-sidebar .profile-email { font-size:12px; }
-  .profile-nav-item { flex:0 0 auto; font-size:12px; padding:6px 10px; overflow:hidden; text-overflow:ellipsis; gap:4px; }
-  .pnav-icon { font-size:14px; width:16px; }
-  .profile-card { padding:16px; }
-  .profile-tab h2 { font-size:18px; margin-bottom:12px; }
-  .profile-card .form-group:not(:last-child) { margin-bottom:14px; }
-  .sub-plan-card { padding:20px 16px; }
-  .sub-price { font-size:26px; }
+  .profile-page { padding:12px; gap:12px; }
+  .profile-sidebar { padding:14px; gap:6px; }
+  .profile-avatar { width:48px; height:48px; font-size:18px; box-shadow:0 0 0 2px rgba(145,0,150,0.3); }
+  .profile-sidebar h2 { font-size:14px; }
+  .profile-sidebar .profile-email { font-size:11px; }
+  .profile-nav { gap:4px; }
+  .profile-nav-item {
+    flex:0 1 auto; font-size:12px; padding:6px 12px; gap:4px;
+    overflow:visible; text-overflow:clip;
+  }
+  .pnav-icon { font-size:13px; width:auto; }
+  .profile-card { padding:14px; }
+  .profile-tab h2 { font-size:16px; margin-bottom:10px; }
+  .profile-tab h2::after { width:32px; height:2px; margin-top:6px; }
+  .profile-card .form-group:not(:last-child) { margin-bottom:12px; }
+  .profile-card label { font-size:11px; margin-bottom:6px; }
+  .setting-row { padding:10px 0; }
+  .setting-row label:first-child { font-size:13px; }
+  .sub-plan-card { padding:16px 14px; }
+  .sub-price { font-size:24px; }
+  .sub-plan-card h3 { font-size:17px; }
+  .sub-plan-card ul li { font-size:13px; padding:5px 0; }
+  .sub-badge { font-size:9px; padding:3px 10px; }
 }
 
 

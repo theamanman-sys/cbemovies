@@ -241,6 +241,14 @@
     document.getElementById('mobile-nav-panel')?.remove();
     document.getElementById('mobile-nav-overlay')?.remove();
   }
+  document.addEventListener('click', function(e) {
+    const panel = document.getElementById('mobile-nav-panel');
+    if (!panel) return;
+    const link = e.target.closest('a, button');
+    if (link && panel.contains(link)) {
+      setTimeout(closeMobileNav, 100);
+    }
+  });
   window.toggleMobileNav = toggleMobileNav;
   window.closeMobileNav = closeMobileNav;
 
