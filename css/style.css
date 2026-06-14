@@ -700,7 +700,7 @@ nav.scrolled {
 
 .player-page:fullscreen .player-nav { padding: 12px 24px; }
 .player-page:fullscreen .player-sidebar { display: none; }
-.player-page:fullscreen .player-fs-btn { right: 20px; bottom: 4px; }
+.player-page:fullscreen .player-fs-btn { right: 16px; bottom: 4px; }
 
 .player-nav {
   display: flex; align-items: center; justify-content: space-between;
@@ -732,7 +732,7 @@ nav.scrolled {
 .player-page .player-fs-btn:hover { opacity: 1; }
 .player-page.hidden .player-fs-btn { display: none; }
 @media (min-width: 1025px) {
-  .player-page .player-fs-btn { bottom: 4px; right: 320px; width: 72px; height: 72px; }
+  .player-page .player-fs-btn { bottom: 4px; right: 316px; width: 72px; height: 72px; }
   .player-page .player-fs-btn svg { width: 44px; height: 44px; }
 }
 @media (max-width: 1024px) {
