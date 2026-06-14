@@ -299,7 +299,7 @@ function setupModalTrailer(item) {
     if (!dom.modalOverlay.classList.contains('active')) return;
     backdrop.style.display = 'none';
     wrapper.style.display = 'block';
-    wrapper.insertAdjacentHTML('beforeend', '<div style="position:absolute;top:0;left:0;right:0;height:72px;background:var(--bg-secondary);z-index:2;pointer-events:none"></div><div style="position:absolute;bottom:0;left:0;right:0;height:72px;background:linear-gradient(to top,#0a0a0f,rgba(10,10,15,0.3));z-index:2;pointer-events:none"></div>');
+    wrapper.insertAdjacentHTML('beforeend', '<div style="position:absolute;top:-12px;left:0;right:0;height:56px;background:var(--bg-secondary);z-index:2;pointer-events:none"></div><div style="position:absolute;bottom:0;left:0;right:0;height:48px;background:#0a0a0f;z-index:2;pointer-events:none"></div>');
     _loadCardYTAPI(() => {
       if (!wrapper.isConnected) return;
       const ytDiv = document.createElement('div');
