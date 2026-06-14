@@ -302,41 +302,45 @@
   };
 
   function applyWelcomeLang(lang) {
-    const t = welcomeText[lang];
-    if (!t) return;
+    try {
+      const t = welcomeText[lang];
+      if (!t) return;
 
-    document.querySelector('.welcome-hero-content h1').textContent = t.heroTitle;
-    document.querySelector('.welcome-hero-content p').textContent = t.heroSub;
-    document.querySelector('.welcome-hero-content .sub').textContent = t.heroCTA;
-    document.querySelector('.welcome-signin').textContent = t.signIn;
-    const getStartedBtn = document.querySelector('#welcome-get-started button');
-    if (lang === 'am') {
-      getStartedBtn.textContent = t.getStarted;
-    } else {
-      getStartedBtn.innerHTML = t.getStarted + ' <svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>';
+      document.querySelector('.welcome-hero-content h1').textContent = t.heroTitle;
+      document.querySelector('.welcome-hero-content p').textContent = t.heroSub;
+      document.querySelector('.welcome-hero-content .sub').textContent = t.heroCTA;
+      document.querySelector('.welcome-signin').textContent = t.signIn;
+      const getStartedBtn = document.querySelector('#welcome-get-started button');
+      if (lang === 'am') {
+        getStartedBtn.textContent = t.getStarted;
+      } else {
+        getStartedBtn.innerHTML = t.getStarted + ' <svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>';
+      }
+
+      const featureH2s = document.querySelectorAll('.welcome-section-text h2');
+      const featurePs = document.querySelectorAll('.welcome-section-text p');
+      t.features.forEach((f, i) => {
+        if (featureH2s[i]) featureH2s[i].textContent = f.h2;
+        if (featurePs[i]) featurePs[i].textContent = f.p;
+      });
+
+      document.querySelector('.welcome-faq h2').textContent = t.faq.title;
+      const faqBtns = document.querySelectorAll('.faq-question');
+      const faqAnswers = document.querySelectorAll('.faq-answer');
+      if (faqBtns[0]) faqBtns[0].textContent = t.faq.q1;
+      if (faqBtns[1]) faqBtns[1].textContent = t.faq.q2;
+      if (faqBtns[2]) faqBtns[2].textContent = t.faq.q3;
+      if (faqBtns[3]) faqBtns[3].textContent = t.faq.q4;
+      if (faqAnswers[0]) faqAnswers[0].textContent = t.faq.a1;
+      if (faqAnswers[1]) faqAnswers[1].textContent = t.faq.a2;
+      if (faqAnswers[2]) faqAnswers[2].textContent = t.faq.a3;
+      if (faqAnswers[3]) faqAnswers[3].textContent = t.faq.a4;
+
+      document.querySelector('.welcome-bottom-cta p').textContent = t.bottomCTA;
+      document.querySelector('.welcome-footer p').textContent = t.footer;
+    } catch (e) {
+      console.error('applyWelcomeLang error:', e);
     }
-
-    const featureH2s = document.querySelectorAll('.welcome-section-text h2');
-    const featurePs = document.querySelectorAll('.welcome-section-text p');
-    t.features.forEach((f, i) => {
-      if (featureH2s[i]) featureH2s[i].textContent = f.h2;
-      if (featurePs[i]) featurePs[i].textContent = f.p;
-    });
-
-    document.querySelector('.welcome-faq h2').textContent = t.faq.title;
-    const faqBtns = document.querySelectorAll('.faq-question');
-    const faqAnswers = document.querySelectorAll('.faq-answer');
-    if (faqBtns[0]) faqBtns[0].textContent = t.faq.q1;
-    if (faqBtns[1]) faqBtns[1].textContent = t.faq.q2;
-    if (faqBtns[2]) faqBtns[2].textContent = t.faq.q3;
-    if (faqBtns[3]) faqBtns[3].textContent = t.faq.q4;
-    if (faqAnswers[0]) faqAnswers[0].textContent = t.faq.a1;
-    if (faqAnswers[1]) faqAnswers[1].textContent = t.faq.a2;
-    if (faqAnswers[2]) faqAnswers[2].textContent = t.faq.a3;
-    if (faqAnswers[3]) faqAnswers[3].textContent = t.faq.a4;
-
-    document.querySelector('.welcome-bottom-cta p').textContent = t.bottomCTA;
-    document.querySelector('.welcome-footer p').textContent = t.footer;
   }
 
   Auth.onAuthStateChanged((user) => {
@@ -346,6 +350,8 @@
   document.getElementById('welcome-lang').addEventListener('change', function() {
     applyWelcomeLang(this.value);
   });
+
+  applyWelcomeLang(document.getElementById('welcome-lang').value);
   </script>
 </body>
 </html>
