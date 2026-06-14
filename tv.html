@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>All TV Shows — CBE Movies</title>
+  <meta name="description" content="Browse all TV shows on CBE Movies. Filter by genre, year, rating, popularity, and more.">
+  <meta name="theme-color" content="#910096">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="img/cbe-logo.png">  <link rel="apple-touch-icon" href="img/cbe-logo.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Antonio:wght@400;700&family=Roboto+Serif:opsz,wght@8..144,400;8..144,500;8..144,600&family=Noto+Sans+Ethiopic:wght@400;600;700&display=swap">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="preloader" id="preloader">
+    <div class="preloader-inner">
+      <img src="img/cbe-logo.png" alt="CBE Movies" class="preloader-logo">
+      <div class="preloader-ring"></div>
+    </div>
+  </div>
+
+  <nav id="nav">
+    <a href="/" class="nav-logo">
+      <img src="img/cbe-logo.png" alt="CBE Movies" class="nav-logo-img">
+      <span class="nav-logo-text">CBE Movies</span>
+    </a>
+    <ul class="nav-links">
+      <li><a href="/">Home</a></li>
+      <li><a href="movies.html">Movies</a></li>
+      <li><a href="tv.html" class="active">TV Shows</a></li>
+      <li><a href="youtube.html">CBE Movies</a></li>
+    </ul>
+    <div class="nav-actions">
+      <button class="lang-switch" onclick="toggleLang()" data-i18n-title="Switch Language" title="Switch Language">EN</button>
+      <button class="nav-search-btn" onclick="openSearch()" title="Search (Ctrl+K)">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+      </button>
+      <button class="mobile-menu-btn">☰</button>
+    </div>
+  </nav>
+
+  <section class="browse-hero">
+    <h1>Browse <span>TV Shows</span></h1>
+    <p>Discover TV shows by genre, year, rating, and more</p>
+  </section>
+
+  <div class="filter-bar" id="filter-bar">
+    <div class="filter-group">
+      <label for="filter-genre">Genre</label>
+      <select id="filter-genre"></select>
+    </div>
+    <div class="filter-group">
+      <label for="filter-year">Year</label>
+      <select id="filter-year"></select>
+    </div>
+    <div class="filter-group">
+      <label for="filter-sort">Sort By</label>
+      <select id="filter-sort"></select>
+    </div>
+    <div class="filter-group">
+      <label for="filter-rating">Min Rating</label>
+      <select id="filter-rating"></select>
+    </div>
+    <div class="filter-group">
+      <label for="filter-votes">Min Votes</label>
+      <select id="filter-votes"></select>
+    </div>
+    <div class="filter-actions">
+      <button class="btn btn-primary" onclick="applyFilters()">Apply</button>
+      <button class="btn" onclick="resetFilters()">Reset</button>
+    </div>
+  </div>
+
+  <section class="browse-section">
+    <div class="browse-header">
+      <span class="result-count" id="result-count"></span>
+    </div>
+    <div class="browse-grid" id="browse-grid">
+      <div class="browse-loading" id="browse-loading" style="display:flex">
+        <div class="spinner"></div>
+        <span style="color:var(--text-secondary);font-size:14px">Loading TV shows...</span>
+      </div>
+    </div>
+    <div class="pagination" id="pagination"></div>
+  </section>
+
+  <footer>
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <img src="img/cbe-logo.png" alt="CBE Movies" class="footer-logo">
+        <p>A dynamic film destination. Watch the latest movies and TV shows in high definition with our powerful player.</p>
+      </div>
+      <div class="footer-col">
+        <h4>Browse</h4>
+        <a href="/">Home</a>
+        <a href="movies.html">Movies</a>
+        <a href="tv.html">TV Shows</a>
+        <a href="youtube.html">CBE Movies</a>
+      </div>
+      <div class="footer-col">
+        <h4>About</h4>
+        <a href="#">Privacy Policy</a>
+        <a href="#">Terms of Service</a>
+        <a href="#">DMCA</a>
+        <a href="#">Contact</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>&copy; 2026 CBE Movies. All rights reserved.</span>
+      <span>CBE Movies &mdash; Experience Cinema</span>
+    </div>
+  </footer>
+
+  <div class="modal-overlay" id="modal-overlay">
+    <div class="modal" id="modal"></div>
+  </div>
+
+  <div class="search-overlay" id="search-overlay">
+    <div class="search-header">
+      <input type="text" id="search-input" placeholder="Search TV shows..." oninput="onSearchInput()" autocomplete="off">
+      <button class="search-close" onclick="closeSearch()">&times;</button>
+    </div>
+    <div class="search-results" id="search-results"></div>
+  </div>
+
+  <div class="player-page hidden" id="player-page">
+    <div class="player-nav">
+      <a href="/" class="nav-logo" onclick="closePlayer();return false">
+        <img src="img/cbe-logo.png" alt="CBE Movies" class="nav-logo-img">
+        <span class="nav-logo-text">CBE Movies</span>
+      </a>
+      <div>
+        <button class="player-close" onclick="closePlayer()">&times;</button>
+      </div>
+    </div>
+    <div class="player-container">
+      <div class="player-main">
+        <iframe id="player-frame" allow="autoplay; encrypted-media" sandbox="allow-scripts allow-same-origin"></iframe>
+      </div>
+      <div class="player-sidebar">
+        <button class="ps-close-btn" onclick="togglePlayerSidebar()">&times;</button>
+        <div id="player-sidebar-content"></div>
+      </div>
+      <button class="player-fs-btn" onclick="togglePlayerFullscreen()" title="Fullscreen">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#ffffff" style="display:block"><path fill-rule="evenodd" clip-rule="evenodd" d="M9.94358 1.25L10 1.25C10.4142 1.25 10.75 1.58579 10.75 2C10.75 2.41421 10.4142 2.75 10 2.75C8.09318 2.75 6.73851 2.75159 5.71085 2.88976C4.70476 3.02502 4.12511 3.27869 3.7019 3.7019C3.27869 4.12511 3.02502 4.70476 2.88976 5.71085C2.75159 6.73851 2.75 8.09318 2.75 10C2.75 10.4142 2.41421 10.75 2 10.75C1.58579 10.75 1.25 10.4142 1.25 10L1.25 9.94358C1.24998 8.10582 1.24997 6.65019 1.40314 5.51098C1.56076 4.33856 1.89288 3.38961 2.64124 2.64124C3.38961 1.89288 4.33856 1.56076 5.51098 1.40314C6.65019 1.24997 8.10582 1.24998 9.94358 1.25ZM18.2892 2.88976C17.2615 2.75159 15.9068 2.75 14 2.75C13.5858 2.75 13.25 2.41421 13.25 2C13.25 1.58579 13.5858 1.25 14 1.25L14.0564 1.25C15.8942 1.24998 17.3498 1.24997 18.489 1.40314C19.6614 1.56076 20.6104 1.89288 21.3588 2.64124C22.1071 3.38961 22.4392 4.33856 22.5969 5.51098C22.75 6.65019 22.75 8.10583 22.75 9.94359V10C22.75 10.4142 22.4142 10.75 22 10.75C21.5858 10.75 21.25 10.4142 21.25 10C21.25 8.09318 21.2484 6.73851 21.1102 5.71085C20.975 4.70476 20.7213 4.12511 20.2981 3.7019C19.8749 3.27869 19.2952 3.02502 18.2892 2.88976ZM2 13.25C2.41421 13.25 2.75 13.5858 2.75 14C2.75 15.9068 2.75159 17.2615 2.88976 18.2892C3.02502 19.2952 3.27869 19.8749 3.7019 20.2981C4.12511 20.7213 4.70476 20.975 5.71085 21.1102C6.73851 21.2484 8.09318 21.25 10 21.25C10.4142 21.25 10.75 21.5858 10.75 22C10.75 22.4142 10.4142 22.75 10 22.75H9.94359C8.10583 22.75 6.65019 22.75 5.51098 22.5969C4.33856 22.4392 3.38961 22.1071 2.64124 21.3588C1.89288 20.6104 1.56076 19.6614 1.40314 18.489C1.24997 17.3498 1.24998 15.8942 1.25 14.0564L1.25 14C1.25 13.5858 1.58579 13.25 2 13.25ZM22 13.25C22.4142 13.25 22.75 13.5858 22.75 14V14.0564C22.75 15.8942 22.75 17.3498 22.5969 18.489C22.4392 19.6614 22.1071 20.6104 21.3588 21.3588C20.6104 22.1071 19.6614 22.4392 18.489 22.5969C17.3498 22.75 15.8942 22.75 14.0564 22.75H14C13.5858 22.75 13.25 22.4142 13.25 22C13.25 21.5858 13.5858 21.25 14 21.25C15.9068 21.25 17.2615 21.2484 18.2892 21.1102C19.2952 20.975 19.8749 20.7213 20.2981 20.2981C20.7213 19.8749 20.975 19.2952 21.1102 18.2892C21.2484 17.2615 21.25 15.9068 21.25 14C21.25 13.5858 21.5858 13.25 22 13.25Z"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="js/i18n.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/translator.js"></script>
+  <script src="js/tv.js"></script>
+</body>
+</html>

@@ -1924,23 +1924,18 @@ function onSearchInput() {
       }
 
       dom.searchResults.innerHTML = '';
+      const parts = [];
       if (movieResults.length && (tab === 'all' || tab === 'movies')) {
-        dom.searchResults.insertAdjacentHTML('beforeend', `<h3 class="search-section-label">${__('Movies')} (${movieResults.length})</h3>`);
-        const grid = document.createElement('div');
-        grid.style.cssText = 'display:contents';
-        grid.innerHTML = movieResults.map((item, i) => searchCard(item, q, i)).join('');
-        dom.searchResults.appendChild(grid);
+        parts.push(`<h3 class="search-section-label">${__('Movies')} (${movieResults.length})</h3>`);
+        parts.push(movieResults.map((item, i) => searchCard(item, q, i)).join(''));
       }
       if (tvResults.length && (tab === 'all' || tab === 'tv')) {
-        dom.searchResults.insertAdjacentHTML('beforeend', `<h3 class="search-section-label">${__('TV Shows')} (${tvResults.length})</h3>`);
-        const grid = document.createElement('div');
-        grid.style.cssText = 'display:contents';
-        grid.innerHTML = tvResults.map((item, i) => searchCard(item, q, i)).join('');
-        dom.searchResults.appendChild(grid);
+        parts.push(`<h3 class="search-section-label">${__('TV Shows')} (${tvResults.length})</h3>`);
+        parts.push(tvResults.map((item, i) => searchCard(item, q, i)).join(''));
       }
       if (personResults.length && (tab === 'all' || tab === 'people')) {
-        dom.searchResults.insertAdjacentHTML('beforeend', `<h3 class="search-section-label">${__('People')} (${personResults.length})</h3>`);
-        dom.searchResults.insertAdjacentHTML('beforeend', personResults.map((item, i) => `
+        parts.push(`<h3 class="search-section-label">${__('People')} (${personResults.length})</h3>`);
+        parts.push(personResults.map((item, i) => `
           <div class="person-card" data-person-id="${item.tmdb_id}" style="grid-column:1/-1;cursor:pointer;padding:10px 14px;border-radius:8px;display:flex;align-items:center;gap:12px;transition:var(--transition)" onmouseover="this.style.background='rgba(255,255,255,0.05)'" onmouseout="this.style.background=''">
             ${item._poster ? `<img src="${item._poster}" alt="" style="width:44px;height:66px;border-radius:4px;object-fit:cover">` : `<div style="width:44px;height:66px;border-radius:4px;background:var(--bg-card);display:flex;align-items:center;justify-content:center;font-size:20px;color:var(--text-secondary)">${escHtml(item.title[0])}</div>`}
             <div>
@@ -1950,6 +1945,7 @@ function onSearchInput() {
           </div>
         `).join(''));
       }
+      dom.searchResults.innerHTML = parts.join('');
 
     } catch (err) {
       dom.searchResults.innerHTML = `
