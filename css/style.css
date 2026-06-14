@@ -691,6 +691,23 @@ nav.scrolled {
 }
 .search-empty h3 { font-size: 24px; margin-bottom: 8px; color: var(--text-primary); }
 
+.person-card {
+  cursor: pointer; padding: 10px 14px; border-radius: 8px;
+  display: flex; align-items: center; gap: 12px;
+  transition: var(--transition);
+}
+.person-card:hover { background: rgba(255,255,255,0.05); }
+.person-card img { width: 44px; height: 66px; border-radius: 4px; object-fit: cover; }
+.person-card .person-avatar {
+  width: 44px; height: 66px; border-radius: 4px;
+  background: var(--bg-card); display: flex;
+  align-items: center; justify-content: center;
+  font-size: 20px; color: var(--text-secondary);
+  flex-shrink: 0;
+}
+.person-card .person-name { font-size: 14px; font-weight: 600; color: var(--text-primary); }
+.person-card .person-info { font-size: 12px; color: var(--text-secondary); }
+
 /* ── Player Page ── */
 .player-page {
   position: fixed; inset: 0; z-index: 4000;

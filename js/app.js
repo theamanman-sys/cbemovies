@@ -1935,15 +1935,17 @@ function onSearchInput() {
       }
       if (personResults.length && (tab === 'all' || tab === 'people')) {
         parts.push(`<h3 class="search-section-label">${__('People')} (${personResults.length})</h3>`);
+        parts.push(`<div style="grid-column:1/-1;display:flex;flex-direction:column;gap:6px">`);
         parts.push(personResults.map((item, i) => `
-          <div class="person-card" data-person-id="${item.tmdb_id}" style="grid-column:1/-1;cursor:pointer;padding:10px 14px;border-radius:8px;display:flex;align-items:center;gap:12px;transition:var(--transition)" onmouseover="this.style.background='rgba(255,255,255,0.05)'" onmouseout="this.style.background=''">
-            ${item._poster ? `<img src="${item._poster}" alt="" style="width:44px;height:66px;border-radius:4px;object-fit:cover">` : `<div style="width:44px;height:66px;border-radius:4px;background:var(--bg-card);display:flex;align-items:center;justify-content:center;font-size:20px;color:var(--text-secondary)">${escHtml(item.title[0])}</div>`}
+          <div class="person-card" onclick="closeSearch();showPersonDetail(${item.tmdb_id})">
+            ${item._poster ? `<img src="${item._poster}" alt="">` : `<div class="person-avatar">${escHtml(item.title[0])}</div>`}
             <div>
-              <div style="font-size:14px;font-weight:600;color:var(--text-primary)">${highlight(item.title, q)}</div>
-              <div style="font-size:12px;color:var(--text-secondary)">${escHtml(item._overview || '')}${item._knownFor ? ` · ${escHtml(item._knownFor)}` : ''}</div>
+              <div class="person-name">${highlight(item.title, q)}</div>
+              <div class="person-info">${escHtml(item._overview || '')}${item._knownFor ? ` · ${escHtml(item._knownFor)}` : ''}</div>
             </div>
           </div>
         `).join(''));
+        parts.push(`</div>`);
       }
       dom.searchResults.innerHTML = parts.join('');
 
@@ -1987,18 +1989,22 @@ function renderSearchDropdown(results, q) {
 }
 
 function searchCard(item, q, i) {
+  const title = escHtml(displayTitleText(item) || '');
+  const year = item._year || item.year || '';
+  const rating = item._rating || (item.rating ? parseFloat(item.rating).toFixed(1) : '');
+  const stars = rating ? `<span class="card-rating">&#11088; ${rating}</span>` : '';
+  const poster = item._poster || item.poster_url || '';
+  const typeLabel = item.type === 'tv' ? 'TV' : 'Movie';
+  const onclick = `closeSearch();showDetail(state.itemMap[${item._id}])`;
   return `
-    <div class="movie-card" data-id="${item._id}" data-action="detail" style="animation:fadeInScale 0.3s ease ${i * 0.03}s both">
-      <div class="card-rating">★ ${displayRating(item)}</div>
-      <span class="card-quality ${displayQuality(item).toLowerCase()}">${displayQuality(item)}</span>
-      <img class="movie-card-poster" src="${posterUrl(item)}" alt="${escHtml(displayTitleText(item))}" loading="lazy" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%27300%27 height=%27450%27 fill=%27%231a1a2e%27%3E%3Crect width=%27300%27 height=%27450%27/%3E%3Ctext x=%2750%%25%27 y=%2750%%25%27 text-anchor=%27middle%27 fill=%27%23a0a0b8%27 font-size=%2716%27%3E${escHtml(displayTitleText(item)[0] || '?')}%3C/text%3E%3C/svg%3E'">
-      <button class="play-btn" data-id="${item._id}" data-action="play">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
-      </button>
+    <div class="movie-card" data-id="${item._id}" onclick="${onclick}">
+      <img class="movie-card-poster" src="${poster}" alt="${title}" loading="lazy" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%22300%22 height=%22450%22><rect fill=%22%231a1a2e%22 width=%22300%22 height=%22450%22/><text fill=%22%23666%22 font-size=%2218%22 x=%22150%22 y=%22225%22 text-anchor=%22middle%22>No Image</text></svg>'">
+      ${stars}
       <div class="movie-card-overlay">
         <h3>${highlight(displayTitle(item), q)}</h3>
-        <div class="meta"><span>${displayYear(item)}</span><span>${item.type === 'tv' ? __('TV') : __('Movie')}</span></div>
+        <div class="meta">${year ? `<span>${year}</span>` : ''}<span>${typeLabel}</span></div>
       </div>
+      <button class="play-btn">&#9654;</button>
     </div>
   `;
 }
