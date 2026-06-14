@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Account — CBE Movies</title>
+  <meta name="theme-color" content="#910096">
+  <link rel="icon" href="img/cbe-logo.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Roboto+Serif:opsz,wght@8..144,400;8..144,500;8..144,600&display=swap">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <nav>
+    <a href="/" class="nav-logo">
+      <img src="img/cbe-logo.png" alt="CBE Movies" class="nav-logo-img">
+      <span class="nav-logo-text">CBE Movies</span>
+    </a>
+    <ul class="nav-links">
+      <li><a href="/">Home</a></li>
+      <li><a href="movies.html">Movies</a></li>
+      <li><a href="tv.html">TV Shows</a></li>
+      <li><a href="youtube.html">CBE Movies</a></li>
+    </ul>
+    <div class="nav-actions">
+      <button class="mobile-menu-btn">☰</button>
+    </div>
+  </nav>
+
+  <div style="height:88px"></div>
+
+  <main class="profile-page">
+    <div class="profile-sidebar" id="profile-sidebar">
+      <div class="profile-avatar" id="profile-avatar">U</div>
+      <h2 id="profile-name">User</h2>
+      <p class="profile-email" id="profile-email"></p>
+      <span class="profile-role-badge" id="profile-role-badge">User</span>
+      <nav class="profile-nav">
+        <button class="profile-nav-item active" data-tab="account">My Account</button>
+        <button class="profile-nav-item" data-tab="subscription">Subscription</button>
+        <button class="profile-nav-item" data-tab="watchlist">Watchlist</button>
+        <button class="profile-nav-item" data-tab="history">History</button>
+        <button class="profile-nav-item" data-tab="settings">Settings</button>
+      </nav>
+      <button class="auth-btn logout-btn" id="logout-btn">Sign Out</button>
+    </div>
+
+    <div class="profile-content">
+
+      <!-- Account Tab -->
+      <div class="profile-tab active" id="tab-account">
+        <h2>My Account</h2>
+        <div class="profile-card">
+          <div class="form-row">
+            <div class="form-group">
+              <label>First Name</label>
+              <input type="text" id="edit-first">
+            </div>
+            <div class="form-group">
+              <label>Last Name</label>
+              <input type="text" id="edit-last">
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Username</label>
+            <input type="text" id="edit-username">
+          </div>
+          <div class="form-group">
+            <label>Email</label>
+            <input type="email" id="edit-email" disabled>
+          </div>
+          <div class="form-group">
+            <label>Phone</label>
+            <input type="tel" id="edit-phone">
+          </div>
+          <button class="auth-btn" id="save-profile-btn">Save Changes</button>
+        </div>
+      </div>
+
+      <!-- Subscription Tab -->
+      <div class="profile-tab" id="tab-subscription">
+        <h2>Subscription</h2>
+        <div class="profile-card" id="sub-status-card">
+          <p id="sub-status-text">Checking subscription...</p>
+        </div>
+        <div class="sub-plans" id="sub-plans">
+          <div class="sub-plan-card" data-plan="monthly">
+            <h3>Monthly</h3>
+            <p class="sub-price">299 ETB</p>
+            <ul>
+              <li>HD Streaming</li>
+              <li>Watch on 1 device</li>
+              <li>Cancel anytime</li>
+            </ul>
+            <button class="auth-btn sub-select-btn" data-plan="monthly">Choose Plan</button>
+          </div>
+          <div class="sub-plan-card featured" data-plan="yearly">
+            <span class="sub-badge">Best Value</span>
+            <h3>Yearly</h3>
+            <p class="sub-price">2,999 ETB</p>
+            <ul>
+              <li>HD Streaming</li>
+              <li>Watch on 2 devices</li>
+              <li>Save 16%</li>
+            </ul>
+            <button class="auth-btn sub-select-btn" data-plan="yearly">Choose Plan</button>
+          </div>
+        </div>
+        <div id="payment-info" style="display:none">
+          <div class="profile-card">
+            <h3>Payment</h3>
+            <p>Send <strong id="pay-amount">299 ETB</strong> via CBE Birr to the following account:</p>
+            <div class="cbe-pay-info">
+              <p>CBE Account: <strong>1000123456789</strong></p>
+              <p>Name: <strong>CBE Movies Subscription</strong></p>
+            </div>
+            <p style="margin-top:12px;font-size:14px;color:var(--text-secondary)">After payment, enter your transaction reference below:</p>
+            <div class="form-group">
+              <input type="text" id="payment-ref" placeholder="Transaction reference number">
+            </div>
+            <button class="auth-btn" id="confirm-payment-btn">I've Paid — Verify</button>
+            <div class="form-error" id="payment-error"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Watchlist Tab -->
+      <div class="profile-tab" id="tab-watchlist">
+        <h2>My Watchlist</h2>
+        <div class="profile-card">
+          <div class="watchlist-grid" id="watchlist-grid">
+            <p class="empty-state">Your watchlist is empty. Browse movies to add some!</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- History Tab -->
+      <div class="profile-tab" id="tab-history">
+        <h2>Watch History</h2>
+        <div class="profile-card">
+          <div class="watchlist-grid" id="history-grid">
+            <p class="empty-state">No watch history yet.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Settings Tab -->
+      <div class="profile-tab" id="tab-settings">
+        <h2>Settings</h2>
+        <div class="profile-card">
+          <div class="setting-row">
+            <label>Auto-play next episode</label>
+            <label class="toggle"><input type="checkbox" id="setting-autoplay" checked><span class="toggle-slider"></span></label>
+          </div>
+          <div class="setting-row">
+            <label>Default quality</label>
+            <select id="setting-quality" class="auth-input">
+              <option value="auto">Auto</option>
+              <option value="hd">HD</option>
+              <option value="sd">SD</option>
+            </select>
+          </div>
+          <div class="setting-row">
+            <label>Subtitles enabled</label>
+            <label class="toggle"><input type="checkbox" id="setting-subtitles" checked><span class="toggle-slider"></span></label>
+          </div>
+          <button class="auth-btn" id="save-settings-btn">Save Settings</button>
+        </div>
+        <div class="profile-card" style="margin-top:16px;border-color:rgba(255,50,50,0.3)">
+          <h3 style="color:#ff4444">Danger Zone</h3>
+          <p style="font-size:14px;color:var(--text-secondary);margin-bottom:12px">Permanently delete your account and all data.</p>
+          <button class="auth-btn" style="background:#ff4444;border-color:#ff4444" id="delete-account-btn">Delete Account</button>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+  <script src="js/firebase-config.js"></script>
+  <script src="js/auth.js"></script>
+  <script>
+  const $ = id => document.getElementById(id);
+  let userDoc = null;
+
+  function showToast(msg, type = '') {
+    const t = $('toast');
+    t.textContent = msg;
+    t.className = 'toast active ' + type;
+    setTimeout(() => { t.className = 'toast'; }, 3000);
+  }
+
+  function esc(s) {
+    const d = document.createElement('div');
+    d.textContent = s || '';
+    return d.innerHTML;
+  }
+
+  Auth.onAuthStateChanged(async (user, doc) => {
+    if (!user) { window.location.href = 'login.html'; return; }
+    userDoc = doc;
+    renderProfile(doc);
+  });
+
+  function renderProfile(doc) {
+    if (!doc) return;
+    const initial = (doc.firstName || 'U')[0].toUpperCase();
+    $('profile-avatar').textContent = initial;
+    $('profile-name').textContent = doc.firstName + ' ' + doc.lastName;
+    $('profile-email').textContent = doc.email;
+    const badge = $('profile-role-badge');
+    badge.textContent = doc.role === 'superadmin' ? 'Super Admin' : doc.role === 'admin' ? 'Admin' : 'User';
+    badge.className = 'profile-role-badge ' + (doc.role === 'superadmin' ? 'superadmin' : doc.role === 'admin' ? 'admin' : '');
+
+    $('edit-first').value = doc.firstName || '';
+    $('edit-last').value = doc.lastName || '';
+    $('edit-username').value = doc.username || '';
+    $('edit-email').value = doc.email || '';
+    $('edit-phone').value = doc.phone || '';
+
+    if (doc.settings) {
+      $('setting-autoplay').checked = doc.settings.autoPlay !== false;
+      $('setting-quality').value = doc.settings.quality || 'auto';
+      $('setting-subtitles').checked = doc.settings.subtitles !== false;
+    }
+
+    renderSubscription(doc);
+    renderWatchlist(doc.watchlist);
+    renderHistory(doc.history);
+  }
+
+  function switchTab(name) {
+    document.querySelectorAll('.profile-nav-item').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.profile-tab').forEach(t => t.classList.remove('active'));
+    document.querySelector(`.profile-nav-item[data-tab="${name}"]`)?.classList.add('active');
+    $('tab-' + name)?.classList.add('active');
+  }
+
+  document.querySelectorAll('.profile-nav-item').forEach(btn => {
+    btn.addEventListener('click', () => switchTab(btn.dataset.tab));
+  });
+
+  if (location.hash === '#subscription') switchTab('subscription');
+
+  /* Save Profile */
+  $('save-profile-btn').addEventListener('click', async () => {
+    const data = {
+      firstName: $('edit-first').value.trim(),
+      lastName: $('edit-last').value.trim(),
+      username: $('edit-username').value.trim(),
+      phone: $('edit-phone').value.trim()
+    };
+    await Auth.updateProfile(Auth.currentUser.uid, data);
+    showToast('Profile updated', 'success');
+    renderProfile(await Auth.refreshUserDoc());
+  });
+
+  /* Settings */
+  $('save-settings-btn').addEventListener('click', async () => {
+    const data = {
+      settings: {
+        autoPlay: $('setting-autoplay').checked,
+        quality: $('setting-quality').value,
+        subtitles: $('setting-subtitles').checked
+      }
+    };
+    await Auth.updateProfile(Auth.currentUser.uid, data);
+    showToast('Settings saved', 'success');
+  });
+
+  /* Subscription */
+  function renderSubscription(doc) {
+    const statusEl = $('sub-status-text');
+    if (doc.subscribed && doc.subscriptionEnd) {
+      const end = doc.subscriptionEnd.toDate ? doc.subscriptionEnd.toDate() : new Date(doc.subscriptionEnd);
+      if (end > new Date()) {
+        statusEl.innerHTML = 'Subscribed — expires ' + end.toLocaleDateString();
+        statusEl.style.color = '#4caf50';
+        $('sub-plans').style.display = 'none';
+        $('payment-info').style.display = 'none';
+        return;
+      }
+    }
+    statusEl.innerHTML = 'No active subscription. Choose a plan below.';
+    statusEl.style.color = 'var(--text-secondary)';
+    $('sub-plans').style.display = 'flex';
+    $('payment-info').style.display = 'none';
+  }
+
+  document.querySelectorAll('.sub-select-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const plan = btn.dataset.plan;
+      const amount = plan === 'yearly' ? '2,999 ETB' : '299 ETB';
+      $('pay-amount').textContent = amount;
+      $('payment-info').style.display = 'block';
+      $('payment-info').dataset.plan = plan;
+    });
+  });
+
+  $('confirm-payment-btn').addEventListener('click', async () => {
+    const ref = $('payment-ref').value.trim();
+    if (!ref) { $('payment-error').textContent = 'Enter transaction reference'; return; }
+    const plan = $('payment-info').dataset.plan || 'monthly';
+    $('confirm-payment-btn').disabled = true;
+    $('confirm-payment-btn').textContent = 'Verifying...';
+    try {
+      const payment = await Auth.createPayment(Auth.currentUser.uid, plan);
+      await db.collection('payments').doc(payment.id).update({
+        transactionRef: ref,
+        method: 'cbe_birr'
+      });
+      await Auth.verifyPayment(payment.id);
+      showToast('Payment verified! You now have access.', 'success');
+      await Auth.refreshUserDoc();
+      renderSubscription(Auth.userDoc);
+      $('payment-info').style.display = 'none';
+    } catch (err) {
+      $('payment-error').textContent = err.message;
+    } finally {
+      $('confirm-payment-btn').disabled = false;
+      $('confirm-payment-btn').textContent = "I've Paid — Verify";
+    }
+  });
+
+  /* Watchlist */
+  async function renderWatchlist(watchlist) {
+    const grid = $('watchlist-grid');
+    if (!watchlist || watchlist.length === 0) {
+      grid.innerHTML = '<p class="empty-state">Your watchlist is empty. Browse movies to add some!</p>';
+      return;
+    }
+    grid.innerHTML = watchlist.map(item => `
+      <div class="wl-item">
+        <img src="${esc(item.poster || '')}" alt="${esc(item.title || '')}" onerror="this.style.display='none'" loading="lazy">
+        <div class="wl-info">
+          <strong>${esc(item.title || '')}</strong>
+          <span>${item.year || ''}</span>
+        </div>
+        <button class="wl-remove" data-id="${item.id}" title="Remove">&times;</button>
+      </div>
+    `).join('');
+    grid.querySelectorAll('.wl-remove').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        await Auth.toggleWatchlist(btn.dataset.id, {});
+        renderWatchlist(Auth.userDoc?.watchlist);
+      });
+    });
+  }
+
+  /* History */
+  function renderHistory(history) {
+    const grid = $('history-grid');
+    if (!history || history.length === 0) {
+      grid.innerHTML = '<p class="empty-state">No watch history yet.</p>';
+      return;
+    }
+    grid.innerHTML = history.slice(0, 50).map(item => `
+      <div class="wl-item">
+        <img src="${esc(item.poster || '')}" alt="${esc(item.title || '')}" onerror="this.style.display='none'" loading="lazy">
+        <div class="wl-info">
+          <strong>${esc(item.title || '')}</strong>
+          <span>${item.year || ''}</span>
+          ${item.progress ? '<span style="font-size:12px;color:var(--text-secondary)">' + Math.round(item.progress) + '% watched</span>' : ''}
+        </div>
+      </div>
+    `).join('');
+  }
+
+  /* Logout */
+  $('logout-btn').addEventListener('click', async () => {
+    await Auth.logout();
+    window.location.href = '/';
+  });
+
+  /* Delete Account */
+  $('delete-account-btn').addEventListener('click', async () => {
+    if (!confirm('Are you sure? This permanently deletes your account and all data.')) return;
+    if (!confirm('This cannot be undone. Continue?')) return;
+    try {
+      await db.collection('users').doc(Auth.currentUser.uid).delete();
+      await Auth.currentUser.delete();
+      showToast('Account deleted', 'success');
+      setTimeout(() => window.location.href = '/', 1500);
+    } catch (err) {
+      showToast(err.message);
+    }
+  });
+  </script>
+</body>
+</html>

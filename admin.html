@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard — CBE Movies</title>
+  <meta name="theme-color" content="#910096">
+  <link rel="icon" href="img/cbe-logo.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Roboto+Serif:opsz,wght@8..144,400;8..144,500;8..144,600&display=swap">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <nav>
+    <a href="/" class="nav-logo">
+      <img src="img/cbe-logo.png" alt="CBE Movies" class="nav-logo-img">
+      <span class="nav-logo-text">Admin Panel</span>
+    </a>
+    <ul class="nav-links">
+      <li><a href="/">Home</a></li>
+      <li><a href="profile.html">Profile</a></li>
+    </ul>
+    <div class="nav-actions">
+      <button class="mobile-menu-btn">☰</button>
+    </div>
+  </nav>
+  <div style="height:88px"></div>
+
+  <div class="admin-layout">
+    <aside class="admin-sidebar">
+      <button class="admin-nav-item active" data-section="dashboard">Dashboard</button>
+      <button class="admin-nav-item" data-section="users">Users</button>
+      <button class="admin-nav-item" data-section="verification">Verification</button>
+      <button class="admin-nav-item" data-section="payments">Payments</button>
+      <hr style="border-color:var(--glass-border);margin:8px 0">
+      <button class="admin-nav-item" id="admin-logout">Sign Out</button>
+    </aside>
+
+    <main class="admin-main">
+
+      <!-- Dashboard -->
+      <section class="admin-section active" id="section-dashboard">
+        <h2>Dashboard</h2>
+        <div class="stats-grid" id="stats-grid">
+          <div class="stat-card"><h3>Total Users</h3><p id="stat-users">0</p></div>
+          <div class="stat-card"><h3>Verified Users</h3><p id="stat-verified">0</p></div>
+          <div class="stat-card"><h3>Pending Verification</h3><p id="stat-pending">0</p></div>
+          <div class="stat-card"><h3>Active Subscriptions</h3><p id="stat-subs">0</p></div>
+          <div class="stat-card"><h3>Total Revenue</h3><p id="stat-revenue">0 ETB</p></div>
+          <div class="stat-card"><h3>Recent Payments</h3><p id="stat-payments">0</p></div>
+        </div>
+        <div class="profile-card" style="margin-top:24px">
+          <h3>Recent Notifications</h3>
+          <div id="admin-notifications"><p style="color:var(--text-secondary)">No notifications</p></div>
+        </div>
+      </section>
+
+      <!-- Users -->
+      <section class="admin-section" id="section-users">
+        <h2>Manage Users</h2>
+        <div class="admin-toolbar">
+          <input type="text" id="user-search" placeholder="Search by name, email, or username..." class="auth-input" style="flex:1">
+        </div>
+        <div class="admin-table-wrap">
+          <table class="admin-table">
+            <thead><tr><th>Name</th><th>Email</th><th>Username</th><th>Role</th><th>Status</th><th>Actions</th></tr></thead>
+            <tbody id="users-tbody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Verification -->
+      <section class="admin-section" id="section-verification">
+        <h2>User Verification Requests</h2>
+        <div class="admin-table-wrap">
+          <table class="admin-table">
+            <thead><tr><th>Name</th><th>Email</th><th>Phone</th><th>Registered</th><th>Actions</th></tr></thead>
+            <tbody id="verification-tbody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Payments -->
+      <section class="admin-section" id="section-payments">
+        <h2>Payment History</h2>
+        <div class="admin-table-wrap">
+          <table class="admin-table">
+            <thead><tr><th>User</th><th>Amount</th><th>Plan</th><th>Method</th><th>Status</th><th>Date</th></tr></thead>
+            <tbody id="payments-tbody"></tbody>
+          </table>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+  <script src="js/firebase-config.js"></script>
+  <script src="js/auth.js"></script>
+  <script>
+  const $ = id => document.getElementById(id);
+  let allUsers = [];
+  let allPayments = [];
+
+  function showToast(msg, type = '') {
+    const t = $('toast');
+    t.textContent = msg;
+    t.className = 'toast active ' + type;
+    setTimeout(() => { t.className = 'toast'; }, 3000);
+  }
+
+  Auth.onAuthStateChanged(async (user, doc) => {
+    if (!user) { window.location.href = 'login.html'; return; }
+    if (!doc || (doc.role !== 'admin' && doc.role !== 'superadmin')) {
+      showToast('Access denied. Admin only.');
+      setTimeout(() => window.location.href = '/', 1500);
+      return;
+    }
+    await loadData();
+  });
+
+  async function loadData() {
+    showToast('Loading dashboard...', 'success');
+    allUsers = await Auth.getAllUsers();
+    allPayments = await Auth.getPayments();
+    renderStats();
+    renderUsers();
+    renderVerification();
+    renderPayments();
+    renderNotifications();
+  }
+
+  function renderStats() {
+    const total = allUsers.length;
+    const verified = allUsers.filter(u => u.verified).length;
+    const pending = allUsers.filter(u => !u.verified).length;
+    const subscribed = allUsers.filter(u => u.subscribed).length;
+    const revenue = allPayments.filter(p => p.status === 'verified').reduce((s, p) => s + (p.amount || 0), 0);
+    const recentPayments = allPayments.length;
+    $('stat-users').textContent = total;
+    $('stat-verified').textContent = verified;
+    $('stat-pending').textContent = pending;
+    $('stat-subs').textContent = subscribed;
+    $('stat-revenue').textContent = revenue.toLocaleString() + ' ETB';
+    $('stat-payments').textContent = recentPayments;
+  }
+
+  function esc(s) {
+    const d = document.createElement('div');
+    d.textContent = s || '';
+    return d.innerHTML;
+  }
+
+  function renderUsers() {
+    const q = ($('user-search').value || '').toLowerCase();
+    const filtered = allUsers.filter(u =>
+      !q || (u.firstName + ' ' + u.lastName).toLowerCase().includes(q) ||
+      (u.email || '').toLowerCase().includes(q) || (u.username || '').toLowerCase().includes(q)
+    );
+    $('users-tbody').innerHTML = filtered.map(u => `
+      <tr>
+        <td>${esc(u.firstName + ' ' + u.lastName)}</td>
+        <td>${esc(u.email)}</td>
+        <td>${esc(u.username)}</td>
+        <td><span class="role-badge ${u.role === 'superadmin' ? 'superadmin' : u.role === 'admin' ? 'admin' : ''}">${u.role || 'user'}</span></td>
+        <td><span class="status-dot ${u.verified ? 'verified' : 'pending'}"></span> ${u.verified ? 'Verified' : 'Pending'}</td>
+        <td class="action-cell">
+          ${!u.verified ? `<button class="admin-btn verify-btn" data-uid="${u.id}">Verify</button>` : ''}
+          <button class="admin-btn edit-btn" data-uid="${u.id}" data-first="${esc(u.firstName)}" data-last="${esc(u.lastName)}" data-phone="${esc(u.phone || '')}">Edit</button>
+          ${u.role === 'user' ? `<button class="admin-btn" onclick="openAdminModal('${u.id}','${esc(u.email)}')">Make Admin</button>` : ''}
+        </td>
+      </tr>
+    `).join('');
+
+    $('users-tbody').querySelectorAll('.verify-btn').forEach(b => b.addEventListener('click', () => verifyUser(b.dataset.uid)));
+    $('users-tbody').querySelectorAll('.edit-btn').forEach(b => {
+      b.addEventListener('click', () => {
+        const uid = b.dataset.uid;
+        const first = prompt('First Name:', b.dataset.first);
+        if (first === null) return;
+        const last = prompt('Last Name:', b.dataset.last);
+        if (last === null) return;
+        const phone = prompt('Phone:', b.dataset.phone);
+        if (phone === null) return;
+        Auth.updateProfile(uid, { firstName: first, lastName: last, phone });
+        showToast('User updated', 'success');
+        loadData();
+      });
+    });
+  }
+
+  function renderVerification() {
+    const pending = allUsers.filter(u => !u.verified);
+    $('verification-tbody').innerHTML = pending.length === 0
+      ? '<tr><td colspan="5" style="text-align:center;color:var(--text-secondary)">No pending verifications</td></tr>'
+      : pending.map(u => `
+        <tr>
+          <td>${esc(u.firstName + ' ' + u.lastName)}</td>
+          <td>${esc(u.email)}</td>
+          <td>${esc(u.phone || 'N/A')}</td>
+          <td>${u.createdAt ? new Date(u.createdAt.toMillis ? u.createdAt.toMillis() : u.createdAt).toLocaleDateString() : 'N/A'}</td>
+          <td class="action-cell">
+            <button class="admin-btn verify-btn" data-uid="${u.id}">Approve</button>
+          </td>
+        </tr>
+      `).join('');
+    $('verification-tbody').querySelectorAll('.verify-btn').forEach(b => b.addEventListener('click', () => verifyUser(b.dataset.uid)));
+  }
+
+  function renderPayments() {
+    $('payments-tbody').innerHTML = allPayments.length === 0
+      ? '<tr><td colspan="6" style="text-align:center;color:var(--text-secondary)">No payments yet</td></tr>'
+      : allPayments.map(p => {
+        const user = allUsers.find(u => u.id === p.userId);
+        return `<tr>
+          <td>${user ? esc(user.firstName + ' ' + user.lastName) : 'Unknown'}</td>
+          <td>${(p.amount || 0).toLocaleString()} ETB</td>
+          <td>${p.plan || '-'}</td>
+          <td>${p.method || '-'}</td>
+          <td><span class="status-dot ${p.status === 'verified' ? 'verified' : p.status === 'pending' ? 'pending' : 'failed'}"></span> ${p.status}</td>
+          <td>${p.createdAt ? new Date(p.createdAt.toMillis ? p.createdAt.toMillis() : p.createdAt).toLocaleDateString() : 'N/A'}</td>
+        </tr>`;
+      }).join('');
+  }
+
+  async function renderNotifications() {
+    const notifs = await Auth.getNotifications();
+    const el = $('admin-notifications');
+    if (notifs.length === 0) { el.innerHTML = '<p style="color:var(--text-secondary)">No notifications</p>'; return; }
+    el.innerHTML = notifs.map(n => `
+      <div class="notif-item ${n.read ? '' : 'unread'}" data-id="${n.id}">
+        <span>${n.type === 'new_user' ? 'New user registered: ' + esc(n.email || n.username) : n.message}</span>
+        <small>${n.createdAt ? new Date(n.createdAt.toMillis ? n.createdAt.toMillis() : n.createdAt).toLocaleString() : ''}</small>
+      </div>
+    `).join('');
+    notifs.filter(n => !n.read).forEach(n => Auth.markNotificationRead(n.id));
+  }
+
+  async function verifyUser(uid) {
+    if (!confirm('Verify this user?')) return;
+    await Auth.updateProfile(uid, { verified: true });
+    showToast('User verified', 'success');
+    await loadData();
+  }
+
+  function openAdminModal(uid, email) {
+    const role = prompt('Assign role (admin or superadmin):', 'admin');
+    if (!role || (role !== 'admin' && role !== 'superadmin')) return;
+    Auth.createAdminUser(uid, email, role);
+    showToast('Admin created', 'success');
+    loadData();
+  }
+
+  $('user-search').addEventListener('input', renderUsers);
+
+  /* Sections */
+  document.querySelectorAll('.admin-nav-item[data-section]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.admin-nav-item').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.admin-section').forEach(s => s.classList.remove('active'));
+      btn.classList.add('active');
+      $('section-' + btn.dataset.section).classList.add('active');
+    });
+  });
+
+  $('admin-logout').addEventListener('click', async () => {
+    await Auth.logout();
+    window.location.href = '/';
+  });
+  </script>
+</body>
+</html>

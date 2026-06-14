@@ -235,6 +235,10 @@
       <li><a href="youtube.html" class="active">CBE Movies</a></li>
     </ul>
     <div class="nav-actions">
+      <a href="profile.html" class="nav-user-btn" id="nav-user-btn" style="display:none" title="My Account">
+        <span class="nav-user-avatar" id="nav-user-avatar">U</span>
+      </a>
+      <a href="login.html" class="nav-login-btn" id="nav-login-btn" style="display:none">Sign In</a>
       <button class="mobile-menu-btn">☰</button>
     </div>
   </nav>
@@ -284,6 +288,28 @@
   <!-- Toast -->
   <div class="toast" id="toast"></div>
 
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+  <script src="js/firebase-config.js"></script>
+  <script src="js/auth.js"></script>
   <script src="js/youtube.js"></script>
+  <script>
+  document.addEventListener('DOMContentLoaded', () => {
+    Auth.onAuthStateChanged((user, doc) => {
+      const loginBtn = document.getElementById('nav-login-btn');
+      const userBtn = document.getElementById('nav-user-btn');
+      const avatar = document.getElementById('nav-user-avatar');
+      if (user && doc) {
+        loginBtn.style.display = 'none';
+        userBtn.style.display = 'flex';
+        avatar.textContent = (doc.firstName || 'U')[0].toUpperCase();
+      } else {
+        loginBtn.style.display = '';
+        userBtn.style.display = 'none';
+      }
+    });
+  });
+  </script>
 </body>
 </html>

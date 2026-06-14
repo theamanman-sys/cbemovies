@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login — CBE Movies</title>
+  <meta name="theme-color" content="#910096">
+  <link rel="icon" href="img/cbe-logo.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Roboto+Serif:opsz,wght@8..144,400;8..144,500;8..144,600&display=swap">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="auth-page">
+  <div class="auth-container">
+    <div class="auth-card">
+      <a href="/" class="auth-logo">
+        <img src="img/cbe-logo.png" alt="CBE Movies">
+        <span>CBE Movies</span>
+      </a>
+      <h1 class="auth-title">Welcome Back</h1>
+      <p class="auth-subtitle">Sign in to continue watching</p>
+
+      <form id="login-form" class="auth-form" onsubmit="return false">
+        <div class="form-group">
+          <label for="login-email">Email</label>
+          <input type="email" id="login-email" placeholder="Enter your email" required autocomplete="email">
+        </div>
+        <div class="form-group">
+          <label for="login-password">Password</label>
+          <input type="password" id="login-password" placeholder="Enter your password" required autocomplete="current-password">
+        </div>
+        <div class="form-error" id="login-error"></div>
+        <button type="submit" class="auth-btn" id="login-btn">Sign In</button>
+      </form>
+
+      <div class="auth-divider"><span>or</span></div>
+
+      <button class="auth-btn auth-btn-phone" id="cbe-login-btn">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M17 1.01L7 1c-1.1 0-2 .9-2 2v18c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V3c0-1.1-.9-1.99-2-1.99zM17 19H7V5h10v14z"/></svg>
+        Login with CBE Super App
+      </button>
+
+      <div id="phone-auth-section" style="display:none">
+        <div class="form-group">
+          <label for="login-phone">Phone Number</label>
+          <input type="tel" id="login-phone" placeholder="+251911234567">
+        </div>
+        <button class="auth-btn" id="send-otp-btn">Send OTP</button>
+        <div class="form-group" id="otp-section" style="display:none">
+          <label for="login-otp">OTP Code</label>
+          <input type="text" id="login-otp" placeholder="Enter OTP" inputmode="numeric">
+          <button class="auth-btn" id="verify-otp-btn">Verify & Sign In</button>
+        </div>
+        <div class="form-error" id="phone-error"></div>
+      </div>
+
+      <p class="auth-footer-text">Don't have an account? <a href="register.html">Create one</a></p>
+      <p class="auth-footer-text"><a href="/">Back to Home</a></p>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+  <script src="js/firebase-config.js"></script>
+  <script src="js/auth.js"></script>
+  <script>
+  const $ = id => document.getElementById(id);
+  const form = $('login-form');
+  const emailInp = $('login-email');
+  const passInp = $('login-password');
+  const errorEl = $('login-error');
+  const loginBtn = $('login-btn');
+
+  function showToast(msg, type = '') {
+    const t = $('toast');
+    t.textContent = msg;
+    t.className = 'toast active ' + type;
+    setTimeout(() => { t.className = 'toast'; }, 3000);
+  }
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    errorEl.textContent = '';
+    loginBtn.disabled = true;
+    loginBtn.textContent = 'Signing in...';
+    try {
+      const cred = await Auth.login(emailInp.value, passInp.value);
+      window.location.href = '/';
+    } catch (err) {
+      if (err.message === 'ACCOUNT_NOT_VERIFIED') {
+        errorEl.textContent = 'Account not yet verified. Please wait for admin approval.';
+        showToast('Account pending verification by admin');
+      } else {
+        const msg = err.code === 'auth/user-not-found' ? 'No account found with this email' :
+                    err.code === 'auth/wrong-password' ? 'Incorrect password' :
+                    err.code === 'auth/invalid-credential' ? 'Invalid email or password' :
+                    err.message;
+        errorEl.textContent = msg;
+      }
+    } finally {
+      loginBtn.disabled = false;
+      loginBtn.textContent = 'Sign In';
+    }
+  });
+
+  Auth.onAuthStateChanged((user) => {
+    if (user) window.location.href = '/';
+  });
+
+  /* CBE Super App - Phone Auth */
+  let recaptchaVerifier;
+  let confirmationResult;
+  const cbeBtn = $('cbe-login-btn');
+  const phoneSection = $('phone-auth-section');
+  const phoneInp = $('login-phone');
+  const phoneError = $('phone-error');
+  const sendOtp = $('send-otp-btn');
+  const otpSection = $('otp-section');
+  const otpInp = $('login-otp');
+  const verifyOtp = $('verify-otp-btn');
+
+  cbeBtn.addEventListener('click', () => {
+    phoneSection.style.display = phoneSection.style.display === 'none' ? 'block' : 'none';
+    if (!recaptchaVerifier) {
+      recaptchaVerifier = new firebase.auth.RecaptchaVerifier('cbe-login-btn', {
+        size: 'invisible',
+        callback: () => {}
+      });
+    }
+  });
+
+  sendOtp.addEventListener('click', async () => {
+    const phone = phoneInp.value.trim();
+    if (!phone) { phoneError.textContent = 'Enter your phone number'; return; }
+    sendOtp.disabled = true;
+    sendOtp.textContent = 'Sending...';
+    phoneError.textContent = '';
+    try {
+      confirmationResult = await auth.signInWithPhoneNumber(phone, recaptchaVerifier);
+      otpSection.style.display = 'block';
+      sendOtp.textContent = 'OTP Sent';
+      showToast('OTP sent to ' + phone, 'success');
+    } catch (err) {
+      phoneError.textContent = err.message;
+      sendOtp.textContent = 'Send OTP';
+      sendOtp.disabled = false;
+    }
+  });
+
+  verifyOtp.addEventListener('click', async () => {
+    const code = otpInp.value.trim();
+    if (!code) { phoneError.textContent = 'Enter OTP code'; return; }
+    verifyOtp.disabled = true;
+    verifyOtp.textContent = 'Verifying...';
+    try {
+      if (confirmationResult) {
+        await confirmationResult.confirm(code);
+      } else {
+        await Auth.confirmPhoneCode(confirmationResult.verificationId, code);
+      }
+      window.location.href = '/';
+    } catch (err) {
+      if (err.message === 'ACCOUNT_NOT_VERIFIED') {
+        phoneError.textContent = 'Account pending admin verification';
+      } else {
+        phoneError.textContent = 'Invalid OTP. Try again.';
+      }
+      verifyOtp.disabled = false;
+      verifyOtp.textContent = 'Verify & Sign In';
+    }
+  });
+  </script>
+</body>
+</html>

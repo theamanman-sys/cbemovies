@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Super Admin Panel — CBE Movies</title>
+  <meta name="theme-color" content="#910096">
+  <link rel="icon" href="img/cbe-logo.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Roboto+Serif:opsz,wght@8..144,400;8..144,500;8..144,600&display=swap">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <nav>
+    <a href="/" class="nav-logo">
+      <img src="img/cbe-logo.png" alt="CBE Movies" class="nav-logo-img">
+      <span class="nav-logo-text">Super Admin</span>
+    </a>
+    <ul class="nav-links">
+      <li><a href="/">Home</a></li>
+      <li><a href="admin.html">Admin Dashboard</a></li>
+      <li><a href="profile.html">Profile</a></li>
+    </ul>
+    <div class="nav-actions">
+      <button class="mobile-menu-btn">☰</button>
+    </div>
+  </nav>
+  <div style="height:88px"></div>
+
+  <div class="admin-layout">
+    <aside class="admin-sidebar">
+      <button class="admin-nav-item active" data-section="overview">Overview</button>
+      <button class="admin-nav-item" data-section="admins">Admin Management</button>
+      <button class="admin-nav-item" data-section="all-users">All Users</button>
+      <button class="admin-nav-item" data-section="content">Content Control</button>
+      <button class="admin-nav-item" data-section="features">Feature Flags</button>
+      <hr style="border-color:var(--glass-border);margin:8px 0">
+      <button class="admin-nav-item" id="super-logout">Sign Out</button>
+    </aside>
+
+    <main class="admin-main">
+
+      <!-- Overview -->
+      <section class="admin-section active" id="section-overview">
+        <h2>Super Admin Overview</h2>
+        <div class="stats-grid" id="super-stats"></div>
+        <div class="profile-card" style="margin-top:24px">
+          <h3>All Notifications</h3>
+          <div id="super-notifications"><p style="color:var(--text-secondary)">Loading...</p></div>
+        </div>
+      </section>
+
+      <!-- Admin Management -->
+      <section class="admin-section" id="section-admins">
+        <h2>Admin Management</h2>
+        <div class="profile-card" style="margin-bottom:16px">
+          <h3>Create New Admin</h3>
+          <div class="form-row">
+            <div class="form-group">
+              <label>User UID</label>
+              <input type="text" id="new-admin-uid" placeholder="Firebase user UID" class="auth-input">
+            </div>
+            <div class="form-group">
+              <label>Email</label>
+              <input type="email" id="new-admin-email" placeholder="user@email.com" class="auth-input">
+            </div>
+            <div class="form-group">
+              <label>Role</label>
+              <select id="new-admin-role" class="auth-input">
+                <option value="admin">Admin</option>
+                <option value="superadmin">Super Admin</option>
+              </select>
+            </div>
+          </div>
+          <button class="auth-btn" id="create-admin-btn">Create Admin</button>
+          <div class="form-error" id="admin-error"></div>
+        </div>
+        <h3>Current Admins</h3>
+        <div class="admin-table-wrap">
+          <table class="admin-table">
+            <thead><tr><th>UID</th><th>Email</th><th>Role</th><th>Added By</th><th>Date</th><th>Actions</th></tr></thead>
+            <tbody id="admins-tbody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- All Users -->
+      <section class="admin-section" id="section-all-users">
+        <h2>All Users — Full Control</h2>
+        <div class="admin-toolbar">
+          <input type="text" id="super-user-search" placeholder="Search users..." class="auth-input" style="flex:1">
+        </div>
+        <div class="admin-table-wrap">
+          <table class="admin-table">
+            <thead><tr><th>Name</th><th>Email</th><th>Phone</th><th>Role</th><th>Verified</th><th>Subscribed</th><th>Actions</th></tr></thead>
+            <tbody id="super-users-tbody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Content Control -->
+      <section class="admin-section" id="section-content">
+        <h2>Content Control</h2>
+        <div class="profile-card" id="content-settings">
+          <p style="color:var(--text-secondary)">Content management settings will be available here. You can toggle what content is visible, update featured items, and manage TMDB cache.</p>
+        </div>
+      </section>
+
+      <!-- Feature Flags -->
+      <section class="admin-section" id="section-features">
+        <h2>Feature Flags</h2>
+        <div class="profile-card">
+          <div class="setting-row">
+            <label>Enable registration</label>
+            <label class="toggle"><input type="checkbox" id="ff-registration" checked><span class="toggle-slider"></span></label>
+          </div>
+          <div class="setting-row">
+            <label>Require verification</label>
+            <label class="toggle"><input type="checkbox" id="ff-verification" checked><span class="toggle-slider"></span></label>
+          </div>
+          <div class="setting-row">
+            <label>Enable subscriptions</label>
+            <label class="toggle"><input type="checkbox" id="ff-subscriptions" checked><span class="toggle-slider"></span></label>
+          </div>
+          <div class="setting-row">
+            <label>Maintenance mode</label>
+            <label class="toggle"><input type="checkbox" id="ff-maintenance"><span class="toggle-slider"></span></label>
+          </div>
+          <button class="auth-btn" id="save-features-btn">Save Settings</button>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+  <script src="js/firebase-config.js"></script>
+  <script src="js/auth.js"></script>
+  <script>
+  const $ = id => document.getElementById(id);
+  let allUsers = [];
+
+  function showToast(msg, type = '') {
+    const t = $('toast');
+    t.textContent = msg;
+    t.className = 'toast active ' + type;
+    setTimeout(() => { t.className = 'toast'; }, 3000);
+  }
+
+  function esc(s) {
+    const d = document.createElement('div');
+    d.textContent = s || '';
+    return d.innerHTML;
+  }
+
+  Auth.onAuthStateChanged(async (user, doc) => {
+    if (!user) { window.location.href = 'login.html'; return; }
+    if (!doc || doc.role !== 'superadmin') {
+      showToast('Access denied. Super admin only.');
+      setTimeout(() => window.location.href = '/', 1500);
+      return;
+    }
+    await loadAll();
+  });
+
+  async function loadAll() {
+    allUsers = await Auth.getAllUsers();
+    renderOverview();
+    renderAdmins();
+    renderAllUsers();
+    renderNotifications();
+    loadFeatureFlags();
+  }
+
+  function renderOverview() {
+    const total = allUsers.length;
+    const verified = allUsers.filter(u => u.verified).length;
+    const pending = allUsers.filter(u => !u.verified).length;
+    const admins = allUsers.filter(u => u.role === 'admin' || u.role === 'superadmin').length;
+    const subs = allUsers.filter(u => u.subscribed).length;
+    $('super-stats').innerHTML = `
+      <div class="stat-card"><h3>Total Users</h3><p>${total}</p></div>
+      <div class="stat-card"><h3>Verified</h3><p>${verified}</p></div>
+      <div class="stat-card"><h3>Pending</h3><p>${pending}</p></div>
+      <div class="stat-card"><h3>Admins</h3><p>${admins}</p></div>
+      <div class="stat-card"><h3>Subscribed</h3><p>${subs}</p></div>
+    `;
+  }
+
+  async function renderAdmins() {
+    const admins = await Auth.getAllAdmins();
+    $('admins-tbody').innerHTML = admins.length === 0
+      ? '<tr><td colspan="6" style="text-align:center;color:var(--text-secondary)">No admins</td></tr>'
+      : admins.map(a => `
+        <tr>
+          <td style="font-size:12px">${a.uid || ''}</td>
+          <td>${esc(a.email || '')}</td>
+          <td><span class="role-badge ${a.role === 'superadmin' ? 'superadmin' : 'admin'}">${a.role}</span></td>
+          <td>${a.addedBy || 'N/A'}</td>
+          <td>${a.createdAt ? new Date(a.createdAt.toMillis ? a.createdAt.toMillis() : a.createdAt).toLocaleDateString() : 'N/A'}</td>
+          <td class="action-cell">
+            ${a.role !== 'superadmin' ? `<button class="admin-btn" onclick="removeAdmin('${a.uid}')">Remove</button>` : '<span style="color:var(--text-secondary)">—</span>'}
+          </td>
+        </tr>
+      `).join('');
+  }
+
+  function renderAllUsers() {
+    const q = ($('super-user-search').value || '').toLowerCase();
+    const filtered = allUsers.filter(u =>
+      !q || (u.firstName + ' ' + u.lastName).toLowerCase().includes(q) ||
+      (u.email || '').toLowerCase().includes(q) || (u.username || '').toLowerCase().includes(q)
+    );
+    $('super-users-tbody').innerHTML = filtered.map(u => `
+      <tr>
+        <td>${esc(u.firstName + ' ' + u.lastName)}</td>
+        <td>${esc(u.email)}</td>
+        <td>${esc(u.phone || '-')}</td>
+        <td><span class="role-badge ${u.role === 'superadmin' ? 'superadmin' : u.role === 'admin' ? 'admin' : ''}">${u.role || 'user'}</span></td>
+        <td><span class="status-dot ${u.verified ? 'verified' : 'pending'}"></span></td>
+        <td><span class="status-dot ${u.subscribed ? 'verified' : 'pending'}"></span></td>
+        <td class="action-cell">
+          <button class="admin-btn" onclick="superEditUser('${u.id}')">Edit</button>
+          ${!u.verified ? `<button class="admin-btn" onclick="superVerifyUser('${u.id}')">Verify</button>` : ''}
+          <button class="admin-btn" onclick="superDeleteUser('${u.id}')" style="color:#ff4444">Delete</button>
+        </td>
+      </tr>
+    `).join('');
+  }
+
+  async function renderNotifications() {
+    const notifs = await Auth.getNotifications();
+    const el = $('super-notifications');
+    if (notifs.length === 0) { el.innerHTML = '<p style="color:var(--text-secondary)">No notifications</p>'; return; }
+    el.innerHTML = notifs.map(n => `
+      <div class="notif-item ${n.read ? '' : 'unread'}" data-id="${n.id}">
+        <span>${n.type === 'new_user' ? 'New user: ' + esc(n.email || n.username) : n.message}</span>
+        <small>${n.createdAt ? new Date(n.createdAt.toMillis ? n.createdAt.toMillis() : n.createdAt).toLocaleString() : ''}</small>
+      </div>
+    `).join('');
+  }
+
+  async function loadFeatureFlags() {
+    try {
+      const doc = await db.collection('settings').doc('features').get();
+      if (doc.exists) {
+        const data = doc.data();
+        $('ff-registration').checked = data.registration !== false;
+        $('ff-verification').checked = data.verification !== false;
+        $('ff-subscriptions').checked = data.subscriptions !== false;
+        $('ff-maintenance').checked = data.maintenance === true;
+      }
+    } catch (e) {}
+  }
+
+  /* Create Admin */
+  $('create-admin-btn').addEventListener('click', async () => {
+    const uid = $('new-admin-uid').value.trim();
+    const email = $('new-admin-email').value.trim();
+    const role = $('new-admin-role').value;
+    if (!uid) { $('admin-error').textContent = 'Enter user UID'; return; }
+    try {
+      await Auth.createAdminUser(uid, email, role);
+      showToast('Admin created', 'success');
+      $('new-admin-uid').value = '';
+      $('new-admin-email').value = '';
+      $('admin-error').textContent = '';
+      renderAdmins();
+      renderOverview();
+    } catch (err) {
+      $('admin-error').textContent = err.message;
+    }
+  });
+
+  window.removeAdmin = async (uid) => {
+    if (!confirm('Remove this admin?')) return;
+    try {
+      await Auth.removeAdmin(uid);
+      showToast('Admin removed', 'success');
+      renderAdmins();
+    } catch (err) {
+      showToast(err.message);
+    }
+  };
+
+  window.superEditUser = (uid) => {
+    const u = allUsers.find(x => x.id === uid);
+    if (!u) return;
+    const first = prompt('First Name:', u.firstName || '');
+    if (first === null) return;
+    const last = prompt('Last Name:', u.lastName || '');
+    if (last === null) return;
+    const email = prompt('Email:', u.email || '');
+    if (email === null) return;
+    const phone = prompt('Phone:', u.phone || '');
+    if (phone === null) return;
+    const role = prompt('Role (user/admin/superadmin):', u.role || 'user');
+    if (role === null) return;
+    Auth.updateProfile(uid, { firstName: first, lastName: last, email, phone, role });
+    showToast('User updated', 'success');
+    loadAll();
+  };
+
+  window.superVerifyUser = async (uid) => {
+    await Auth.updateProfile(uid, { verified: true });
+    showToast('User verified', 'success');
+    loadAll();
+  };
+
+  window.superDeleteUser = async (uid) => {
+    if (!confirm('DELETE this user permanently?')) return;
+    if (!confirm('This cannot be undone. Continue?')) return;
+    try {
+      await db.collection('users').doc(uid).delete();
+      showToast('User deleted', 'success');
+      loadAll();
+    } catch (err) {
+      showToast(err.message);
+    }
+  };
+
+  $('super-user-search').addEventListener('input', renderAllUsers);
+
+  /* Save Feature Flags */
+  $('save-features-btn').addEventListener('click', async () => {
+    await db.collection('settings').doc('features').set({
+      registration: $('ff-registration').checked,
+      verification: $('ff-verification').checked,
+      subscriptions: $('ff-subscriptions').checked,
+      maintenance: $('ff-maintenance').checked
+    });
+    showToast('Feature flags saved', 'success');
+  });
+
+  /* Sections */
+  document.querySelectorAll('.admin-nav-item[data-section]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.admin-nav-item').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.admin-section').forEach(s => s.classList.remove('active'));
+      btn.classList.add('active');
+      $('section-' + btn.dataset.section).classList.add('active');
+    });
+  });
+
+  $('super-logout').addEventListener('click', async () => {
+    await Auth.logout();
+    window.location.href = '/';
+  });
+  </script>
+</body>
+</html>

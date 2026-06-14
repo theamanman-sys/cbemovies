@@ -39,8 +39,23 @@ function escHtml(s) {
   return d.innerHTML;
 }
 
+/* ── Toast ── */
+function showToast(msg, duration = 3000) {
+  const el = document.getElementById('toast');
+  if (!el) return;
+  el.textContent = msg;
+  el.classList.add('active');
+  clearTimeout(el._timer);
+  el._timer = setTimeout(() => el.classList.remove('active'), duration);
+}
+
 /* ── Player ── */
 function openPlayer(item) {
+  if (!Auth.currentUser || !Auth.userDoc?.subscribed) {
+    showToast('Subscribe to watch', 'success');
+    setTimeout(() => window.location.href = 'profile.html', 1500);
+    return;
+  }
   tvState.currentItem = item;
   const url = API.getPlayerUrl(item);
   dom.playerFrame.src = url;
@@ -136,6 +151,19 @@ function searchCard(item, q, idx) {
   `;
 }
 
+/* ── Display Helpers ── */
+function tDisplayTitle(item) {
+  const en = item._tmdbTitle || item.title || 'Untitled';
+  return escHtml(en);
+}
+function tDisplayGenres(item) {
+  if (item._genres?.length) return item._genres.join(', ');
+  return item.genre || 'General';
+}
+function tDisplayRating(item) { return item._rating || (item.rating ? parseFloat(item.rating).toFixed(1) : '0'); }
+function tDisplayYear(item) { return item._year || item.year || 'N/A'; }
+function tDisplayOverview(item) { return item._overview || ''; }
+
 /* ── Modal ── */
 async function openTVDetail(tmdbId) {
   dom.modal.innerHTML = '<div style="padding:40px;text-align:center;color:var(--text-secondary)">Loading...</div>';
@@ -156,43 +184,87 @@ function closeModal() {
 }
 
 function renderTVModal(item) {
-  const title = escHtml(item._tmdbTitle || item.title);
-  const year = item._year || item.year || '';
-  const rating = item._rating || item.rating || '';
-  const overview = escHtml(item._overview || '');
-  const genres = (item._genres || []).join(', ');
-  const backdrop = item._backdrop || '';
-  const poster = item._poster || item.poster_url || '';
-  const seasons = item._seasons || 0;
-  const cast = (item._cast || []).slice(0, 6);
-  const castHtml = cast.map(c => `
-    <div class="cast-card">
-      <img src="${c.photo || ''}" alt="${escHtml(c.name)}" loading="lazy" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2264%22 height=%2264%22><rect fill=%22%23333%22 width=%2264%22 height=%2264%22/><text fill=%22%23666%22 font-size=%2214%22 x=%2232%22 y=%2236%22 text-anchor=%22middle%22>?</text></svg>'">
-      <div class="name">${escHtml(c.name)}</div>
-      <div class="role">${escHtml(c.character || '')}</div>
-    </div>
-  `).join('');
+  const trailer = item._trailer;
+  const cast = item._cast || [];
+  const isTV = true;
+
+  const facts = [
+    { label: 'Rating', value: `\u2605 ${tDisplayRating(item)}` },
+    { label: 'Year', value: tDisplayYear(item) },
+    { label: 'Status', value: item._status || '\u2014' },
+    { label: 'Language', value: item._originalLanguage || '\u2014' },
+  ];
+  if (item._runtime) facts.push({ label: 'Runtime', value: `${Math.floor(item._runtime / 60)}h ${item._runtime % 60}m` });
+  if (item._popularity) facts.push({ label: 'Popularity', value: `#${item._popularity}` });
+  if (item._contentRating) facts.push({ label: 'Content Rating', value: item._contentRating });
+  if (isTV) {
+    if (item._seasons) facts.push({ label: 'Seasons', value: String(item._seasons) });
+    if (item._episodes) facts.push({ label: 'Episodes', value: String(item._episodes) });
+    if (item._networks?.length) facts.push({ label: 'Network', value: item._networks.join(', ') });
+    if (item._createdBy?.length) facts.push({ label: 'Created By', value: item._createdBy.join(', ') });
+  }
+  if (item._productionCompanies?.length) {
+    facts.push({ label: 'Production', value: item._productionCompanies.slice(0, 3).map(c => c.name).join(', ') });
+  }
 
   dom.modal.innerHTML = `
     <button class="modal-close" onclick="closeModal()">&times;</button>
-    <div class="modal-backdrop" style="background-image:url(${backdrop})"></div>
+    <img class="modal-backdrop" src="${item._poster || item.poster_url || ''}" alt="" onerror="this.style.display='none'">
     <div class="modal-body">
-      <div style="display:flex;gap:20px;flex-wrap:wrap">
-        <img src="${poster}" alt="${title}" style="width:160px;border-radius:8px;flex-shrink:0;object-fit:cover;aspect-ratio:2/3" loading="lazy" onerror="this.style.display='none'">
-        <div style="flex:1;min-width:200px">
-          <h2>${title}</h2>
-          <div class="meta" style="margin-bottom:12px">
-            ${year ? `<span>${year}</span>` : ''}
-            ${rating ? `<span>&#11088; ${rating}</span>` : ''}
-            ${genres ? `<span>${genres}</span>` : ''}
-            ${seasons ? `<span>${seasons} ${seasons === 1 ? 'Season' : 'Seasons'}</span>` : ''}
-          </div>
-          <p style="font-size:14px;line-height:1.6;color:var(--text-secondary);margin-bottom:16px">${overview}</p>
-          <button class="btn btn-primary" onclick="playFromModal(${item.tmdb_id})">&#9654; Watch Now</button>
-          ${item._trailer ? `<button class="btn" onclick="openTrailer('${item._trailer.key}')" style="margin-left:8px">&#9654; Trailer</button>` : ''}
+      <div class="detail-title-row">
+        <div>
+          <h2>${tDisplayTitle(item)}</h2>
+          ${item._tagline ? `<div style="font-size:14px;color:var(--text-secondary);font-style:italic;margin-top:2px">"${escHtml(item._tagline)}"</div>` : ''}
         </div>
+        ${trailer ? `<button class="trailer-btn" onclick="openTrailer('${trailer.key}')" style="flex-shrink:0">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+          ${escHtml(trailer.name || 'Trailer')}
+        </button>` : ''}
       </div>
-      ${cast.length ? `<div class="cast-section"><h4>Cast</h4><div class="cast-scroll">${castHtml}</div></div>` : ''}
+
+      <div class="meta" style="margin-bottom:12px;margin-top:8px">
+        <span class="rating">\u2605 ${tDisplayRating(item)}</span>
+        <span>\u2022</span>
+        <span>${escHtml(tDisplayYear(item))}</span>
+        <span>\u2022</span>
+        <span>${escHtml(tDisplayGenres(item))}</span>
+        ${item._runtime ? `<span>\u2022</span><span>${Math.floor(item._runtime / 60)}h ${item._runtime % 60}m</span>` : ''}
+        ${item._status ? `<span>\u2022</span><span>${escHtml(item._status)}</span>` : ''}
+      </div>
+
+      <p>${escHtml(tDisplayOverview(item))}</p>
+
+      <div class="modal-actions" style="margin-bottom:16px">
+        <button class="btn btn-primary" onclick="playFromModal(${item.tmdb_id})">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+          Play Now
+        </button>
+        <button class="btn btn-secondary" onclick="closeModal()">Close</button>
+      </div>
+
+      <div class="facts-grid">
+        ${facts.map(f => `
+          <div class="fact-item">
+            <div class="fact-label">${escHtml(f.label)}</div>
+            <div class="fact-value">${f.html ? f.value : escHtml(f.value)}</div>
+          </div>
+        `).join('')}
+      </div>
+
+      ${cast.length ? `
+        <div class="cast-section">
+          <h4>Cast (${cast.length})</h4>
+          <div class="cast-scroll">
+            ${cast.map(c => `
+              <div class="cast-card">
+                <img src="${c.photo || ''}" alt="${escHtml(c.name)}" loading="lazy" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2764%27 height=%2764%27 fill=%27%231a1a2e%27%3E%3Crect width=%2764%27 height=%2764%27 rx=%2732%27/%3E%3Ctext x=%2732%27 y=%2732%27 text-anchor=%27middle%27 dy=%27.3em%27 fill=%27%23a0a0b8%27 font-size=%2718%27%3E${escHtml(c.name[0] || '?')}%3C/text%3E%3C/svg%3E'">
+                <div class="name">${escHtml(c.name)}</div>
+                <div class="role">${escHtml(c.character || '')}</div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      ` : ''}
     </div>
   `;
 }
@@ -203,17 +275,19 @@ function playFromModal(tmdbId) {
   openPlayer(item);
 }
 
+/* ── Trailer ── */
 function openTrailer(key) {
   const existing = document.getElementById('trailer-modal');
   if (existing) {
-    existing.querySelector('iframe').src = `https://www.youtube.com/embed/${key}?autoplay=1&rel=0`;
     existing.classList.add('active');
+    const iframe = existing.querySelector('iframe');
+    iframe.src = `https://www.youtube.com/embed/${key}?autoplay=1&muted=1&playsinline=1&controls=0&rel=0`;
     return;
   }
   const div = document.createElement('div');
   div.className = 'trailer-modal active';
   div.id = 'trailer-modal';
-  div.innerHTML = `<button class="trailer-close" onclick="this.parentElement.classList.remove('active');this.nextElementSibling.src=''">&times;</button><iframe src="https://www.youtube.com/embed/${key}?autoplay=1&rel=0" allow="autoplay;fullscreen"></iframe>`;
+  div.innerHTML = `<button class="trailer-close" onclick="this.parentElement.classList.remove('active');this.nextElementSibling.src=''">&times;</button><iframe src="https://www.youtube.com/embed/${key}?autoplay=1&muted=1&playsinline=1&controls=0&rel=0" allow="autoplay;fullscreen"></iframe>`;
   document.body.appendChild(div);
 }
 
@@ -372,6 +446,37 @@ function unlockScroll() {
   document.body.style.overflow = '';
 }
 
+/* ── Mobile Nav ── */
+function toggleMobileNav() {
+  let panel = document.getElementById('mobile-nav-panel');
+  if (panel) { closeMobileNav(); return; }
+  const overlay = document.createElement('div');
+  overlay.id = 'mobile-nav-overlay';
+  overlay.style.cssText = 'position:fixed;inset:0;z-index:998;background:rgba(0,0,0,0.6);-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);animation:fadeIn .2s ease';
+  overlay.addEventListener('click', closeMobileNav);
+  document.body.appendChild(overlay);
+  panel = document.createElement('div');
+  panel.id = 'mobile-nav-panel';
+  const navH = document.querySelector('nav')?.offsetHeight || 88;
+  panel.style.cssText = `position:fixed;top:${navH}px;left:0;right:0;z-index:999;background:rgba(10,10,15,0.98);backdrop-filter:blur(20px);border-bottom:1px solid var(--glass-border);padding:16px 24px;animation:fadeInUp .2s ease;display:flex;flex-direction:column;gap:12px;max-height:calc(100vh - ${navH}px);overflow-y:auto`;
+  panel.innerHTML = `
+    <a href="/" style="color:var(--text-primary);font-size:16px;font-weight:500;text-decoration:none;padding:12px 0">${__('Home')}</a>
+    <a href="movies.html" style="color:var(--text-secondary);font-size:16px;font-weight:500;text-decoration:none;padding:12px 0">${__('Movies')}</a>
+    <a href="tv.html" style="color:var(--text-secondary);font-size:16px;font-weight:500;text-decoration:none;padding:12px 0">${__('TV Shows')}</a>
+    <a href="youtube.html" style="color:var(--text-secondary);font-size:16px;font-weight:500;text-decoration:none;padding:12px 0">\uD83C\uDFAC ${__('CBE Movies')}</a>
+    <a href="#" style="color:var(--text-secondary);font-size:16px;font-weight:500;text-decoration:none;padding:12px 0" onclick="openSearch();closeMobileNav();return false">${__('Search')}</a>
+  `;
+  document.body.appendChild(panel);
+  lockScroll();
+}
+function closeMobileNav() {
+  document.getElementById('mobile-nav-panel')?.remove();
+  document.getElementById('mobile-nav-overlay')?.remove();
+  unlockScroll();
+}
+window.toggleMobileNav = toggleMobileNav;
+window.closeMobileNav = closeMobileNav;
+
 /* ── Keyboard ── */
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') {
@@ -398,10 +503,10 @@ function toggleLang() {
 (async function init() {
   initDOM();
   i18n.init();
-  document.querySelector('.mobile-menu-btn')?.addEventListener('click', () => {
-    document.getElementById('nav').classList.toggle('nav-open');
-  });
   document.querySelector('.lang-switch').textContent = i18n.current === 'am' ? '\u12A0\u121B' : 'EN';
+  document.addEventListener('click', (e) => {
+    if (e.target.closest('.mobile-menu-btn')) toggleMobileNav();
+  });
   tvState.genres = await API.getTVGenres();
   populateFilters();
   await fetchAndRender();

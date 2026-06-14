@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Register — CBE Movies</title>
+  <meta name="theme-color" content="#910096">
+  <link rel="icon" href="img/cbe-logo.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Roboto+Serif:opsz,wght@8..144,400;8..144,500;8..144,600&display=swap">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="auth-page">
+  <div class="auth-container">
+    <div class="auth-card">
+      <a href="/" class="auth-logo">
+        <img src="img/cbe-logo.png" alt="CBE Movies">
+        <span>CBE Movies</span>
+      </a>
+      <h1 class="auth-title">Create Account</h1>
+      <p class="auth-subtitle">Register to access premium content</p>
+
+      <form id="register-form" class="auth-form" onsubmit="return false">
+        <div class="form-row">
+          <div class="form-group">
+            <label for="reg-first">First Name</label>
+            <input type="text" id="reg-first" placeholder="First name" required>
+          </div>
+          <div class="form-group">
+            <label for="reg-last">Last Name</label>
+            <input type="text" id="reg-last" placeholder="Last name" required>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="reg-username">Username</label>
+          <input type="text" id="reg-username" placeholder="Choose a username" required>
+        </div>
+        <div class="form-group">
+          <label for="reg-email">Email</label>
+          <input type="email" id="reg-email" placeholder="Enter your email" required autocomplete="email">
+        </div>
+        <div class="form-group">
+          <label for="reg-phone">Phone Number (linked to CBE account)</label>
+          <input type="tel" id="reg-phone" placeholder="+251911234567" required>
+        </div>
+        <div class="form-group">
+          <label for="reg-password">Password</label>
+          <input type="password" id="reg-password" placeholder="Create a password (min 6 chars)" required minlength="6" autocomplete="new-password">
+        </div>
+        <div class="form-group">
+          <label for="reg-confirm">Confirm Password</label>
+          <input type="password" id="reg-confirm" placeholder="Confirm password" required autocomplete="new-password">
+        </div>
+        <div class="form-error" id="reg-error"></div>
+        <button type="submit" class="auth-btn" id="reg-btn">Create Account</button>
+      </form>
+
+      <p class="auth-footer-text">Already have an account? <a href="login.html">Sign in</a></p>
+      <p class="auth-footer-text"><a href="/">Back to Home</a></p>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+  <script src="js/firebase-config.js"></script>
+  <script src="js/auth.js"></script>
+  <script>
+  const $ = id => document.getElementById(id);
+  const form = $('register-form');
+  const errorEl = $('reg-error');
+  const regBtn = $('reg-btn');
+
+  function showToast(msg, type = '') {
+    const t = $('toast');
+    t.textContent = msg;
+    t.className = 'toast active ' + type;
+    setTimeout(() => { t.className = 'toast'; }, 4000);
+  }
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    errorEl.textContent = '';
+    const firstName = $('reg-first').value.trim();
+    const lastName = $('reg-last').value.trim();
+    const username = $('reg-username').value.trim();
+    const email = $('reg-email').value.trim();
+    const phone = $('reg-phone').value.trim();
+    const password = $('reg-password').value;
+    const confirm = $('reg-confirm').value;
+
+    if (!firstName || !lastName || !username || !email || !phone || !password) {
+      errorEl.textContent = 'All fields are required';
+      return;
+    }
+    if (password.length < 6) {
+      errorEl.textContent = 'Password must be at least 6 characters';
+      return;
+    }
+    if (password !== confirm) {
+      errorEl.textContent = 'Passwords do not match';
+      return;
+    }
+
+    regBtn.disabled = true;
+    regBtn.textContent = 'Creating account...';
+    try {
+      await Auth.register({ email, phone, username, password, firstName, lastName });
+      showToast('Account created! Please check your email to verify, then wait for admin approval.', 'success');
+      setTimeout(() => window.location.href = 'login.html', 3000);
+    } catch (err) {
+      const msg = err.code === 'auth/email-already-in-use' ? 'This email is already registered' :
+                  err.code === 'auth/weak-password' ? 'Password is too weak' :
+                  err.code === 'auth/invalid-email' ? 'Invalid email address' :
+                  err.message;
+      errorEl.textContent = msg;
+      regBtn.disabled = false;
+      regBtn.textContent = 'Create Account';
+    }
+  });
+
+  Auth.onAuthStateChanged((user) => {
+    if (user) window.location.href = '/';
+  });
+  </script>
+</body>
+</html>

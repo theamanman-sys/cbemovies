@@ -93,10 +93,7 @@ function init() {
   });
 
   document.addEventListener('click', (e) => {
-    if (e.target.closest('.mobile-menu-btn')) {
-      document.getElementById('nav').classList.toggle('nav-open');
-      return;
-    }
+    if (e.target.closest('.mobile-menu-btn')) { toggleMobileNav(); return; }
     const card = e.target.closest('.video-card');
     if (card) { showDetail(card.dataset.videoId); return; }
 
@@ -202,5 +199,41 @@ function closeYouTubePlayer() {
   if (modal) modal.classList.remove('active');
   document.body.style.overflow = '';
 }
+
+/* ── Mobile Nav ── */
+function lockScroll() {
+  document.body.style.overflow = 'hidden';
+}
+function unlockScroll() {
+  document.body.style.overflow = '';
+}
+function toggleMobileNav() {
+  let panel = document.getElementById('mobile-nav-panel');
+  if (panel) { closeMobileNav(); return; }
+  const overlay = document.createElement('div');
+  overlay.id = 'mobile-nav-overlay';
+  overlay.style.cssText = 'position:fixed;inset:0;z-index:998;background:rgba(0,0,0,0.6);-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);animation:fadeIn .2s ease';
+  overlay.addEventListener('click', closeMobileNav);
+  document.body.appendChild(overlay);
+  panel = document.createElement('div');
+  panel.id = 'mobile-nav-panel';
+  const navH = document.querySelector('nav')?.offsetHeight || 88;
+  panel.style.cssText = `position:fixed;top:${navH}px;left:0;right:0;z-index:999;background:rgba(10,10,15,0.98);backdrop-filter:blur(20px);border-bottom:1px solid var(--glass-border);padding:16px 24px;animation:fadeInUp .2s ease;display:flex;flex-direction:column;gap:12px;max-height:calc(100vh - ${navH}px);overflow-y:auto`;
+  panel.innerHTML = `
+    <a href="/" style="color:var(--text-primary);font-size:16px;font-weight:500;text-decoration:none;padding:12px 0">Home</a>
+    <a href="movies.html" style="color:var(--text-secondary);font-size:16px;font-weight:500;text-decoration:none;padding:12px 0">Movies</a>
+    <a href="tv.html" style="color:var(--text-secondary);font-size:16px;font-weight:500;text-decoration:none;padding:12px 0">TV Shows</a>
+    <a href="youtube.html" style="color:var(--text-secondary);font-size:16px;font-weight:500;text-decoration:none;padding:12px 0">\uD83C\uDFAC CBE Movies</a>
+  `;
+  document.body.appendChild(panel);
+  lockScroll();
+}
+function closeMobileNav() {
+  document.getElementById('mobile-nav-panel')?.remove();
+  document.getElementById('mobile-nav-overlay')?.remove();
+  unlockScroll();
+}
+window.toggleMobileNav = toggleMobileNav;
+window.closeMobileNav = closeMobileNav;
 
 init();
