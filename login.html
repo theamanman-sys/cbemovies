@@ -89,7 +89,7 @@
     loginBtn.textContent = 'Signing in...';
     try {
       const cred = await Auth.login(emailInp.value, passInp.value);
-      window.location.href = '/';
+      window.location.href = 'home.html';
     } catch (err) {
       if (err.message === 'ACCOUNT_NOT_VERIFIED') {
         errorEl.textContent = 'Account not yet verified. Please wait for admin approval.';
@@ -108,7 +108,7 @@
   });
 
   Auth.onAuthStateChanged((user) => {
-    if (user) window.location.href = '/';
+    if (user) window.location.href = 'home.html';
   });
 
   /* CBE Super App - Phone Auth */
@@ -162,7 +162,7 @@
       } else {
         await Auth.confirmPhoneCode(confirmationResult.verificationId, code);
       }
-      window.location.href = '/';
+      window.location.href = 'home.html';
     } catch (err) {
       if (err.message === 'ACCOUNT_NOT_VERIFIED') {
         phoneError.textContent = 'Account pending admin verification';

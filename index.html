@@ -3,424 +3,270 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>CBE Movies — Stream Movies & TV Shows</title>
-  <meta name="description" content="CBE Movies — A premium film destination from Commercial Bank of Ethiopia. Watch the latest movies and TV shows online in HD.">
+  <title>CBE Movies — Unlimited Movies & TV Shows</title>
+  <meta name="description" content="CBE Movies — Unlimited movies, TV shows, and more from Commercial Bank of Ethiopia. Watch anywhere. Cancel anytime.">
   <meta name="theme-color" content="#910096">
-  <link rel="manifest" href="manifest.json">
-  <link rel="icon" href="img/cbe-logo.png">  <link rel="apple-touch-icon" href="img/cbe-logo.png">
+  <link rel="icon" href="img/cbe-logo.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Antonio:wght@400;700&family=Roboto+Serif:opsz,wght@8..144,400;8..144,500;8..144,600&family=Noto+Sans+Ethiopic:wght@400;600;700&display=swap">
-  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Roboto+Serif:opsz,wght@8..144,400;8..144,500;8..144,600&display=swap">
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family:'Roboto Serif',sans-serif; background:#000; color:#fff; overflow-x:hidden; }
+    a { text-decoration:none; color:inherit; }
+
+    /* Hero */
+    .welcome-hero {
+      position:relative; min-height:100vh; display:flex; flex-direction:column;
+      background: radial-gradient(ellipse at center, rgba(145,0,150,0.15) 0%, transparent 60%),
+                  linear-gradient(180deg, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.3) 40%, rgba(0,0,0,0.8) 100%),
+                  url('https://assets.nflxext.com/ffe/siteui/vlv3/154a9550-ce07-4e28-819c-63185dd849f8/web/EG-en-20250106-TRIFECTA-perspective_58126dd0-b6b0-4385-9130-e6c087d5f85c_large.jpg');
+      background-size:cover; background-position:center;
+    }
+    .welcome-hero::before {
+      content:''; position:absolute; inset:0;
+      background: radial-gradient(ellipse at 70% 50%, rgba(145,0,150,0.08) 0%, transparent 50%);
+    }
+    .welcome-nav { display:flex; align-items:center; justify-content:space-between; padding:24px 48px; position:relative; z-index:2; }
+    .welcome-logo { display:flex; align-items:center; gap:10px; }
+    .welcome-logo img { height:44px; width:auto; }
+    .welcome-logo span { font-family:'Anton',sans-serif; font-size:24px; letter-spacing:1px; color:#910096; }
+    .welcome-nav-right { display:flex; align-items:center; gap:16px; }
+    .welcome-lang { display:flex; align-items:center; gap:6px; padding:6px 12px; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.3); border-radius:4px; color:#fff; font-size:14px; cursor:pointer; font-family:inherit; }
+    .welcome-lang svg { width:16px; height:16px; }
+    .welcome-signin { padding:8px 20px; background:#910096; color:#fff; border-radius:4px; font-size:14px; font-weight:600; transition:0.3s; border:none; cursor:pointer; font-family:inherit; }
+    .welcome-signin:hover { background:#7a007e; }
+    .welcome-hero-content { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:0 24px; position:relative; z-index:2; max-width:800px; margin:0 auto; }
+    .welcome-hero-content h1 { font-size:48px; font-weight:700; line-height:1.2; margin-bottom:16px; }
+    .welcome-hero-content p { font-size:22px; color:rgba(255,255,255,0.85); margin-bottom:8px; }
+    .welcome-hero-content .sub { font-size:18px; color:rgba(255,255,255,0.7); margin-bottom:24px; }
+    .welcome-cta { display:flex; gap:8px; width:100%; max-width:560px; margin-top:8px; }
+    .welcome-cta input { flex:1; padding:16px 20px; font-size:16px; background:rgba(0,0,0,0.6); border:1px solid rgba(255,255,255,0.3); border-radius:4px; color:#fff; outline:none; font-family:inherit; }
+    .welcome-cta input:focus { border-color:#910096; }
+    .welcome-cta input::placeholder { color:rgba(255,255,255,0.5); }
+    .welcome-cta button { padding:16px 32px; font-size:18px; font-weight:600; background:#910096; color:#fff; border:none; border-radius:4px; cursor:pointer; transition:0.3s; font-family:inherit; white-space:nowrap; display:flex; align-items:center; gap:8px; }
+    .welcome-cta button:hover { background:#7a007e; }
+    .welcome-cta button svg { width:20px; height:20px; }
+
+    /* Curve */
+    .welcome-curve { position:relative; height:8px; background:linear-gradient(90deg,#910096,#6b1e68,#910096); }
+
+    /* Sections */
+    .welcome-section { padding:72px 48px; max-width:1200px; margin:0 auto; display:flex; align-items:center; gap:48px; }
+    .welcome-section.reverse { flex-direction:row-reverse; }
+    .welcome-section-text { flex:1; }
+    .welcome-section-text h2 { font-size:42px; font-weight:700; margin-bottom:16px; }
+    .welcome-section-text p { font-size:20px; color:rgba(255,255,255,0.8); line-height:1.6; }
+    .welcome-section-media { flex:1; position:relative; }
+    .welcome-section-media img { width:100%; max-width:500px; display:block; margin:0 auto; }
+    .welcome-section-media video { width:100%; max-width:500px; display:block; margin:0 auto; }
+
+    /* FAQ */
+    .welcome-faq { padding:72px 48px; max-width:800px; margin:0 auto; text-align:center; }
+    .welcome-faq h2 { font-size:42px; font-weight:700; margin-bottom:48px; }
+    .faq-item { background:rgba(255,255,255,0.06); margin-bottom:8px; border-radius:4px; text-align:left; }
+    .faq-question { width:100%; padding:20px 24px; background:none; border:none; color:#fff; font-size:20px; text-align:left; cursor:pointer; display:flex; justify-content:space-between; align-items:center; font-family:inherit; }
+    .faq-question::after { content:'+'; font-size:28px; transition:0.3s; color:#910096; }
+    .faq-item.open .faq-question::after { content:'×'; }
+    .faq-answer { display:none; padding:0 24px 20px; font-size:16px; color:rgba(255,255,255,0.8); line-height:1.6; }
+    .faq-item.open .faq-answer { display:block; }
+
+    /* Bottom CTA */
+    .welcome-bottom-cta { text-align:center; padding:48px 24px 72px; }
+    .welcome-bottom-cta p { font-size:18px; margin-bottom:20px; color:rgba(255,255,255,0.8); }
+    .welcome-bottom-cta .welcome-cta { margin:0 auto; }
+
+    /* Footer */
+    .welcome-footer { padding:48px; max-width:1200px; margin:0 auto; }
+    .welcome-footer p { color:rgba(255,255,255,0.5); font-size:14px; margin-bottom:24px; }
+    .welcome-footer-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; }
+    .welcome-footer-grid a { color:rgba(255,255,255,0.5); font-size:13px; }
+    .welcome-footer-grid a:hover { text-decoration:underline; }
+
+    @media (max-width: 768px) {
+      .welcome-nav { padding:16px 20px; }
+      .welcome-logo img { height:32px; }
+      .welcome-logo span { font-size:18px; }
+      .welcome-hero-content h1 { font-size:28px; }
+      .welcome-hero-content p { font-size:16px; }
+      .welcome-hero-content .sub { font-size:14px; }
+      .welcome-cta { flex-direction:column; }
+      .welcome-cta button { justify-content:center; }
+      .welcome-section { flex-direction:column; padding:48px 24px; text-align:center; }
+      .welcome-section.reverse { flex-direction:column; }
+      .welcome-section-text h2 { font-size:28px; }
+      .welcome-section-text p { font-size:16px; }
+      .welcome-faq { padding:48px 24px; }
+      .welcome-faq h2 { font-size:28px; }
+      .faq-question { font-size:16px; }
+      .welcome-footer-grid { grid-template-columns:repeat(2,1fr); }
+    }
+  </style>
 </head>
 <body>
 
-  <!-- Preloader -->
-  <div class="preloader" id="preloader">
-    <div class="preloader-inner">
-      <img src="img/cbe-logo.png" alt="CBE Movies" class="preloader-logo">
-      <div class="preloader-ring"></div>
+  <div class="welcome-hero">
+    <div class="welcome-nav">
+      <a href="/" class="welcome-logo">
+        <img src="img/cbe-logo.png" alt="CBE Movies">
+        <span>CBE Movies</span>
+      </a>
+      <div class="welcome-nav-right">
+        <select class="welcome-lang" id="welcome-lang">
+          <option value="en">English</option>
+          <option value="am">አማርኛ</option>
+        </select>
+        <a href="login.html" class="welcome-signin">Sign In</a>
+      </div>
+    </div>
+    <div class="welcome-hero-content">
+      <h1>Unlimited movies, TV shows, and more</h1>
+      <p>Watch anywhere. Cancel anytime.</p>
+      <p class="sub">Ready to watch? Enter your email to create or restart your membership.</p>
+      <div class="welcome-cta">
+        <input type="email" id="welcome-email" placeholder="Email address" autofocus>
+        <a href="register.html" id="welcome-get-started">
+          <button>Get Started <svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg></button>
+        </a>
+      </div>
     </div>
   </div>
 
-  <!-- Navigation -->
-  <nav id="nav">
-    <a href="/" class="nav-logo">
-      <img src="img/cbe-logo.png" alt="CBE Movies" class="nav-logo-img">
-      <span class="nav-logo-text">CBE Movies</span>
-    </a>
-    <ul class="nav-links">
-      <li><a href="/" class="active" data-i18n="Home">Home</a></li>
-      <li><a href="movies.html" data-i18n="Movies">Movies</a></li>
-      <li><a href="tv.html" data-i18n="TV Shows">TV Shows</a></li>
-      <li><a href="youtube.html" data-i18n="CBE Movies">CBE Movies</a></li>
-    </ul>
-    <div class="nav-actions">
-      <a href="profile.html" class="nav-user-btn" id="nav-user-btn" style="display:none" title="My Account">
-        <span class="nav-user-avatar" id="nav-user-avatar">U</span>
-      </a>
-      <a href="login.html" class="nav-login-btn" id="nav-login-btn" data-i18n="Sign In" style="display:none">Sign In</a>
-      <button class="lang-switch" onclick="toggleLang()" data-i18n-title="Switch Language" title="Switch Language">EN</button>
-      <button class="nav-search-btn" onclick="openSearch()" title="Search (Ctrl+K)">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
-      </button>
-      <button class="mobile-menu-btn">☰</button>
-    </div>
-  </nav>
+  <div class="welcome-curve"></div>
 
-  <!-- Hero Section -->
-  <section class="hero" id="hero">
-    <div class="hero-parallax" id="hero-parallax"></div>
-    <div class="hero-overlay"></div>
-    <div class="hero-overlay-right"></div>
-    <div class="hero-content" id="hero-content">
-      <div class="hero-badge" data-i18n="Loading...">Loading...</div>
-      <h1 class="hero-title">CBE Movies</h1>
-      <p class="hero-desc" data-i18n="Loading the latest content for you...">Loading the latest content for you...</p>
+  <!-- Feature 1: TV -->
+  <div class="welcome-section">
+    <div class="welcome-section-text">
+      <h2>Enjoy on your TV</h2>
+      <p>Watch on Smart TVs, Playstation, Xbox, Chromecast, Apple TV, Blu-ray players, and more.</p>
     </div>
-    <div class="hero-preview" id="hero-preview"></div>
-    <div class="hero-controls">
-      <button class="hero-arrow" data-action="hero-prev">←</button>
-      <div class="hero-dots" id="hero-dots"></div>
-      <button class="hero-arrow" data-action="hero-next">→</button>
+    <div class="welcome-section-media">
+      <img src="https://assets.nflxext.com/ffe/siteui/acquisition/ourStory/fuji/desktop/tv.png" alt="TV" loading="lazy">
     </div>
-    <div class="hero-timer" id="hero-timer"></div>
-  </section>
+  </div>
 
-  <!-- Trending Movies -->
-  <section class="section">
-    <div class="section-header">
-      <h2><span class="accent-bar"></span><span data-i18n="Trending Movies">Trending Movies</span></h2>
-      <div class="section-nav">
-        <button onclick="scrollCarousel(dom.trendingTrack, -1)">←</button>
-        <button onclick="scrollCarousel(dom.trendingTrack, 1)">→</button>
-      </div>
-    </div>
-    <div class="carousel-wrapper">
-      <div class="carousel-track" id="trending-track">
-        <div class="skeleton skeleton-card"></div>
-        <div class="skeleton skeleton-card"></div>
-        <div class="skeleton skeleton-card"></div>
-        <div class="skeleton skeleton-card"></div>
-        <div class="skeleton skeleton-card"></div>
-        <div class="skeleton skeleton-card"></div>
-        <div class="skeleton skeleton-card"></div>
-        <div class="skeleton skeleton-card"></div>
-      </div>
-    </div>
-  </section>
+  <div class="welcome-curve"></div>
 
-  <!-- Trending TV -->
-  <section class="section">
-    <div class="section-header">
-      <h2><span class="accent-bar"></span><span data-i18n="Trending TV Shows">Trending TV Shows</span></h2>
-      <div class="section-nav">
-        <button onclick="scrollCarousel(dom.trendingTVTrack, -1)">←</button>
-        <button onclick="scrollCarousel(dom.trendingTVTrack, 1)">→</button>
-      </div>
+  <!-- Feature 2: Download -->
+  <div class="welcome-section reverse">
+    <div class="welcome-section-text">
+      <h2>Download your shows to watch offline</h2>
+      <p>Save your favorites easily and always have something to watch.</p>
     </div>
-    <div class="carousel-wrapper">
-      <div class="carousel-track" id="trending-tv-track">
-        <div class="skeleton skeleton-card"></div>
-        <div class="skeleton skeleton-card"></div>
-        <div class="skeleton skeleton-card"></div>
-        <div class="skeleton skeleton-card"></div>
-        <div class="skeleton skeleton-card"></div>
-        <div class="skeleton skeleton-card"></div>
-        <div class="skeleton skeleton-card"></div>
-        <div class="skeleton skeleton-card"></div>
-      </div>
+    <div class="welcome-section-media">
+      <img src="https://assets.nflxext.com/ffe/siteui/acquisition/ourStory/fuji/desktop/mobile-0819.jpg" alt="Download" loading="lazy">
     </div>
-  </section>
+  </div>
 
-  <!-- Now Playing -->
-  <section class="section">
-    <div class="section-header">
-      <h2><span class="accent-bar"></span><span data-i18n="Now Playing in Theaters">Now Playing in Theaters</span></h2>
-      <div class="section-nav">
-        <button onclick="scrollCarousel(dom.nowPlayingTrack, -1)">←</button>
-        <button onclick="scrollCarousel(dom.nowPlayingTrack, 1)">→</button>
-      </div>
-    </div>
-    <div class="carousel-wrapper">
-      <div class="carousel-track" id="nowplaying-track">
-        <div class="skeleton skeleton-card"></div>
-        <div class="skeleton skeleton-card"></div>
-        <div class="skeleton skeleton-card"></div>
-        <div class="skeleton skeleton-card"></div>
-        <div class="skeleton skeleton-card"></div>
-        <div class="skeleton skeleton-card"></div>
-        <div class="skeleton skeleton-card"></div>
-        <div class="skeleton skeleton-card"></div>
-      </div>
-    </div>
-  </section>
+  <div class="welcome-curve"></div>
 
-  <!-- Latest Movies -->
-  <section class="section">
-    <div class="section-header">
-      <h2><span class="accent-bar"></span><span data-i18n="Latest Movies">Latest Movies</span></h2>
-      <div class="section-nav">
-        <button onclick="scrollCarousel(dom.latestTrack, -1)">←</button>
-        <button onclick="scrollCarousel(dom.latestTrack, 1)">→</button>
-      </div>
+  <!-- Feature 3: Watch Everywhere -->
+  <div class="welcome-section">
+    <div class="welcome-section-text">
+      <h2>Watch everywhere</h2>
+      <p>Stream unlimited movies and TV shows on your phone, tablet, laptop, and TV.</p>
     </div>
-    <div class="carousel-wrapper">
-      <div class="carousel-track" id="latest-track">
-        <div class="skeleton skeleton-card"></div>
-        <div class="skeleton skeleton-card"></div>
-        <div class="skeleton skeleton-card"></div>
-        <div class="skeleton skeleton-card"></div>
-        <div class="skeleton skeleton-card"></div>
-        <div class="skeleton skeleton-card"></div>
-        <div class="skeleton skeleton-card"></div>
-        <div class="skeleton skeleton-card"></div>
-      </div>
+    <div class="welcome-section-media">
+      <img src="https://assets.nflxext.com/ffe/siteui/acquisition/ourStory/fuji/desktop/device-pile.png" alt="Devices" loading="lazy">
     </div>
-  </section>
+  </div>
 
-  <!-- Featured Grid -->
-  <section class="section">
-    <div class="section-header">
-      <h2><span class="accent-bar"></span><span data-i18n="Featured">Featured</span></h2>
-    </div>
-    <div class="featured-grid" id="featured-grid">
-      <div class="skeleton" style="grid-row:span 2;height:576px"></div>
-      <div class="skeleton" style="height:280px"></div>
-      <div class="skeleton" style="height:280px"></div>
-    </div>
-  </section>
+  <div class="welcome-curve"></div>
 
-  <!-- Ethiopian Movies -->
-  <section class="section">
-    <div class="section-header">
-      <h2><span class="accent-bar"></span><span data-i18n="Ethiopian Movies">🇪🇹 Ethiopian Movies</span></h2>
-      <div class="section-nav">
-        <button onclick="scrollCarousel(dom.ethiopianTrack, -1)">←</button>
-        <button onclick="scrollCarousel(dom.ethiopianTrack, 1)">→</button>
-      </div>
+  <!-- Feature 4: Kids -->
+  <div class="welcome-section reverse">
+    <div class="welcome-section-text">
+      <h2>Create profiles for kids</h2>
+      <p>Send kids on adventures with their favorite characters in a space made just for them — free with your membership.</p>
     </div>
-    <div class="carousel-wrapper">
-      <div class="carousel-track" id="ethiopian-track">
-        <div class="skeleton skeleton-card"></div>
-        <div class="skeleton skeleton-card"></div>
-        <div class="skeleton skeleton-card"></div>
-        <div class="skeleton skeleton-card"></div>
-        <div class="skeleton skeleton-card"></div>
-        <div class="skeleton skeleton-card"></div>
-        <div class="skeleton skeleton-card"></div>
-        <div class="skeleton skeleton-card"></div>
-      </div>
+    <div class="welcome-section-media">
+      <img src="https://assets.nflxext.com/ffe/siteui/acquisition/ourStory/fuji/desktop/kids.png" alt="Kids" loading="lazy">
     </div>
-  </section>
+  </div>
 
-  <!-- Popular TV Shows -->
-  <section class="section">
-    <div class="section-header">
-      <h2><span class="accent-bar"></span><span data-i18n="Popular TV Shows">Popular TV Shows</span></h2>
-      <div class="section-nav">
-        <button onclick="scrollCarousel(dom.popularTrack, -1)">←</button>
-        <button onclick="scrollCarousel(dom.popularTrack, 1)">→</button>
-      </div>
-    </div>
-    <div class="carousel-wrapper">
-      <div class="carousel-track" id="popular-track">
-        <div class="skeleton skeleton-card"></div>
-        <div class="skeleton skeleton-card"></div>
-        <div class="skeleton skeleton-card"></div>
-        <div class="skeleton skeleton-card"></div>
-        <div class="skeleton skeleton-card"></div>
-        <div class="skeleton skeleton-card"></div>
-        <div class="skeleton skeleton-card"></div>
-        <div class="skeleton skeleton-card"></div>
-      </div>
-    </div>
-  </section>
+  <div class="welcome-curve"></div>
 
-  <!-- YouTube Channel -->
-  <section class="section youtube-section" id="youtube-section">
-    <div class="youtube-header">
-      <div class="youtube-brand">
-        <svg width="36" height="36" viewBox="0 0 24 24" fill="#FF0000"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
-        <div>
-          <h2><span>Commercial Bank of Ethiopia</span></h2>
-          <p class="youtube-subtitle" data-i18n="Official YouTube channel — banking, financial insights, and community updates">🏦 Official YouTube channel — banking, financial insights, and community updates</p>
-        </div>
-      </div>
+  <!-- FAQ -->
+  <div class="welcome-faq">
+    <h2>Frequently Asked Questions</h2>
+    <div class="faq-item">
+      <button class="faq-question" onclick="this.closest('.faq-item').classList.toggle('open')">What is CBE Movies?</button>
+      <div class="faq-answer">CBE Movies is a streaming service from Commercial Bank of Ethiopia that offers a wide variety of award-winning movies, TV shows, and more – on thousands of internet-connected devices.</div>
+    </div>
+    <div class="faq-item">
+      <button class="faq-question" onclick="this.closest('.faq-item').classList.toggle('open')">How much does it cost?</button>
+      <div class="faq-answer">Enjoy CBE Movies for as low as 299 ETB per month or 2,999 ETB per year. Watch on any device, anytime, with no ads.</div>
+    </div>
+    <div class="faq-item">
+      <button class="faq-question" onclick="this.closest('.faq-item').classList.toggle('open')">Where can I watch?</button>
+      <div class="faq-answer">Watch anywhere, anytime. Sign in with your CBE Movies account to watch instantly on the web at cbemovies.com or on any internet-connected device.</div>
+    </div>
+    <div class="faq-item">
+      <button class="faq-question" onclick="this.closest('.faq-item').classList.toggle('open')">How do I pay?</button>
+      <div class="faq-answer">Pay easily using CBE Birr, your CBE Super App, or other Ethiopian payment methods. Your subscription gives you full access to all content.</div>
+    </div>
+  </div>
 
+  <div class="welcome-bottom-cta">
+    <p>Ready to watch? Enter your email to create or restart your membership.</p>
+    <div class="welcome-cta">
+      <input type="email" placeholder="Email address">
+      <a href="register.html"><button>Get Started <svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg></button></a>
     </div>
-    <div class="youtube-grid">
-      <div class="youtube-card" data-video-id="wvTRae6Awas">
-        <div class="youtube-thumb">
-          <img src="https://img.youtube.com/vi/wvTRae6Awas/mqdefault.jpg" alt="Fasika Easter Ad" loading="lazy">
-          <div class="youtube-play"><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></div>
-        </div>
-        <div class="youtube-card-body">
-          <h3>Fasika (Easter) FCY Ad</h3>
-          <p>Commercial Bank of Ethiopia Easter celebration advertisement.</p>
-        </div>
-      </div>
-      <div class="youtube-card" data-video-id="44KofcrAw5I">
-        <div class="youtube-thumb">
-          <img src="https://img.youtube.com/vi/44KofcrAw5I/mqdefault.jpg" alt="CBE TV Special" loading="lazy">
-          <div class="youtube-play"><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></div>
-        </div>
-        <div class="youtube-card-body">
-          <h3>CBE TV Special Easter Program</h3>
-          <p>Special Easter television program from Commercial Bank of Ethiopia.</p>
-        </div>
-      </div>
-      <div class="youtube-card" data-video-id="QFeMChEqrjE">
-        <div class="youtube-thumb">
-          <img src="https://img.youtube.com/vi/QFeMChEqrjE/mqdefault.jpg" alt="CBE TV Program" loading="lazy">
-          <div class="youtube-play"><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></div>
-        </div>
-        <div class="youtube-card-body">
-          <h3>CBE TV Program</h3>
-          <p>Banking services and updates from Commercial Bank of Ethiopia.</p>
-        </div>
-      </div>
-    </div>
-    <div class="youtube-footer">
-      <a href="youtube.html" class="btn btn-primary">
-        <span data-i18n="View Full Channel →">View Full Channel →</span>
-      </a>
+  </div>
 
-    </div>
-  </section>
+  <div class="welcome-curve"></div>
 
   <!-- Footer -->
-  <footer>
-    <div class="footer-grid">
-      <div class="footer-brand">
-        <img src="img/cbe-logo.png" alt="CBE Movies" class="footer-logo">
-        <p>A dynamic film destination. Watch the latest movies and TV shows in high definition with our powerful player.</p>
-      </div>
-      <div class="footer-col">
-        <h4 data-i18n="Browse">Browse</h4>
-        <a href="/" data-i18n="Home">Home</a>
-        <a href="youtube.html" data-i18n="CBE Movies">CBE Movies</a>
-        <a href="#" data-i18n="Trending">Trending</a>
-        <a href="#" data-i18n="New Releases">New Releases</a>
-      </div>
-      <div class="footer-col">
-        <h4 data-i18n="About">About</h4>
-        <a href="#" data-i18n="Privacy Policy">Privacy Policy</a>
-        <a href="#" data-i18n="Terms of Service">Terms of Service</a>
-        <a href="#" data-i18n="DMCA">DMCA</a>
-        <a href="#" data-i18n="Contact">Contact</a>
-      </div>
+  <div class="welcome-footer">
+    <p>Questions? Contact us at support@cbemovies.com</p>
+    <div class="welcome-footer-grid">
+      <a href="#">FAQ</a>
+      <a href="#">Help Center</a>
+      <a href="#">Account</a>
+      <a href="#">Media Center</a>
+      <a href="#">Investor Relations</a>
+      <a href="#">Jobs</a>
+      <a href="#">Ways to Watch</a>
+      <a href="#">Terms of Use</a>
+      <a href="#">Privacy</a>
+      <a href="#">Cookie Preferences</a>
+      <a href="#">Corporate Information</a>
+      <a href="#">Contact Us</a>
     </div>
-    <div class="footer-bottom">
-      <span>© 2026 <span data-i18n="CBE Movies">CBE Movies</span>. <span data-i18n="All rights reserved.">All rights reserved.</span></span>
-      <span data-i18n="CBE Movies — Experience Cinema">CBE Movies — Experience Cinema</span>
-    </div>
-  </footer>
-
-  <!-- Movie Detail Modal -->
-  <div class="modal-overlay" id="modal-overlay">
-    <div class="modal" id="modal"></div>
+    <p style="margin-top:24px">CBE Movies — A Commercial Bank of Ethiopia service. &copy; 2025 CBE Movies. All rights reserved.</p>
   </div>
 
-  <!-- Search Overlay -->
-  <div class="search-overlay" id="search-overlay">
-    <div class="search-header">
-      <input type="text" id="search-input" data-i18n-placeholder="Type to search movies, TV shows & people..." placeholder="Search movies, TV shows & people..." oninput="onSearchInput()" autocomplete="off">
-      <button class="search-close" onclick="closeSearch()">✕</button>
-      <div class="search-dropdown" id="search-dropdown"></div>
-    </div>
-    <div class="search-tabs" id="search-tabs">
-      <button class="search-tab active" data-tab="all" data-i18n="All">All</button>
-      <button class="search-tab" data-tab="movies" data-i18n="Movies">Movies</button>
-      <button class="search-tab" data-tab="tv" data-i18n="TV Shows">TV Shows</button>
-      <button class="search-tab" data-tab="people" data-i18n="People">People</button>
-    </div>
-    <div class="search-results" id="search-results"></div>
-  </div>
-
-  <!-- Trailer Modal -->
-  <div class="trailer-modal" id="trailer-modal">
-    <button class="trailer-close" onclick="closeTrailer()">✕</button>
-    <iframe id="trailer-frame" allow="autoplay;fullscreen"></iframe>
-  </div>
-
-  <!-- Player Page -->
-  <div class="player-page hidden" id="player-page">
-    <div class="player-nav">
-      <a href="/" class="nav-logo" onclick="closePlayer();return false">
-        <img src="img/cbe-logo.png" alt="CBE Movies" class="nav-logo-img">
-        <span class="nav-logo-text">CBE Movies</span>
-      </a>
-      <div>
-        <button class="player-sidebar-btn" onclick="togglePlayerSidebar()" title="Show Info">☰</button>
-          <div class="player-subtitle-wrap" id="subtitle-wrap">
-            <button class="player-subtitle-btn" id="subtitle-btn" onclick="toggleSubtitleMenu()" title="Subtitles">CC</button>
-            <div class="player-subtitle-menu hidden" id="subtitle-menu">
-              <div class="subtitle-menu-header">Subtitles</div>
-              <div class="subtitle-menu-list" id="subtitle-list"></div>
-              <div class="subtitle-menu-footer" id="subtitle-footer"></div>
-              <div class="subtitle-menu-item upload-srt" onclick="document.getElementById('srt-upload-input').click()" style="border-top:1px solid rgba(255,255,255,0.1);cursor:pointer">
-                <span class="label">📁 Upload SRT</span>
-              </div>
-            </div>
-            <input type="file" id="srt-upload-input" accept=".srt,.vtt,text/plain" style="display:none">
-          </div>
-        <button class="player-close" onclick="closePlayer()" title="Close Player (Esc)">✕</button>
-      </div>
-    </div>
-    <div class="player-container">
-      <div class="player-main">
-        <iframe id="player-frame" allow="autoplay; encrypted-media" sandbox="allow-scripts allow-same-origin"></iframe>
-          <div id="subtitle-overlay" class="subtitle-overlay hidden">
-            <div id="subtitle-text" class="subtitle-text"></div>
-            <div id="subtitle-time" class="subtitle-time"></div>
-            <div id="subtitle-debug" class="subtitle-debug"></div>
-          <div class="subtitle-progress" id="subtitle-progress">
-            <div class="subtitle-progress-track" id="subtitle-progress-track">
-              <div class="subtitle-progress-fill" id="subtitle-progress-fill"></div>
-              <div class="subtitle-progress-thumb" id="subtitle-progress-thumb"></div>
-            </div>
-          </div>
-          <div id="subtitle-next-banner" class="subtitle-next-banner hidden">
-            <span id="subtitle-next-text" class="subtitle-next-text"></span>
-            <span id="subtitle-next-countdown" class="subtitle-next-countdown"></span>
-            <button class="substep-btn" onclick="dismissAutoNext(); nextEpisode()" id="subtitle-next-btn">Next →</button>
-            <button class="substep-btn" onclick="dismissAutoNext()">✕</button>
-          </div>
-          <div class="subtitle-step-group">
-            <button class="substep-btn" onclick="subStep(-0.5)" title="-0.5s">−½</button>
-            <button class="substep-btn" onclick="subStep(-5)" title="-5s">−5</button>
-            <button class="substep-btn substep-resync" onclick="resyncSubtitles()" title="Resync to video">↻</button>
-            <button class="substep-btn" onclick="subStep(5)" title="+5s">+5</button>
-            <button class="substep-btn" onclick="subStep(0.5)" title="+0.5s">+½</button>
-            <button class="substep-btn substep-next" id="substep-next-btn" onclick="dismissAutoNext(); nextEpisode()" title="Next Episode" style="display:none">Next →</button>
-          </div>
-        </div>
-      </div>
-      <div class="player-sidebar">
-        <button class="ps-close-btn" onclick="togglePlayerSidebar()" title="Close">✕</button>
-        <div id="player-sidebar-content"></div>
-      </div>
-    <button class="player-fs-btn" onclick="togglePlayerFullscreen()" title="Fullscreen">
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#ffffff" style="display:block"><path fill-rule="evenodd" clip-rule="evenodd" d="M9.94358 1.25L10 1.25C10.4142 1.25 10.75 1.58579 10.75 2C10.75 2.41421 10.4142 2.75 10 2.75C8.09318 2.75 6.73851 2.75159 5.71085 2.88976C4.70476 3.02502 4.12511 3.27869 3.7019 3.7019C3.27869 4.12511 3.02502 4.70476 2.88976 5.71085C2.75159 6.73851 2.75 8.09318 2.75 10C2.75 10.4142 2.41421 10.75 2 10.75C1.58579 10.75 1.25 10.4142 1.25 10L1.25 9.94358C1.24998 8.10582 1.24997 6.65019 1.40314 5.51098C1.56076 4.33856 1.89288 3.38961 2.64124 2.64124C3.38961 1.89288 4.33856 1.56076 5.51098 1.40314C6.65019 1.24997 8.10582 1.24998 9.94358 1.25ZM18.2892 2.88976C17.2615 2.75159 15.9068 2.75 14 2.75C13.5858 2.75 13.25 2.41421 13.25 2C13.25 1.58579 13.5858 1.25 14 1.25L14.0564 1.25C15.8942 1.24998 17.3498 1.24997 18.489 1.40314C19.6614 1.56076 20.6104 1.89288 21.3588 2.64124C22.1071 3.38961 22.4392 4.33856 22.5969 5.51098C22.75 6.65019 22.75 8.10583 22.75 9.94359V10C22.75 10.4142 22.4142 10.75 22 10.75C21.5858 10.75 21.25 10.4142 21.25 10C21.25 8.09318 21.2484 6.73851 21.1102 5.71085C20.975 4.70476 20.7213 4.12511 20.2981 3.7019C19.8749 3.27869 19.2952 3.02502 18.2892 2.88976ZM2 13.25C2.41421 13.25 2.75 13.5858 2.75 14C2.75 15.9068 2.75159 17.2615 2.88976 18.2892C3.02502 19.2952 3.27869 19.8749 3.7019 20.2981C4.12511 20.7213 4.70476 20.975 5.71085 21.1102C6.73851 21.2484 8.09318 21.25 10 21.25C10.4142 21.25 10.75 21.5858 10.75 22C10.75 22.4142 10.4142 22.75 10 22.75H9.94359C8.10583 22.75 6.65019 22.75 5.51098 22.5969C4.33856 22.4392 3.38961 22.1071 2.64124 21.3588C1.89288 20.6104 1.56076 19.6614 1.40314 18.489C1.24997 17.3498 1.24998 15.8942 1.25 14.0564L1.25 14C1.25 13.5858 1.58579 13.25 2 13.25ZM22 13.25C22.4142 13.25 22.75 13.5858 22.75 14V14.0564C22.75 15.8942 22.75 17.3498 22.5969 18.489C22.4392 19.6614 22.1071 20.6104 21.3588 21.3588C20.6104 22.1071 19.6614 22.4392 18.489 22.5969C17.3498 22.75 15.8942 22.75 14.0564 22.75H14C13.5858 22.75 13.25 22.4142 13.25 22C13.25 21.5858 13.5858 21.25 14 21.25C15.9068 21.25 17.2615 21.2484 18.2892 21.1102C19.2952 20.975 19.8749 20.7213 20.2981 20.2981C20.7213 19.8749 20.975 19.2952 21.1102 18.2892C21.2484 17.2615 21.25 15.9068 21.25 14C21.25 13.5858 21.5858 13.25 22 13.25Z"/></svg>
-    </button>
-  </div>
-
-  <!-- YouTube Player Modal -->
-  <div class="trailer-modal" id="youtube-modal">
-    <button class="trailer-close" onclick="closeYouTubePlayer()">✕</button>
-    <iframe id="youtube-frame" allow="autoplay;fullscreen"></iframe>
-  </div>
-
-  <!-- Toast -->
-  <div class="toast" id="toast"></div>
-
+  <!-- Auth check: if logged in, redirect to home -->
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
   <script src="js/firebase-config.js"></script>
   <script src="js/auth.js"></script>
-  <script src="js/i18n.js"></script>
-  <script src="js/api.js"></script>
-  <script src="js/translator.js"></script>
-  <script src="js/subtitle-storage.js"></script>
-  <script src="js/app.js"></script>
   <script>
-  /* Auth-aware nav */
-  document.addEventListener('DOMContentLoaded', () => {
-    Auth.onAuthStateChanged((user, doc) => {
-      const loginBtn = document.getElementById('nav-login-btn');
-      const userBtn = document.getElementById('nav-user-btn');
-      const avatar = document.getElementById('nav-user-avatar');
-      if (user && doc) {
-        loginBtn.style.display = 'none';
-        userBtn.style.display = 'flex';
-        avatar.textContent = (doc.firstName || 'U')[0].toUpperCase();
-      } else {
-        loginBtn.style.display = '';
-        userBtn.style.display = 'none';
-      }
-    });
+  Auth.onAuthStateChanged((user) => {
+    if (user) window.location.href = 'home.html';
+  });
+  document.getElementById('welcome-lang').addEventListener('change', function() {
+    const lang = this.value;
+    const el = document.querySelector('.welcome-hero-content h1');
+    const signinBtn = document.querySelector('.welcome-signin');
+    const getStarted = document.querySelector('#welcome-get-started button');
+    if (lang === 'am') {
+      el.textContent = '\u120B\u1325 \u12AB\u120D \u134A\u121D\u1363 \u12F5\u120D\u121D \u1308\u126B\u12CD \u1263\u121B\u122D \u1265\u122C\u12DD';
+      document.querySelector('.welcome-hero-content p').textContent = '\u1218\u1260\u1273 \u1260\u134D\u12AB የ\u1270\u132D\u1275 \u12A0\u12CD\u1295\u1275\u1363 \u122A\u1275\u1295 \u12A0\u1275\u130D\u120D\u1275';
+      document.querySelector('.welcome-hero-content .sub').textContent = '\u1208\u1218\u12AD \u1281\u1265\u130D\u12CE\u1275 \u1290\u12C8\u1265\u1275 \u12A5\u121D\u12A5\u120D\u12CD\u1263\u1276\u1275\u1363 በ\u12A0\u12CD\u121E\u12ED\u120D \u12A0\u12A8\u1295\u1276\u1275\u1363 \u12A5\u121D\u12A8\u122D\u1235\u1275\u1271 አ\u12AD\u120D\u1308\u1265';
+      signinBtn.textContent = '\u12E9\u130D\u1266\u1275';
+      getStarted.textContent = '\u12EB \u130D\u1295\u1265\u122D \u12A0\u122D\u130D\u1325 \u1364';
+      document.querySelectorAll('.welcome-section-text h2')[0].textContent = '\u1265\u1275\u12F5\u12CE\u1275 \u12E8\u1275\u12A0\u12EB\u12CD\u130B \u1218\u120B\u12AD\u1275';
+    } else {
+      el.textContent = 'Unlimited movies, TV shows, and more';
+      document.querySelector('.welcome-hero-content p').textContent = 'Watch anywhere. Cancel anytime.';
+      document.querySelector('.welcome-hero-content .sub').textContent = 'Ready to watch? Enter your email to create or restart your membership.';
+      signinBtn.textContent = 'Sign In';
+      getStarted.innerHTML = 'Get Started <svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>';
+      document.querySelectorAll('.welcome-section-text h2')[0].textContent = 'Enjoy on your TV';
+    }
   });
   </script>
 </body>

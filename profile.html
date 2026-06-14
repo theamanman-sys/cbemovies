@@ -13,12 +13,12 @@
 </head>
 <body>
   <nav>
-    <a href="/" class="nav-logo">
+    <a href="home.html" class="nav-logo">
       <img src="img/cbe-logo.png" alt="CBE Movies" class="nav-logo-img">
       <span class="nav-logo-text">CBE Movies</span>
     </a>
     <ul class="nav-links">
-      <li><a href="/">Home</a></li>
+      <li><a href="home.html">Home</a></li>
       <li><a href="movies.html">Movies</a></li>
       <li><a href="tv.html">TV Shows</a></li>
       <li><a href="youtube.html">CBE Movies</a></li>
@@ -374,7 +374,7 @@
   /* Logout */
   $('logout-btn').addEventListener('click', async () => {
     await Auth.logout();
-    window.location.href = '/';
+    window.location.href = 'home.html';
   });
 
   /* Delete Account */
@@ -385,7 +385,7 @@
       await db.collection('users').doc(Auth.currentUser.uid).delete();
       await Auth.currentUser.delete();
       showToast('Account deleted', 'success');
-      setTimeout(() => window.location.href = '/', 1500);
+      setTimeout(() => window.location.href = 'home.html', 1500);
     } catch (err) {
       showToast(err.message);
     }

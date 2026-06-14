@@ -13,12 +13,12 @@
 </head>
 <body>
   <nav>
-    <a href="/" class="nav-logo">
+    <a href="home.html" class="nav-logo">
       <img src="img/cbe-logo.png" alt="CBE Movies" class="nav-logo-img">
       <span class="nav-logo-text">Admin Panel</span>
     </a>
     <ul class="nav-links">
-      <li><a href="/">Home</a></li>
+      <li><a href="home.html">Home</a></li>
       <li><a href="profile.html">Profile</a></li>
     </ul>
     <div class="nav-actions">
@@ -118,7 +118,7 @@
     if (!user) { window.location.href = 'login.html'; return; }
     if (!doc || (doc.role !== 'admin' && doc.role !== 'superadmin')) {
       showToast('Access denied. Admin only.');
-      setTimeout(() => window.location.href = '/', 1500);
+      setTimeout(() => window.location.href = 'home.html', 1500);
       return;
     }
     await loadData();
@@ -270,7 +270,7 @@
 
   $('admin-logout').addEventListener('click', async () => {
     await Auth.logout();
-    window.location.href = '/';
+    window.location.href = 'home.html';
   });
   </script>
 </body>
