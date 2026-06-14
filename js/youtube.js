@@ -219,11 +219,21 @@ function toggleMobileNav() {
   panel.id = 'mobile-nav-panel';
   const navH = document.querySelector('nav')?.offsetHeight || 88;
   panel.style.cssText = `position:fixed;top:${navH}px;left:0;right:0;z-index:999;background:rgba(10,10,15,0.98);backdrop-filter:blur(20px);border-bottom:1px solid var(--glass-border);padding:16px 24px;animation:fadeInUp .2s ease;display:flex;flex-direction:column;gap:12px;max-height:calc(100vh - ${navH}px);overflow-y:auto`;
+  const userLinks = Auth.currentUser && Auth.userDoc ? `
+    <hr style="border-color:var(--glass-border);margin:4px 0">
+    <a href="profile.html" style="color:var(--text-secondary);font-size:16px;font-weight:500;text-decoration:none;padding:12px 0">👤 Dashboard</a>
+    <a href="profile.html#settings" style="color:var(--text-secondary);font-size:16px;font-weight:500;text-decoration:none;padding:12px 0">⚙️ Settings</a>
+    <button style="color:#ff4444;font-size:16px;font-weight:500;background:none;border:none;padding:12px 0;cursor:pointer;font-family:inherit;text-align:left" onclick="Auth.logout();window.location.href='index.html'">🚪 Sign Out</button>
+  ` : `
+    <hr style="border-color:var(--glass-border);margin:4px 0">
+    <a href="login.html" style="color:var(--accent);font-size:16px;font-weight:600;text-decoration:none;padding:12px 0">🔑 Sign In</a>
+  `;
   panel.innerHTML = `
     <a href="home.html" style="color:var(--text-primary);font-size:16px;font-weight:500;text-decoration:none;padding:12px 0">Home</a>
     <a href="movies.html" style="color:var(--text-secondary);font-size:16px;font-weight:500;text-decoration:none;padding:12px 0">Movies</a>
     <a href="tv.html" style="color:var(--text-secondary);font-size:16px;font-weight:500;text-decoration:none;padding:12px 0">TV Shows</a>
     <a href="youtube.html" style="color:var(--text-secondary);font-size:16px;font-weight:500;text-decoration:none;padding:12px 0">\uD83C\uDFAC CBE Movies</a>
+    ${userLinks}
   `;
   document.body.appendChild(panel);
   lockScroll();

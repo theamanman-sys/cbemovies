@@ -370,6 +370,7 @@ async function fetchAndRender() {
     mState.totalPages = Math.min(data.total_pages || 1, 500);
     mState.totalResults = data.total_results || 0;
     renderGrid(items);
+    setupCardTrailers();
     renderPagination();
     dom.count.textContent = `${mState.totalResults.toLocaleString()} movies found`;
   } catch {
@@ -381,26 +382,166 @@ async function fetchAndRender() {
   }
 }
 
+async function playTrailer(tmdbId, type) {
+  try {
+    const data = await API.tmdbFetch(`/${type}/${tmdbId}/videos`);
+    const videos = data.results || [];
+    const trailer = videos.find(v => v.site === 'YouTube' && (v.type === 'Trailer' || v.type === 'Teaser')) || videos.find(v => v.site === 'YouTube');
+    if (trailer) {
+      openTrailer(trailer.key);
+    } else {
+      alert('No trailer available');
+    }
+  } catch {
+    alert('Failed to load trailer');
+  }
+}
+window.playTrailer = playTrailer;
+
+/* ── Card Trailer Autoplay on Hover ── */
+let _cardYTReady = false;
+let _cardYTLoading = false;
+const _cardPlayers = new Map();
+
+function _loadCardYTAPI(cb) {
+  if (_cardYTReady) { if (cb) cb(); return; }
+  if (_cardYTLoading) { setTimeout(() => _loadCardYTAPI(cb), 200); return; }
+  _cardYTLoading = true;
+  const tag = document.createElement('script');
+  tag.src = 'https://www.youtube.com/iframe_api';
+  tag.onload = () => { _cardYTReady = true; _cardYTLoading = false; if (cb) cb(); };
+  tag.onerror = () => { _cardYTLoading = false; setTimeout(() => _loadCardYTAPI(cb), 1000); };
+  document.head.appendChild(tag);
+}
+window.onYouTubeIframeAPIReady = () => {
+  _cardYTReady = true;
+  _cardYTLoading = false;
+};
+
+function _initCardTrailer(card) {
+  if (_cardPlayers.has(card)) return;
+  const tmdbId = card.dataset.tmdb;
+  const type = card.dataset.type;
+  const wrap = card.querySelector('.browse-card-backdrop-wrap');
+  const playerDiv = wrap.querySelector('.browse-card-trailer-player');
+  if (!playerDiv) return;
+  API.tmdbFetch(`/${type}/${tmdbId}/videos`).then(data => {
+    const videos = data.results || [];
+    const trailer = videos.find(v => v.site === 'YouTube' && (v.type === 'Trailer' || v.type === 'Teaser')) || videos.find(v => v.site === 'YouTube');
+    if (!trailer) return;
+    _loadCardYTAPI(() => {
+      if (!playerDiv.isConnected) return;
+      const ytDiv = document.createElement('div');
+      ytDiv.id = 'card-yt-' + tmdbId;
+      playerDiv.appendChild(ytDiv);
+      playerDiv.style.display = 'block';
+      const backdrop = wrap.querySelector('.browse-card-backdrop');
+      if (backdrop) backdrop.style.opacity = '0';
+      const player = new YT.Player(ytDiv.id, {
+        height: '100%', width: '100%',
+        videoId: trailer.key,
+        playerVars: {
+          autoplay: 1, mute: 1, playsinline: 1,
+          controls: 0, rel: 0, modestbranding: 1,
+          iv_load_policy: 3, loop: 1, playlist: trailer.key
+        },
+        events: {
+          onReady: (e) => {
+            e.target.mute();
+            e.target.playVideo();
+          }
+        }
+      });
+      _cardPlayers.set(card, { player, playerDiv, backdrop, wrap, key: trailer.key });
+      const muteBtn = wrap.querySelector('.browse-card-trailer-mute-btn');
+      if (muteBtn) {
+        muteBtn.style.display = 'flex';
+        muteBtn.dataset.muted = '1';
+        muteBtn.onclick = (e) => {
+          e.stopPropagation();
+          if (muteBtn.dataset.muted === '1') {
+            player.unMute();
+            muteBtn.dataset.muted = '0';
+            muteBtn.textContent = '🔊';
+          } else {
+            player.mute();
+            muteBtn.dataset.muted = '1';
+            muteBtn.textContent = '🔇';
+          }
+        };
+      }
+    });
+  }).catch(() => {});
+}
+
+function _destroyCardPlayer(card) {
+  const entry = _cardPlayers.get(card);
+  if (!entry) return;
+  if (entry.player && entry.player.destroy) entry.player.destroy();
+  if (entry.backdrop) entry.backdrop.style.opacity = '1';
+  if (entry.playerDiv) {
+    entry.playerDiv.innerHTML = '';
+    entry.playerDiv.style.display = 'none';
+  }
+  const muteBtn = entry.wrap?.querySelector('.browse-card-trailer-mute-btn');
+  if (muteBtn) muteBtn.style.display = 'none';
+  _cardPlayers.delete(card);
+}
+
+function setupCardTrailers() {
+  dom.grid.querySelectorAll('.browse-card').forEach(card => {
+    const wrap = card.querySelector('.browse-card-backdrop-wrap');
+    if (!wrap || wrap._trailerListeners) return;
+    wrap._trailerListeners = true;
+    let leaveTimer;
+    wrap.addEventListener('mouseenter', () => {
+      clearTimeout(leaveTimer);
+      _initCardTrailer(card);
+    });
+    wrap.addEventListener('mouseleave', () => {
+      leaveTimer = setTimeout(() => _destroyCardPlayer(card), 500);
+    });
+  });
+}
+
 function renderGrid(items) {
+  _cardPlayers.forEach((entry, card) => {
+    if (entry.player && entry.player.destroy) entry.player.destroy();
+  });
+  _cardPlayers.clear();
   if (!items.length) {
     dom.grid.innerHTML = '<div class="search-empty"><h3>No movies found</h3><p>Try adjusting your filters.</p></div>';
     return;
   }
-  dom.grid.innerHTML = items.map((item, i) => {
+  dom.grid.innerHTML = items.map((item) => {
     const title = escHtml(item.title || '');
-    const year = item.year ? `<span>${escHtml(item.year)}</span>` : '';
-    const rating = item._rating || item.rating;
-    const stars = rating ? `<span class="card-rating">&#11088; ${rating}</span>` : '';
+    const year = item.year || '';
+    const rating = item._rating || (item.rating ? parseFloat(item.rating).toFixed(1) : '0');
     const poster = item._poster || item.poster_url || '';
+    const backdrop = item._backdrop || poster;
+    const genre = item.genre || '';
+    const overview = escHtml(item._overview || '');
     return `
-      <div class="movie-card" data-tmdb="${item.tmdb_id}" data-type="movie" onclick="openMovieDetail(${item.tmdb_id})">
-        <img class="movie-card-poster" src="${poster}" alt="${title}" loading="lazy" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%22300%22 height=%22450%22><rect fill=%22%231a1a2e%22 width=%22300%22 height=%22450%22/><text fill=%22%23666%22 font-size=%2218%22 x=%22150%22 y=%22225%22 text-anchor=%22middle%22>No Image</text></svg>'">
-        ${stars}
-        <div class="movie-card-overlay">
-          <h3>${title}</h3>
-          <div class="meta">${year}</div>
+      <div class="browse-card" data-tmdb="${item.tmdb_id}" data-type="movie" onclick="openMovieDetail(${item.tmdb_id})">
+        <div class="card-rating">★ ${rating}</div>
+        <span class="card-quality hd">HD</span>
+        <div class="browse-card-backdrop-wrap">
+          <img class="browse-card-backdrop" src="${backdrop}" alt="${title}" loading="lazy" onerror="this.style.display='none'">
+          <div class="browse-card-trailer-player"></div>
+          <button class="browse-card-trailer-mute-btn">🔇</button>
+          <button class="browse-card-trailer-btn" onclick="event.stopPropagation();playTrailer(${item.tmdb_id},'movie')">▶ Trailer</button>
+          <button class="play-btn" onclick="event.stopPropagation();openMovieDetail(${item.tmdb_id})">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+          </button>
         </div>
-        <button class="play-btn">&#9654;</button>
+        <div class="browse-card-body">
+          <img class="browse-card-poster" src="${poster}" alt="${title}" loading="lazy" onerror="this.style.display='none'">
+          <div class="browse-card-info">
+            <h3>${title}</h3>
+            <div class="meta"><span>${year}</span>${genre ? `<span>${escHtml(genre)}</span>` : ''}</div>
+            <div class="overview">${overview}</div>
+          </div>
+        </div>
       </div>
     `;
   }).join('');
@@ -463,12 +604,22 @@ function toggleMobileNav() {
   panel.id = 'mobile-nav-panel';
   const navH = document.querySelector('nav')?.offsetHeight || 88;
   panel.style.cssText = `position:fixed;top:${navH}px;left:0;right:0;z-index:999;background:rgba(10,10,15,0.98);backdrop-filter:blur(20px);border-bottom:1px solid var(--glass-border);padding:16px 24px;animation:fadeInUp .2s ease;display:flex;flex-direction:column;gap:12px;max-height:calc(100vh - ${navH}px);overflow-y:auto`;
+  const userLinks = Auth.currentUser && Auth.userDoc ? `
+    <hr style="border-color:var(--glass-border);margin:4px 0">
+    <a href="profile.html" style="color:var(--text-secondary);font-size:16px;font-weight:500;text-decoration:none;padding:12px 0">👤 ${__('Dashboard')}</a>
+    <a href="profile.html#settings" style="color:var(--text-secondary);font-size:16px;font-weight:500;text-decoration:none;padding:12px 0">⚙️ ${__('Settings')}</a>
+    <button style="color:#ff4444;font-size:16px;font-weight:500;background:none;border:none;padding:12px 0;cursor:pointer;font-family:inherit;text-align:left" onclick="Auth.logout();window.location.href='index.html'">🚪 ${__('Sign Out')}</button>
+  ` : `
+    <hr style="border-color:var(--glass-border);margin:4px 0">
+    <a href="login.html" style="color:var(--accent);font-size:16px;font-weight:600;text-decoration:none;padding:12px 0">🔑 ${__('Sign In')}</a>
+  `;
   panel.innerHTML = `
     <a href="home.html" style="color:var(--text-primary);font-size:16px;font-weight:500;text-decoration:none;padding:12px 0">${__('Home')}</a>
     <a href="movies.html" style="color:var(--text-secondary);font-size:16px;font-weight:500;text-decoration:none;padding:12px 0">${__('Movies')}</a>
     <a href="tv.html" style="color:var(--text-secondary);font-size:16px;font-weight:500;text-decoration:none;padding:12px 0">${__('TV Shows')}</a>
     <a href="youtube.html" style="color:var(--text-secondary);font-size:16px;font-weight:500;text-decoration:none;padding:12px 0">\uD83C\uDFAC ${__('CBE Movies')}</a>
     <a href="#" style="color:var(--text-secondary);font-size:16px;font-weight:500;text-decoration:none;padding:12px 0" onclick="openSearch();closeMobileNav();return false">${__('Search')}</a>
+    ${userLinks}
   `;
   document.body.appendChild(panel);
   lockScroll();
