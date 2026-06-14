@@ -340,7 +340,11 @@ function setupModalTrailer(item) {
     if (!dom.modalOverlay.classList.contains('active')) return;
     backdrop.style.display = 'none';
     wrapper.style.display = 'block';
-    wrapper.insertAdjacentHTML('beforeend', '<div style="position:absolute;top:-12px;left:0;right:0;height:56px;background:var(--bg-secondary);z-index:2;pointer-events:none"></div><div style="position:absolute;bottom:0;left:0;right:0;height:48px;background:var(--bg-secondary);z-index:2;pointer-events:none"></div>');
+    wrapper.insertAdjacentHTML('beforeend',
+      '<div class="modal-trailer-cover-top"></div>' +
+      '<div class="modal-trailer-cover-bottom"></div>' +
+      '<button class="browse-card-trailer-mute-btn" style="display:none">🔇</button>'
+    );
     _loadCardYTAPI(() => {
       if (!wrapper.isConnected) return;
       const ytDiv = document.createElement('div');
@@ -362,6 +366,24 @@ function setupModalTrailer(item) {
             }
           }
         });
+        const muteBtn = wrapper.querySelector('.browse-card-trailer-mute-btn');
+        if (muteBtn) {
+          muteBtn.style.display = 'flex';
+          muteBtn.dataset.muted = '1';
+          muteBtn.onclick = (e) => {
+            e.stopPropagation();
+            if (!_modalYTPlayer) return;
+            if (muteBtn.dataset.muted === '1') {
+              _modalYTPlayer.unMute();
+              muteBtn.dataset.muted = '0';
+              muteBtn.textContent = '🔊';
+            } else {
+              _modalYTPlayer.mute();
+              muteBtn.dataset.muted = '1';
+              muteBtn.textContent = '🔇';
+            }
+          };
+        }
       } catch {}
     });
   }, 1000);

@@ -702,6 +702,22 @@ nav.scrolled {
   transition: opacity 0.5s;
   pointer-events: none;
 }
+.modal-trailer-cover-top,
+.modal-trailer-cover-bottom {
+  position: absolute;
+  left: 0; right: 0;
+  z-index: 2;
+}
+.modal-trailer-cover-top {
+  top: -12px;
+  height: 56px;
+  background: var(--bg-secondary);
+}
+.modal-trailer-cover-bottom {
+  bottom: 0;
+  height: 56px;
+  background: var(--bg-secondary);
+}
 
 .modal-body {
   padding: 24px 32px 32px;
@@ -1593,7 +1609,6 @@ footer {
   left: 0; right: 0;
   z-index: 1;
   display: none;
-  pointer-events: none;
 }
 .browse-card-trailer-cover-top {
   top: -12px;
