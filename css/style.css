@@ -1583,6 +1583,53 @@ footer {
 .browse-card-trailer-mute-btn:hover {
   background: rgba(255,148,202,0.4);
 }
+.browse-card-trailer-cover-top,
+.browse-card-trailer-cover-bottom {
+  position: absolute;
+  left: 0; right: 0;
+  z-index: 1;
+  display: none;
+  pointer-events: none;
+}
+.browse-card-trailer-cover-top {
+  top: 0;
+  height: 56px;
+  background: var(--bg-secondary);
+}
+.browse-card-trailer-cover-bottom {
+  bottom: 0;
+  height: 60px;
+  background: linear-gradient(to top, var(--bg-card), transparent);
+}
+.view-toggle {
+  display: flex;
+  gap: 4px;
+  background: rgba(255,255,255,0.06);
+  border-radius: 8px;
+  padding: 3px;
+}
+.view-toggle-btn {
+  width: 36px; height: 36px;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: var(--transition);
+  line-height: 1;
+}
+.view-toggle-btn.active {
+  background: var(--accent);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(145,0,150,0.3);
+}
+.view-toggle-btn:hover:not(.active) {
+  background: rgba(255,255,255,0.08);
+}
 
 @media (max-width: 768px) {
   .browse-grid { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; }

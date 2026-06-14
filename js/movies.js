@@ -1,6 +1,8 @@
 const $ = (s, ctx = document) => ctx.querySelector(s);
 const $$ = (s, ctx = document) => [...ctx.querySelectorAll(s)];
 
+let _cardView = localStorage.getItem('cbemovies_cardview') || 'browse';
+
 const mState = {
   page: 1, totalPages: 1, totalResults: 0,
   genres: [],
@@ -180,12 +182,14 @@ async function openMovieDetail(tmdbId) {
   try {
     const item = await API.enrichItem({ tmdb_id: tmdbId, type: 'movie' });
     renderMovieModal(item);
+    setupModalTrailer(item);
   } catch {
     dom.modal.innerHTML = '<div style="padding:40px;text-align:center;color:var(--text-secondary)">Failed to load details.</div>';
   }
 }
 
 function closeModal() {
+  destroyModalTrailer();
   dom.modalOverlay.classList.remove('active');
   unlockScroll();
 }
@@ -277,6 +281,57 @@ function playFromModal(tmdbId) {
   closeModal();
   const item = { tmdb_id: tmdbId, type: 'movie' };
   openPlayer(item);
+}
+
+/* ── Modal Trailer Autoplay ── */
+let _modalYTPlayer = null;
+
+function setupModalTrailer(item) {
+  const trailer = item._trailer;
+  if (!trailer) return;
+  const backdrop = dom.modal.querySelector('.modal-backdrop');
+  if (!backdrop) return;
+  const wrapper = document.createElement('div');
+  wrapper.style.cssText = 'position:relative;flex:none;width:100%;aspect-ratio:16/9;z-index:5;overflow:hidden;display:none';
+  wrapper.dataset.modalTrailer = '';
+  backdrop.parentNode.insertBefore(wrapper, backdrop.nextSibling);
+  setTimeout(() => {
+    if (!dom.modalOverlay.classList.contains('active')) return;
+    backdrop.style.display = 'none';
+    wrapper.style.display = 'block';
+    _loadCardYTAPI(() => {
+      if (!wrapper.isConnected) return;
+      const ytDiv = document.createElement('div');
+      ytDiv.id = 'modal-yt-' + Date.now();
+      wrapper.appendChild(ytDiv);
+      _modalYTPlayer = new YT.Player(ytDiv.id, {
+        height: '100%', width: '100%',
+        videoId: trailer.key,
+        playerVars: {
+          autoplay: 1, mute: 1, playsinline: 1,
+          controls: 0, rel: 0, modestbranding: 1,
+          iv_load_policy: 3, loop: 1, playlist: trailer.key
+        },
+        events: {
+          onReady: (e) => {
+            e.target.mute();
+            e.target.playVideo();
+          }
+        }
+      });
+    });
+  }, 1000);
+}
+
+function destroyModalTrailer() {
+  const wrapper = dom.modal?.querySelector('[data-modal-trailer]');
+  if (wrapper) wrapper.remove();
+  if (_modalYTPlayer) {
+    try { _modalYTPlayer.destroy(); } catch {}
+    _modalYTPlayer = null;
+  }
+  const backdrop = dom.modal?.querySelector('.modal-backdrop');
+  if (backdrop) backdrop.style.display = '';
 }
 
 /* ── Trailer ── */
@@ -398,6 +453,39 @@ async function playTrailer(tmdbId, type) {
 }
 window.playTrailer = playTrailer;
 
+/* ── View Toggle ── */
+function toggleCardView(view) {
+  _cardView = view;
+  localStorage.setItem('cbemovies_cardview', view);
+  document.querySelectorAll('.view-toggle-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.view === view);
+  });
+  mState.page = 1;
+  fetchAndRender();
+}
+
+function renderClassicCard(item, tmdbType) {
+  const title = escHtml(item.title || '');
+  const year = item.year || '';
+  const rating = item._rating || (item.rating ? parseFloat(item.rating).toFixed(1) : '0');
+  const poster = item._poster || item.poster_url || '';
+  const genre = item.genre || '';
+  return `
+    <div class="movie-card" data-tmdb="${item.tmdb_id}" data-type="${tmdbType}" onclick="${tmdbType === 'movie' ? 'openMovieDetail' : 'openTVDetail'}(${item.tmdb_id})">
+      <div class="card-rating">★ ${rating}</div>
+      <span class="card-quality hd">HD</span>
+      <img class="movie-card-poster" src="${poster}" alt="${title}" loading="lazy" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%27300%27 height=%27450%27 fill=%27%231a1a2e%27%3E%3Crect width=%27300%27 height=%27450%27/%3E%3Ctext x=%2750%%25%27 y=%2750%%25%27 text-anchor=%27middle%27 fill=%27%23a0a0b8%27 font-size=%2716%27%3E${title[0] || '?'}%3C/text%3E%3C/svg%3E'">
+      <button class="play-btn" onclick="event.stopPropagation();${tmdbType === 'movie' ? 'openMovieDetail' : 'openTVDetail'}(${item.tmdb_id})">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+      </button>
+      <div class="movie-card-overlay">
+        <h3>${title}</h3>
+        <div class="meta"><span>${year}</span>${genre ? `<span>${escHtml(genre)}</span>` : ''}</div>
+      </div>
+    </div>
+  `;
+}
+
 /* ── Card Trailer Autoplay on Hover ── */
 let _cardYTReady = false;
 let _cardYTLoading = false;
@@ -452,7 +540,11 @@ function _initCardTrailer(card) {
           }
         }
       });
-      _cardPlayers.set(card, { player, playerDiv, backdrop, wrap, key: trailer.key });
+      const topCover = wrap.querySelector('.browse-card-trailer-cover-top');
+      const bottomCover = wrap.querySelector('.browse-card-trailer-cover-bottom');
+      if (topCover) topCover.style.display = 'block';
+      if (bottomCover) bottomCover.style.display = 'block';
+      _cardPlayers.set(card, { player, playerDiv, backdrop, wrap, key: trailer.key, topCover, bottomCover });
       const muteBtn = wrap.querySelector('.browse-card-trailer-mute-btn');
       if (muteBtn) {
         muteBtn.style.display = 'flex';
@@ -483,6 +575,8 @@ function _destroyCardPlayer(card) {
     entry.playerDiv.innerHTML = '';
     entry.playerDiv.style.display = 'none';
   }
+  if (entry.topCover) entry.topCover.style.display = 'none';
+  if (entry.bottomCover) entry.bottomCover.style.display = 'none';
   const muteBtn = entry.wrap?.querySelector('.browse-card-trailer-mute-btn');
   if (muteBtn) muteBtn.style.display = 'none';
   _cardPlayers.delete(card);
@@ -513,6 +607,10 @@ function renderGrid(items) {
     dom.grid.innerHTML = '<div class="search-empty"><h3>No movies found</h3><p>Try adjusting your filters.</p></div>';
     return;
   }
+  if (_cardView === 'classic') {
+    dom.grid.innerHTML = items.map(item => renderClassicCard(item, 'movie')).join('');
+    return;
+  }
   dom.grid.innerHTML = items.map((item) => {
     const title = escHtml(item.title || '');
     const year = item.year || '';
@@ -528,6 +626,8 @@ function renderGrid(items) {
         <div class="browse-card-backdrop-wrap">
           <img class="browse-card-backdrop" src="${backdrop}" alt="${title}" loading="lazy" onerror="this.style.display='none'">
           <div class="browse-card-trailer-player"></div>
+          <div class="browse-card-trailer-cover-top"></div>
+          <div class="browse-card-trailer-cover-bottom"></div>
           <button class="browse-card-trailer-mute-btn">🔇</button>
           <button class="browse-card-trailer-btn" onclick="event.stopPropagation();playTrailer(${item.tmdb_id},'movie')">▶ Trailer</button>
           <button class="play-btn" onclick="event.stopPropagation();openMovieDetail(${item.tmdb_id})">
@@ -661,6 +761,11 @@ function toggleLang() {
   document.querySelector('.lang-switch').textContent = i18n.current === 'am' ? '\u12A0\u121B' : 'EN';
   document.addEventListener('click', (e) => {
     if (e.target.closest('.mobile-menu-btn')) toggleMobileNav();
+    const viewBtn = e.target.closest('.view-toggle-btn');
+    if (viewBtn) toggleCardView(viewBtn.dataset.view);
+  });
+  document.querySelectorAll('.view-toggle-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.view === _cardView);
   });
   mState.genres = await API.getMovieGenres();
   populateFilters();
