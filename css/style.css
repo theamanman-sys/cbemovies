@@ -736,7 +736,8 @@ nav.scrolled {
   .player-page .player-fs-btn svg { width: 44px; height: 44px; }
 }
 @media (max-width: 1024px) {
-  .player-page .player-fs-btn { right: 16px; }
+  .player-page .player-fs-btn { right: 12px; bottom: 12px; width: 48px; height: 48px; }
+  .player-page .player-fs-btn svg { width: 26px; height: 26px; }
 }
 
 /* ── Subtitle Controls ── */

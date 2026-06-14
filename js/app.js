@@ -2028,6 +2028,17 @@ function scrollCarousel(container, dir) {
 window.scrollCarousel = scrollCarousel;
 
 /* ── Mobile Nav ── */
+function scrollToSection(name) {
+  closeMobileNav();
+  if (name === '.hero') { document.querySelector('.hero')?.scrollIntoView({ behavior: 'smooth' }); return; }
+  if (name === 'youtube') { window.location.href = 'youtube.html'; return; }
+  const sections = document.querySelectorAll('.section');
+  const map = { trending: 0, nowPlaying: 2, latest: 3, popular: 6 };
+  const idx = map[name];
+  if (idx !== undefined && sections[idx]) sections[idx].scrollIntoView({ behavior: 'smooth' });
+}
+window.scrollToSection = scrollToSection;
+
 function toggleMobileNav() {
   let panel = $('#mobile-nav-panel');
   if (panel) { closeMobileNav(); return; }
