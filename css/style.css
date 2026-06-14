@@ -1041,6 +1041,7 @@ nav.scrolled {
 
 .player-sidebar-btn { display: none; }
 .ps-close-btn { display: none; }
+.player-sidebar.active,
 .player-sidebar.mobile-open {
   display: block;
   position: fixed; top: 0; right: 0; bottom: 0; z-index: 5000;
@@ -1048,6 +1049,7 @@ nav.scrolled {
   border-left: 1px solid var(--glass-border); padding: 24px; overflow-y: auto;
   animation: slideInRight .25s ease;
 }
+.player-sidebar.active .ps-close-btn,
 .player-sidebar.mobile-open .ps-close-btn {
   display: flex; align-items: center; justify-content: center;
   position: absolute; top: 12px; right: 12px; z-index: 1;
@@ -1055,7 +1057,9 @@ nav.scrolled {
   border-radius: 50%; color: #fff; font-size: 16px; cursor: pointer;
   transition: background .2s;
 }
+.player-sidebar.active .ps-close-btn:hover,
 .player-sidebar.mobile-open .ps-close-btn:hover { background: var(--accent); }
+.player-sidebar.active + .player-sidebar-overlay,
 .player-sidebar.mobile-open + .player-sidebar-overlay {
   display: block;
 }
@@ -1520,7 +1524,7 @@ footer {
 }
 .browse-card-trailer-btn {
   position: absolute;
-  bottom: 8px; right: 8px;
+  bottom: 8px; left: 8px;
   z-index: 3;
   background: rgba(0,0,0,0.7);
   backdrop-filter: blur(8px);
@@ -1594,12 +1598,12 @@ footer {
 .browse-card-trailer-cover-top {
   top: -12px;
   height: 56px;
-  background: var(--bg-secondary);
+  background: var(--bg-card);
 }
 .browse-card-trailer-cover-bottom {
   bottom: 0;
   height: 48px;
-  background: #0a0a0f;
+  background: var(--bg-card);
 }
 .view-toggle {
   display: flex;

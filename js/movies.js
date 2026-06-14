@@ -85,15 +85,56 @@ function togglePlayerSidebar() {
 }
 
 function renderPlayerSidebar(item) {
+  const title = mDisplayTitle(item);
+  const poster = item._poster || item.poster_url || '';
+  const rating = mDisplayRating(item);
+  const year = mDisplayYear(item);
+  const genres = mDisplayGenres(item);
+  const overview = mDisplayOverview(item);
+  const cast = item._cast || [];
+  const director = item._director;
+
+  const facts = [
+    { label: 'Rating', value: `\u2605 ${rating}` },
+    { label: 'Year', value: year },
+    { label: 'Status', value: item._status || '\u2014' },
+    { label: 'Language', value: item._originalLanguage || '\u2014' },
+  ];
+  if (item._runtime) facts.push({ label: 'Runtime', value: `${Math.floor(item._runtime / 60)}h ${item._runtime % 60}m` });
+  if (director) facts.push({ label: 'Director', value: director });
+
   return `
-    <div style="padding:20px">
-      <h2 style="font-size:18px;margin-bottom:8px">${escHtml(item.title)}</h2>
-      <p style="font-size:13px;color:var(--text-secondary);margin-bottom:12px">${escHtml(item._overview || '')}</p>
-      <div style="font-size:12px;color:var(--text-secondary)">
-        ${item._rating ? `<span>&#11088; ${item._rating}</span>` : ''}
-        ${item.year ? `<span style="margin-left:12px">${item.year}</span>` : ''}
+    <div class="ps-header">
+      <img class="ps-poster" src="${poster}" alt="${title}" loading="lazy" onerror="this.style.display='none'">
+      <div>
+        <h3>${title}</h3>
+        <div class="meta">${year} ${genres !== 'General' ? `\u2022 ${escHtml(genres)}` : ''}</div>
+        <div class="meta" style="margin-bottom:0"><span class="rating">\u2605 ${rating}</span></div>
       </div>
     </div>
+    ${overview ? `<p class="ps-overview">${escHtml(overview)}</p>` : ''}
+    <div class="facts-grid" style="margin-bottom:12px">
+      ${facts.map(f => `
+        <div class="fact-item">
+          <div class="fact-label">${escHtml(f.label)}</div>
+          <div class="fact-value">${escHtml(f.value)}</div>
+        </div>
+      `).join('')}
+    </div>
+    ${cast.length ? `
+      <div class="ps-section">
+        <h4>Cast (${cast.length})</h4>
+        <div class="cast-scroll" style="display:flex;gap:6px;overflow-x:auto;padding-bottom:4px">
+          ${cast.slice(0, 8).map(c => `
+            <div class="cast-card" style="flex:0 0 60px">
+              <img src="${c.photo || ''}" alt="${escHtml(c.name)}" loading="lazy" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2764%27 height=%2764%27 fill=%27%231a1a2e%27%3E%3Crect width=%2764%27 height=%2764%27 rx=%2732%27/%3E%3Ctext x=%2732%27 y=%2732%27 text-anchor=%27middle%27 dy=%27.3em%27 fill=%27%23a0a0b8%27 font-size=%2718%27%3E${escHtml(c.name[0] || '?')}%3C/text%3E%3C/svg%3E'">
+              <div class="name">${escHtml(c.name)}</div>
+              <div class="role">${escHtml(c.character || '')}</div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    ` : ''}
   `;
 }
 
@@ -299,27 +340,29 @@ function setupModalTrailer(item) {
     if (!dom.modalOverlay.classList.contains('active')) return;
     backdrop.style.display = 'none';
     wrapper.style.display = 'block';
-    wrapper.insertAdjacentHTML('beforeend', '<div style="position:absolute;top:-12px;left:0;right:0;height:56px;background:var(--bg-secondary);z-index:2;pointer-events:none"></div><div style="position:absolute;bottom:0;left:0;right:0;height:48px;background:#0a0a0f;z-index:2;pointer-events:none"></div>');
+    wrapper.insertAdjacentHTML('beforeend', '<div style="position:absolute;top:-12px;left:0;right:0;height:56px;background:var(--bg-secondary);z-index:2;pointer-events:none"></div><div style="position:absolute;bottom:0;left:0;right:0;height:48px;background:var(--bg-secondary);z-index:2;pointer-events:none"></div>');
     _loadCardYTAPI(() => {
       if (!wrapper.isConnected) return;
       const ytDiv = document.createElement('div');
       ytDiv.id = 'modal-yt-' + Date.now();
       wrapper.appendChild(ytDiv);
-      _modalYTPlayer = new YT.Player(ytDiv.id, {
-        height: '100%', width: '100%',
-        videoId: trailer.key,
-        playerVars: {
-          autoplay: 1, mute: 1, playsinline: 1,
-          controls: 0, rel: 0, modestbranding: 1,
-          iv_load_policy: 3, loop: 1, playlist: trailer.key
-        },
-        events: {
-          onReady: (e) => {
-            e.target.mute();
-            e.target.playVideo();
+      try {
+        _modalYTPlayer = new YT.Player(ytDiv.id, {
+          height: '100%', width: '100%',
+          videoId: trailer.key,
+          playerVars: {
+            autoplay: 1, mute: 1, playsinline: 1,
+            controls: 0, rel: 0, modestbranding: 1,
+            iv_load_policy: 3, loop: 1, playlist: trailer.key
+          },
+          events: {
+            onReady: (e) => {
+              e.target.mute();
+              e.target.playVideo();
+            }
           }
-        }
-      });
+        });
+      } catch {}
     });
   }, 1000);
 }
@@ -526,21 +569,25 @@ function _initCardTrailer(card) {
       playerDiv.style.display = 'block';
       const backdrop = wrap.querySelector('.browse-card-backdrop');
       if (backdrop) backdrop.style.opacity = '0';
-      const player = new YT.Player(ytDiv.id, {
-        height: '100%', width: '100%',
-        videoId: trailer.key,
-        playerVars: {
-          autoplay: 1, mute: 1, playsinline: 1,
-          controls: 0, rel: 0, modestbranding: 1,
-          iv_load_policy: 3, loop: 1, playlist: trailer.key
-        },
-        events: {
-          onReady: (e) => {
-            e.target.mute();
-            e.target.playVideo();
+      let player;
+      try {
+        player = new YT.Player(ytDiv.id, {
+          height: '100%', width: '100%',
+          videoId: trailer.key,
+          playerVars: {
+            autoplay: 1, mute: 1, playsinline: 1,
+            controls: 0, rel: 0, modestbranding: 1,
+            iv_load_policy: 3, loop: 1, playlist: trailer.key
+          },
+          events: {
+            onReady: (e) => {
+              e.target.mute();
+              e.target.playVideo();
+            }
           }
-        }
-      });
+        });
+      } catch {}
+      if (!player) return;
       const topCover = wrap.querySelector('.browse-card-trailer-cover-top');
       const bottomCover = wrap.querySelector('.browse-card-trailer-cover-bottom');
       if (topCover) topCover.style.display = 'block';
