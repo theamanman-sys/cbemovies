@@ -43,7 +43,7 @@
         </div>
       </div>
       <a href="login.html" class="nav-login-btn" id="nav-login-btn" style="display:none">Sign In</a>
-      <button class="mobile-menu-btn" onclick="toggleMobileNav()">☰</button>
+      <button class="mobile-menu-btn">☰</button>
     </div>
   </nav>
 
@@ -207,6 +207,9 @@
   const $ = id => document.getElementById(id);
   let userDoc = null;
 
+  function lockScroll() { document.body.style.overflow = 'hidden'; }
+  function unlockScroll() { document.body.style.overflow = ''; }
+
   function toggleMobileNav() {
     let panel = document.getElementById('mobile-nav-panel');
     if (panel) { closeMobileNav(); return; }
@@ -236,17 +239,19 @@
       ${userLinks}
     `;
     document.body.appendChild(panel);
+    lockScroll();
   }
   function closeMobileNav() {
     document.getElementById('mobile-nav-panel')?.remove();
     document.getElementById('mobile-nav-overlay')?.remove();
+    unlockScroll();
   }
-  document.addEventListener('click', function(e) {
+  document.addEventListener('click', (e) => {
+    if (e.target.closest('.mobile-menu-btn')) toggleMobileNav();
     const panel = document.getElementById('mobile-nav-panel');
-    if (!panel) return;
-    const link = e.target.closest('a, button');
-    if (link && panel.contains(link)) {
-      setTimeout(closeMobileNav, 100);
+    if (panel) {
+      const link = e.target.closest('a, button');
+      if (link && panel.contains(link)) closeMobileNav();
     }
   });
   window.toggleMobileNav = toggleMobileNav;
