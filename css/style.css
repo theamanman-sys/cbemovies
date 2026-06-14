@@ -700,7 +700,7 @@ nav.scrolled {
 
 .player-page:fullscreen .player-nav { padding: 12px 24px; }
 .player-page:fullscreen .player-sidebar { display: none; }
-.player-page:fullscreen .player-fs-btn { right: 12px; bottom: 0; }
+.player-page:fullscreen .player-fs-btn { right: 6px; bottom: 0; }
 
 .player-nav {
   display: flex; align-items: center; justify-content: space-between;
