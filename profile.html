@@ -56,11 +56,11 @@
       <p class="profile-email" id="profile-email"></p>
       <span class="profile-role-badge" id="profile-role-badge">User</span>
       <nav class="profile-nav">
-        <button class="profile-nav-item active" data-tab="account">My Account</button>
-        <button class="profile-nav-item" data-tab="subscription">Subscription</button>
-        <button class="profile-nav-item" data-tab="watchlist">Watchlist</button>
-        <button class="profile-nav-item" data-tab="history">History</button>
-        <button class="profile-nav-item" data-tab="settings">Settings</button>
+        <button class="profile-nav-item active" data-tab="account"><span class="pnav-icon">👤</span> My Account</button>
+        <button class="profile-nav-item" data-tab="subscription"><span class="pnav-icon">💳</span> Subscription</button>
+        <button class="profile-nav-item" data-tab="watchlist"><span class="pnav-icon">🤍</span> Watchlist</button>
+        <button class="profile-nav-item" data-tab="history"><span class="pnav-icon">🕐</span> History</button>
+        <button class="profile-nav-item" data-tab="settings"><span class="pnav-icon">⚙️</span> Settings</button>
       </nav>
       <button class="auth-btn logout-btn" id="logout-btn">Sign Out</button>
     </div>
@@ -292,9 +292,9 @@
       trigger.classList.remove('open');
     }
   });
-  document.getElementById('nav-logout-btn')?.addEventListener('click', function() {
-    auth.signOut();
-    window.location.href = 'index.html';
+  document.getElementById('nav-logout-btn')?.addEventListener('click', async function() {
+    await Auth.logout();
+    window.location.href = 'home.html';
   });
 
   Auth.onAuthStateChanged(async (user, doc) => {
@@ -336,13 +336,20 @@
     document.querySelectorAll('.profile-tab').forEach(t => t.classList.remove('active'));
     document.querySelector(`.profile-nav-item[data-tab="${name}"]`)?.classList.add('active');
     $('tab-' + name)?.classList.add('active');
+    if (location.hash !== '#' + name) history.replaceState(null, '', '#' + name);
   }
 
   document.querySelectorAll('.profile-nav-item').forEach(btn => {
     btn.addEventListener('click', () => switchTab(btn.dataset.tab));
   });
 
-  if (location.hash === '#subscription') switchTab('subscription');
+  window.addEventListener('hashchange', () => {
+    const tab = location.hash.replace('#', '') || 'account';
+    switchTab(tab);
+  });
+
+  const initialTab = location.hash.replace('#', '') || 'account';
+  switchTab(initialTab);
 
   /* Save Profile */
   $('save-profile-btn').addEventListener('click', async () => {

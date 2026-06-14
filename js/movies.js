@@ -7,7 +7,7 @@ const mState = {
   page: 1, totalPages: 1, totalResults: 0,
   genres: [],
   filters: { with_genres: '', primary_release_year: '', sort_by: 'popularity.desc', 'vote_average.gte': '', 'vote_count.gte': '' },
-  loading: false, currentItem: null
+  loading: false, currentItem: null, playerSimilarItems: null
 };
 
 const dom = {};
@@ -50,18 +50,28 @@ function showToast(msg, duration = 3000) {
 }
 
 /* ── Player ── */
-function openPlayer(item) {
+async function openPlayer(item) {
   if (!Auth.currentUser || !Auth.userDoc?.subscribed) {
     showToast('Subscribe to watch', 'success');
     setTimeout(() => window.location.href = 'profile.html', 1500);
     return;
   }
   mState.currentItem = item;
+  mState.playerSimilarItems = null;
   const url = API.getPlayerUrl(item);
   dom.playerFrame.src = url;
   dom.playerPage.classList.remove('hidden');
   dom.playerSidebarContent.innerHTML = renderPlayerSidebar(item);
   unlockScroll();
+  try {
+    const enriched = await API.enrichItem({ tmdb_id: item.tmdb_id, type: item.type || 'movie' });
+    Object.assign(item, enriched);
+    const similar = await loadPlayerSimilar(item);
+    mState.playerSimilarItems = similar;
+    if (mState.currentItem?._id === item._id || mState.currentItem?.tmdb_id === item.tmdb_id) {
+      dom.playerSidebarContent.innerHTML = renderPlayerSidebar(item);
+    }
+  } catch {}
 }
 
 function closePlayer() {
@@ -84,6 +94,15 @@ function togglePlayerSidebar() {
   if (sb) sb.classList.toggle('active');
 }
 
+async function loadPlayerSimilar(item) {
+  if (!item?.tmdb_id) return [];
+  try {
+    const isTV = item.type === 'tv';
+    const items = isTV ? await API.getSimilarTV(item.tmdb_id) : await API.getSimilarMovies(item.tmdb_id);
+    return (items || []).slice(0, 10);
+  } catch { return []; }
+}
+
 function renderPlayerSidebar(item) {
   const title = mDisplayTitle(item);
   const poster = item._poster || item.poster_url || '';
@@ -92,44 +111,42 @@ function renderPlayerSidebar(item) {
   const genres = mDisplayGenres(item);
   const overview = mDisplayOverview(item);
   const cast = item._cast || [];
-  const director = item._director;
-
-  const facts = [
-    { label: 'Rating', value: `\u2605 ${rating}` },
-    { label: 'Year', value: year },
-    { label: 'Status', value: item._status || '\u2014' },
-    { label: 'Language', value: item._originalLanguage || '\u2014' },
-  ];
-  if (item._runtime) facts.push({ label: 'Runtime', value: `${Math.floor(item._runtime / 60)}h ${item._runtime % 60}m` });
-  if (director) facts.push({ label: 'Director', value: director });
+  const trailer = item._trailer;
+  const isTV = item.type === 'tv';
+  const similar = mState.playerSimilarItems || [];
 
   return `
     <div class="ps-header">
-      <img class="ps-poster" src="${poster}" alt="${title}" loading="lazy" onerror="this.style.display='none'">
+      ${poster ? `<img class="ps-poster" src="${poster}" alt="" loading="lazy" onerror="this.style.display='none'">` : ''}
       <div>
         <h3>${title}</h3>
-        <div class="meta">${year} ${genres !== 'General' ? `\u2022 ${escHtml(genres)}` : ''}</div>
-        <div class="meta" style="margin-bottom:0"><span class="rating">\u2605 ${rating}</span></div>
+        <div class="meta">${year} · ${escHtml(genres)} · ★ ${rating}${isTV ? ' · S' + (item._season || 1) + ' E' + (item._episode || 1) : ''}</div>
       </div>
     </div>
     ${overview ? `<p class="ps-overview">${escHtml(overview)}</p>` : ''}
-    <div class="facts-grid" style="margin-bottom:12px">
-      ${facts.map(f => `
-        <div class="fact-item">
-          <div class="fact-label">${escHtml(f.label)}</div>
-          <div class="fact-value">${escHtml(f.value)}</div>
-        </div>
-      `).join('')}
-    </div>
+    ${trailer ? `<button class="btn btn-outline ps-trailer-btn" onclick="playTrailer(${item.tmdb_id},'${item.type || 'movie'}')">▶ Trailer</button>` : ''}
     ${cast.length ? `
       <div class="ps-section">
         <h4>Cast (${cast.length})</h4>
-        <div class="cast-scroll" style="display:flex;gap:6px;overflow-x:auto;padding-bottom:4px">
+        <div class="cast-scroll">
           ${cast.slice(0, 8).map(c => `
-            <div class="cast-card" style="flex:0 0 60px">
+            <div class="cast-card">
               <img src="${c.photo || ''}" alt="${escHtml(c.name)}" loading="lazy" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2764%27 height=%2764%27 fill=%27%231a1a2e%27%3E%3Crect width=%2764%27 height=%2764%27 rx=%2732%27/%3E%3Ctext x=%2732%27 y=%2732%27 text-anchor=%27middle%27 dy=%27.3em%27 fill=%27%23a0a0b8%27 font-size=%2718%27%3E${escHtml(c.name[0] || '?')}%3C/text%3E%3C/svg%3E'">
               <div class="name">${escHtml(c.name)}</div>
               <div class="role">${escHtml(c.character || '')}</div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    ` : ''}
+    ${similar.length ? `
+      <div class="ps-section">
+        <h4>Similar Titles</h4>
+        <div class="ps-similar-scroll">
+          ${similar.map(s => `
+            <div class="ps-similar-card" onclick="openPlayer({tmdb_id:${s.tmdb_id},type:'${s.type || 'movie'}'})">
+              <img src="${s.poster_url || ''}" alt="${escHtml(s.title || '')}" loading="lazy" onerror="this.parentElement.style.display='none'">
+              <span>${escHtml(s.title || '')}</span>
             </div>
           `).join('')}
         </div>
@@ -318,10 +335,14 @@ function renderMovieModal(item) {
   `;
 }
 
-function playFromModal(tmdbId) {
+function playFromModal(tmdbId, type) {
   closeModal();
-  const item = { tmdb_id: tmdbId, type: 'movie' };
+  const item = { tmdb_id: tmdbId, type: type || 'movie' };
   openPlayer(item);
+}
+
+function openTVDetail(tmdbId) {
+  openPlayer({ tmdb_id: tmdbId, type: 'tv' });
 }
 
 /* ── Modal Trailer Autoplay ── */
