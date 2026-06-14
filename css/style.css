@@ -606,6 +606,7 @@ nav.scrolled {
   padding: 80px 48px;
   opacity: 0; visibility: hidden;
   transition: var(--transition);
+  min-height: 0;
 }
 .search-overlay.active { opacity: 1; visibility: visible; }
 
@@ -675,6 +676,7 @@ nav.scrolled {
   gap: 16px;
   overflow-y: auto;
   flex: 1;
+  min-height: 0;
 }
 
 .search-results .movie-card {
