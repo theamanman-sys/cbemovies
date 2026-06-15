@@ -36,9 +36,21 @@
 
       <div class="auth-divider"><span>or</span></div>
 
+      <button class="auth-btn auth-btn-phone" id="cbe-superapp-btn">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M17 1.01L7 1c-1.1 0-2 .9-2 2v18c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V3c0-1.1-.9-1.99-2-1.99zM17 19H7V5h10v14z"/></svg>
+        Login with CBE SuperApp
+      </button>
+
+      <div id="cbe-superapp-loading" style="display:none" class="auth-superapp-loading">
+        <div class="superapp-spinner"></div>
+        <p>Connecting to CBE SuperApp...</p>
+      </div>
+
+      <div class="auth-divider"><span>or</span></div>
+
       <button class="auth-btn auth-btn-phone" id="cbe-login-btn">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M17 1.01L7 1c-1.1 0-2 .9-2 2v18c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V3c0-1.1-.9-1.99-2-1.99zM17 19H7V5h10v14z"/></svg>
-        Login with CBE Super App
+        Login with Phone (OTP)
       </button>
 
       <div id="phone-auth-section" style="display:none">
@@ -67,6 +79,7 @@
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
   <script src="js/firebase-config.js"></script>
   <script src="js/auth.js"></script>
+  <script src="js/cbe-superapp.js"></script>
   <script>
   const $ = id => document.getElementById(id);
   const form = $('login-form');
@@ -117,7 +130,41 @@
     if (user) window.location.href = 'home.html';
   });
 
-  /* CBE Super App - Phone Auth */
+  /* ── CBE SuperApp Login ── */
+  const superappBtn = $('cbe-superapp-btn');
+  const superappLoading = $('cbe-superapp-loading');
+
+  if (CbeSuperApp.isAvailable()) {
+    superappBtn.style.display = 'flex';
+  } else {
+    superappBtn.style.display = 'none';
+  }
+
+  superappBtn.addEventListener('click', async () => {
+    superappBtn.style.display = 'none';
+    superappLoading.style.display = 'block';
+    errorEl.textContent = '';
+    try {
+      const accessToken = await CbeSuperApp.fetchAccessToken();
+      if (!accessToken) throw new Error('Could not get access token from SuperApp');
+      const res = await fetch('/api/cbe-auth', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ accessToken })
+      });
+      const data = await res.json();
+      if (!data.success) throw new Error(data.error || 'Auth failed');
+      await auth.signInWithCustomToken(data.customToken);
+      window.location.href = 'home.html';
+    } catch (err) {
+      errorEl.textContent = err.message;
+      showToast(err.message);
+      superappBtn.style.display = 'flex';
+      superappLoading.style.display = 'none';
+    }
+  });
+
+  /* ── CBE Phone Auth (OTP fallback) ── */
   let recaptchaVerifier;
   let confirmationResult;
   const cbeBtn = $('cbe-login-btn');

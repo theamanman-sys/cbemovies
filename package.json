@@ -4,6 +4,8 @@
   "private": true,
   "dependencies": {
     "adm-zip": "^0.5.16",
-    "firebase-admin": "^14.0.0"
+    "base64-js": "^1.5.1",
+    "firebase-admin": "^14.0.0",
+    "tweetnacl": "^1.0.3"
   }
 }

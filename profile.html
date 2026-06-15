@@ -36,6 +36,8 @@
             <div class="email" id="dropdown-email"></div>
           </div>
           <a href="profile.html"><span class="dropdown-icon">📺</span> Dashboard</a>
+          <a href="profile.html#watchlist"><span class="dropdown-icon">🤍</span> Watchlist</a>
+          <a href="profile.html#history"><span class="dropdown-icon">🕐</span> History</a>
           <a href="profile.html#subscription"><span class="dropdown-icon">💳</span> Subscription</a>
           <a href="profile.html#settings"><span class="dropdown-icon">⚙️</span> Settings</a>
           <div class="dropdown-divider"></div>
@@ -50,20 +52,25 @@
   <div style="height:88px"></div>
 
   <main class="profile-page">
-    <div class="profile-sidebar" id="profile-sidebar">
-      <div class="profile-avatar" id="profile-avatar">U</div>
-      <h2 id="profile-name">User</h2>
-      <p class="profile-email" id="profile-email"></p>
-      <span class="profile-role-badge" id="profile-role-badge">User</span>
-      <nav class="profile-nav">
-        <button class="profile-nav-item active" data-tab="account"><span class="pnav-icon">👤</span> My Account</button>
-        <button class="profile-nav-item" data-tab="subscription"><span class="pnav-icon">💳</span> Subscription</button>
-        <button class="profile-nav-item" data-tab="watchlist"><span class="pnav-icon">🤍</span> Watchlist</button>
-        <button class="profile-nav-item" data-tab="history"><span class="pnav-icon">🕐</span> History</button>
-        <button class="profile-nav-item" data-tab="settings"><span class="pnav-icon">⚙️</span> Settings</button>
-      </nav>
-      <button class="auth-btn logout-btn" id="logout-btn">Sign Out</button>
+    <div class="profile-topbar">
+      <div class="profile-topbar-left">
+        <div class="profile-avatar" id="profile-avatar">U</div>
+        <div>
+          <h2 id="profile-name">User</h2>
+          <p class="profile-email" id="profile-email"></p>
+        </div>
+        <span class="profile-role-badge" id="profile-role-badge">User</span>
+      </div>
+      <button class="auth-btn logout-btn-top" id="logout-btn">Sign Out</button>
     </div>
+
+    <nav class="profile-tabs-nav">
+      <button class="profile-tab-btn active" data-tab="account">👤 My Account</button>
+      <button class="profile-tab-btn" data-tab="subscription">💳 Subscription</button>
+      <button class="profile-tab-btn" data-tab="watchlist">🤍 Watchlist</button>
+      <button class="profile-tab-btn" data-tab="history">🕐 History</button>
+      <button class="profile-tab-btn" data-tab="settings">⚙️ Settings</button>
+    </nav>
 
     <div class="profile-content">
 
@@ -129,12 +136,28 @@
         <div id="payment-info" style="display:none">
           <div class="profile-card">
             <h3>Payment</h3>
-            <p>Send <strong id="pay-amount">299 ETB</strong> via CBE Birr to the following account:</p>
+            <p>Amount: <strong id="pay-amount">299 ETB</strong></p>
+
+            <div id="cbe-superapp-pay-section">
+              <p style="margin-bottom:12px;font-size:14px;color:var(--text-secondary)">Pay securely via CBE SuperApp:</p>
+              <button class="auth-btn" id="superapp-pay-btn" style="display:flex;align-items:center;justify-content:center;gap:8px">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M17 1.01L7 1c-1.1 0-2 .9-2 2v18c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V3c0-1.1-.9-1.99-2-1.99zM17 19H7V5h10v14z"/></svg>
+                Pay with CBE SuperApp
+              </button>
+            </div>
+
+            <div id="cbe-superapp-pay-loading" style="display:none" class="auth-superapp-loading">
+              <div class="superapp-spinner"></div>
+              <p>Processing payment in CBE SuperApp...</p>
+            </div>
+
+            <hr style="border-color:var(--glass-border);margin:16px 0">
+
+            <p style="font-size:14px;color:var(--text-secondary)">Or send via CBE Birr and enter the reference below:</p>
             <div class="cbe-pay-info">
               <p>CBE Account: <strong>1000123456789</strong></p>
               <p>Name: <strong>CBE Movies Subscription</strong></p>
             </div>
-            <p style="margin-top:12px;font-size:14px;color:var(--text-secondary)">After payment, enter your transaction reference below:</p>
             <div class="form-group">
               <input type="text" id="payment-ref" placeholder="Transaction reference number">
             </div>
@@ -203,6 +226,7 @@
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
   <script src="js/firebase-config.js"></script>
   <script src="js/auth.js"></script>
+  <script src="js/cbe-superapp.js"></script>
   <script>
   const $ = id => document.getElementById(id);
   let userDoc = null;
@@ -225,6 +249,8 @@
     const userLinks = Auth.currentUser && Auth.userDoc ? `
       <hr style="border-color:var(--glass-border);margin:4px 0">
       <a href="profile.html" style="color:var(--text-secondary);font-size:16px;font-weight:500;text-decoration:none;padding:12px 0">👤 Dashboard</a>
+      <a href="profile.html#watchlist" style="color:var(--text-secondary);font-size:16px;font-weight:500;text-decoration:none;padding:12px 0">🤍 Watchlist</a>
+      <a href="profile.html#history" style="color:var(--text-secondary);font-size:16px;font-weight:500;text-decoration:none;padding:12px 0">🕐 History</a>
       <a href="profile.html#settings" style="color:var(--text-secondary);font-size:16px;font-weight:500;text-decoration:none;padding:12px 0">⚙️ Settings</a>
       <button style="color:#ff4444;font-size:16px;font-weight:500;background:none;border:none;padding:12px 0;cursor:pointer;font-family:inherit;text-align:left" onclick="Auth.logout();window.location.href='index.html'">🚪 Sign Out</button>
     ` : `
@@ -345,14 +371,14 @@
   }
 
   function switchTab(name) {
-    document.querySelectorAll('.profile-nav-item').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.profile-tab-btn').forEach(b => b.classList.remove('active'));
     document.querySelectorAll('.profile-tab').forEach(t => t.classList.remove('active'));
-    document.querySelector(`.profile-nav-item[data-tab="${name}"]`)?.classList.add('active');
+    document.querySelector(`.profile-tab-btn[data-tab="${name}"]`)?.classList.add('active');
     $('tab-' + name)?.classList.add('active');
     if (location.hash !== '#' + name) history.replaceState(null, '', '#' + name);
   }
 
-  document.querySelectorAll('.profile-nav-item').forEach(btn => {
+  document.querySelectorAll('.profile-tab-btn').forEach(btn => {
     btn.addEventListener('click', () => switchTab(btn.dataset.tab));
   });
 
@@ -417,6 +443,67 @@
       $('payment-info').style.display = 'block';
       $('payment-info').dataset.plan = plan;
     });
+  });
+
+  /* ── CBE SuperApp Payment ── */
+  const superappPayBtn = $('superapp-pay-btn');
+  const superappPayLoading = $('cbe-superapp-pay-loading');
+  const superappPaySection = $('cbe-superapp-pay-section');
+
+  if (!CbeSuperApp.isAvailable()) {
+    superappPaySection.style.display = 'none';
+  }
+
+  superappPayBtn.addEventListener('click', async () => {
+    const plan = $('payment-info').dataset.plan || 'monthly';
+    superappPaySection.style.display = 'none';
+    superappPayLoading.style.display = 'block';
+    $('payment-error').textContent = '';
+    try {
+      const signRes = await fetch('/api/cbe-payment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ uid: Auth.currentUser.uid, plan })
+      });
+      const signData = await signRes.json();
+      if (!signData.success) throw new Error(signData.error || 'Payment setup failed');
+
+      const payResult = await CbeSuperApp.initiatePayment(
+        { ...signData.orderPayload, sign: signData.sign, confirm_payload: signData.confirm_payload },
+        { ...signData.authPayload, xAccessToken: '' },
+        'CBE Movies'
+      );
+
+      if (!payResult || payResult.status !== 'success') {
+        throw new Error(payResult?.error || 'Payment was not completed');
+      }
+
+      await db.collection('payments').doc(signData.paymentId).update({
+        transactionRef: payResult.data?.ft_number || '',
+        status: 'verified',
+        method: 'cbe_superapp',
+        verifiedAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+
+      const duration = plan === 'yearly' ? 365 : 30;
+      const end = new Date();
+      end.setDate(end.getDate() + duration);
+      await db.collection('users').doc(Auth.currentUser.uid).update({
+        subscribed: true,
+        subscriptionEnd: firebase.firestore.Timestamp.fromDate(end),
+        subscriptionPlan: plan
+      });
+
+      showToast('Payment successful! Subscription activated.', 'success');
+      await Auth.refreshUserDoc();
+      renderSubscription(Auth.userDoc);
+      $('payment-info').style.display = 'none';
+    } catch (err) {
+      $('payment-error').textContent = err.message;
+      showToast(err.message);
+      superappPaySection.style.display = 'block';
+      superappPayLoading.style.display = 'none';
+    }
   });
 
   $('confirm-payment-btn').addEventListener('click', async () => {

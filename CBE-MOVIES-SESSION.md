@@ -63,3 +63,35 @@ https://yt3.googleusercontent.com/ee_P4B8Suz5o19hawcGI5mWwTiAciB_oOoAiaJ4vyuNkMG
 - Dedicated youtube.html page with channel banner hero, filterable video grid, detail modal, embedded player
 - Race condition fix for TV episode loading (per-request ID counter)
 - Modal scroll fix, episode detail enrichment, TV selector timing fix
+
+---
+
+## CBE SuperApp Integration
+
+### SDK Wrapper (`js/cbe-superapp.js`)
+Detects `window.cbesuperapp` and provides methods:
+- `CbeSuperApp.fetchAccessToken(appCode)` — Login via SuperApp
+- `CbeSuperApp.initiatePayment(orderPayload, authPayload, appName)` — In-app payment
+- `CbeSuperApp.requestPermissions(permissions)` — Request native permissions
+- `CbeSuperApp.fetchCurrentLocation()` — Get device location
+
+### Environment Variables (Vercel)
+Add to Vercel project settings:
+```
+CBE_APP_CODE=<miniapp_code>
+CBE_MERCHANT_CODE=<merchant_code>
+CBE_APP_SECRET=<your_hmac_secret>
+CBE_PRIVATE_KEY=<ed25519_private_key_base64>
+CBE_X_API_KEY=<api_key>
+WEBHOOK_SECRET=<webhook_secret>
+```
+
+### API Endpoints
+- `POST /api/cbe-auth` — Exchange SuperApp access token for Firebase custom token
+- `POST /api/cbe-payment` — Sign payment payload (Ed25519 + HMAC-SHA256)
+
+### Pages Modified
+- `login.html` — CBE SuperApp login button (hidden when SDK unavailable)
+- `register.html` — CBE SuperApp register button
+- `profile.html` — Pay with CBE SuperApp button on Subscription tab
+- `home.html`, `movies.html`, `tv.html`, `youtube.html`, `index.html` — Added `js/cbe-superapp.js`

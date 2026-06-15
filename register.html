@@ -56,6 +56,18 @@
         <button type="submit" class="auth-btn" id="reg-btn">Create Account</button>
       </form>
 
+      <div class="auth-divider"><span>or</span></div>
+
+      <button class="auth-btn auth-btn-phone" id="cbe-superapp-reg-btn">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M17 1.01L7 1c-1.1 0-2 .9-2 2v18c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V3c0-1.1-.9-1.99-2-1.99zM17 19H7V5h10v14z"/></svg>
+        Register with CBE SuperApp
+      </button>
+
+      <div id="cbe-superapp-reg-loading" style="display:none" class="auth-superapp-loading">
+        <div class="superapp-spinner"></div>
+        <p>Connecting to CBE SuperApp...</p>
+      </div>
+
       <p class="auth-footer-text">Already have an account? <a href="login.html">Sign in</a></p>
       <p class="auth-footer-text"><a href="/">Back to Home</a></p>
     </div>
@@ -68,6 +80,7 @@
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
   <script src="js/firebase-config.js"></script>
   <script src="js/auth.js"></script>
+  <script src="js/cbe-superapp.js"></script>
   <script>
   const $ = id => document.getElementById(id);
   const form = $('register-form');
@@ -124,6 +137,41 @@
 
   Auth.onAuthStateChanged((user) => {
     if (user) window.location.href = 'home.html';
+  });
+
+  /* ── CBE SuperApp Registration ── */
+  const superappRegBtn = $('cbe-superapp-reg-btn');
+  const superappRegLoading = $('cbe-superapp-reg-loading');
+
+  if (CbeSuperApp.isAvailable()) {
+    superappRegBtn.style.display = 'flex';
+  } else {
+    superappRegBtn.style.display = 'none';
+  }
+
+  superappRegBtn.addEventListener('click', async () => {
+    superappRegBtn.style.display = 'none';
+    superappRegLoading.style.display = 'block';
+    errorEl.textContent = '';
+    try {
+      const accessToken = await CbeSuperApp.fetchAccessToken();
+      if (!accessToken) throw new Error('Could not get access token from SuperApp');
+      const res = await fetch('/api/cbe-auth', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ accessToken })
+      });
+      const data = await res.json();
+      if (!data.success) throw new Error(data.error || 'Registration failed');
+      await auth.signInWithCustomToken(data.customToken);
+      showToast('Account created via CBE SuperApp!', 'success');
+      setTimeout(() => window.location.href = 'home.html', 1000);
+    } catch (err) {
+      errorEl.textContent = err.message;
+      showToast(err.message);
+      superappRegBtn.style.display = 'flex';
+      superappRegLoading.style.display = 'none';
+    }
   });
   </script>
 </body>
