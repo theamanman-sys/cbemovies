@@ -220,9 +220,9 @@
       trigger.classList.remove('open');
     }
   });
-  document.getElementById('nav-logout-btn')?.addEventListener('click', function() {
-    auth.signOut();
-    window.location.href = 'index.html';
+  document.getElementById('nav-logout-btn')?.addEventListener('click', async function() {
+    await Auth.logout();
+    window.location.href = 'login.html';
   });
   Auth.onAuthStateChanged((user, doc) => {
     if (!user) {

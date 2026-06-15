@@ -134,13 +134,11 @@
   const superappBtn = $('cbe-superapp-btn');
   const superappLoading = $('cbe-superapp-loading');
 
-  if (CbeSuperApp.isAvailable()) {
-    superappBtn.style.display = 'flex';
-  } else {
-    superappBtn.style.display = 'none';
-  }
-
   superappBtn.addEventListener('click', async () => {
+    if (!CbeSuperApp.isAvailable()) {
+      showToast('CBE SuperApp login is only available inside the CBE SuperApp mobile app');
+      return;
+    }
     superappBtn.style.display = 'none';
     superappLoading.style.display = 'block';
     errorEl.textContent = '';

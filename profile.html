@@ -333,7 +333,7 @@
   });
   document.getElementById('nav-logout-btn')?.addEventListener('click', async function() {
     await Auth.logout();
-    window.location.href = 'home.html';
+    window.location.href = 'login.html';
   });
 
   Auth.onAuthStateChanged(async (user, doc) => {
@@ -578,7 +578,7 @@
   /* Logout */
   $('logout-btn').addEventListener('click', async () => {
     await Auth.logout();
-    window.location.href = 'home.html';
+    window.location.href = 'login.html';
   });
 
   /* Delete Account */

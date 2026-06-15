@@ -143,13 +143,11 @@
   const superappRegBtn = $('cbe-superapp-reg-btn');
   const superappRegLoading = $('cbe-superapp-reg-loading');
 
-  if (CbeSuperApp.isAvailable()) {
-    superappRegBtn.style.display = 'flex';
-  } else {
-    superappRegBtn.style.display = 'none';
-  }
-
   superappRegBtn.addEventListener('click', async () => {
+    if (!CbeSuperApp.isAvailable()) {
+      showToast('CBE SuperApp registration is only available inside the CBE SuperApp mobile app');
+      return;
+    }
     superappRegBtn.style.display = 'none';
     superappRegLoading.style.display = 'block';
     errorEl.textContent = '';
