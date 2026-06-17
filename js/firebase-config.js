@@ -14,4 +14,4 @@ const db = firebase.firestore();
 const FirebaseAuth = firebase.auth;
 const FirebaseFirestore = firebase.firestore;
 
-db.enablePersistence().catch(() => {});
+db.enablePersistence({ synchronizeTabs: true }).catch(() => {});
