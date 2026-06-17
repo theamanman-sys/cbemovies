@@ -82,6 +82,7 @@
   <script src="js/auth.js"></script>
   <script src="js/cbe-superapp.js"></script>
   <script>
+  let isRegistering = false;
   const $ = id => document.getElementById(id);
   const form = $('register-form');
   const errorEl = $('reg-error');
@@ -103,7 +104,7 @@
     const email = $('reg-email').value.trim();
     const phone = $('reg-phone').value.trim();
     const password = $('reg-password').value;
-    const confirm = $('reg-confirm').value;
+    const confirmPassword = $('reg-confirm').value;
 
     if (!firstName || !lastName || !username || !email || !phone || !password) {
       errorEl.textContent = 'All fields are required';
@@ -113,18 +114,23 @@
       errorEl.textContent = 'Password must be at least 6 characters';
       return;
     }
-    if (password !== confirm) {
+    if (password !== confirmPassword) {
       errorEl.textContent = 'Passwords do not match';
       return;
     }
 
+    isRegistering = true;
     regBtn.disabled = true;
     regBtn.textContent = 'Creating account...';
     try {
       await Auth.register({ email, phone, username, password, firstName, lastName });
+      await auth.signOut();
+      regBtn.disabled = false;
+      regBtn.textContent = 'Create Account';
       showToast('Account created! Please check your email to verify, then wait for admin approval.', 'success');
       setTimeout(() => window.location.href = 'login.html', 3000);
     } catch (err) {
+      isRegistering = false;
       const msg = err.code === 'auth/email-already-in-use' ? 'This email is already registered' :
                   err.code === 'auth/weak-password' ? 'Password is too weak' :
                   err.code === 'auth/invalid-email' ? 'Invalid email address' :
@@ -135,8 +141,8 @@
     }
   });
 
-  Auth.onAuthStateChanged((user) => {
-    if (user) window.location.href = 'home.html';
+  auth.onAuthStateChanged((user) => {
+    if (user && !isRegistering) window.location.href = 'home.html';
   });
 
   /* ── CBE SuperApp Registration ── */
