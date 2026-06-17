@@ -7,7 +7,7 @@ module.exports = async (req, res) => {
   if (req.method === 'OPTIONS') { res.status(200).end(); return; }
 
   try {
-    const { db, admin } = getFirebase();
+    const { db, FieldValue } = getFirebase();
     if (req.method === 'GET') {
       const snap = await db.collection('notifications')
         .where('read', '==', false)
@@ -22,7 +22,7 @@ module.exports = async (req, res) => {
       await db.collection('notifications').add({
         type, userId: userId || '', email: email || '', username: username || '',
         read: false,
-        createdAt: admin.firestore.FieldValue.serverTimestamp()
+        createdAt: FieldValue.serverTimestamp()
       });
       res.json({ success: true });
     }

@@ -77,7 +77,7 @@ module.exports = async (req, res) => {
       sign = fromByteArray(sig);
     }
 
-    const { db, admin } = getFirebase();
+    const { db, FieldValue } = getFirebase();
     const paymentRef = await db.collection('payments').add({
       userId: uid,
       amount,
@@ -85,7 +85,7 @@ module.exports = async (req, res) => {
       method: 'cbe_superapp',
       status: 'pending',
       merchantReference: ref,
-      createdAt: admin.firestore.FieldValue.serverTimestamp()
+      createdAt: FieldValue.serverTimestamp()
     });
 
     res.json({

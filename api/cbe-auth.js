@@ -9,7 +9,7 @@ module.exports = async (req, res) => {
   if (req.method !== 'POST') { res.status(405).json({ error: 'Method not allowed' }); return; }
 
   try {
-    const { db, admin, auth: firebaseAuth } = getFirebase();
+    const { db, FieldValue, auth: firebaseAuth } = getFirebase();
     const { accessToken } = req.body;
 
     if (!accessToken) {
@@ -31,7 +31,7 @@ module.exports = async (req, res) => {
         subscribed: false,
         subscriptionEnd: null,
         subscriptionPlan: null,
-        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        createdAt: FieldValue.serverTimestamp(),
         watchlist: [],
         history: [],
         settings: { autoPlay: true, quality: 'auto', subtitles: true }
@@ -42,7 +42,7 @@ module.exports = async (req, res) => {
       uid = userDoc.docs[0].id;
       await db.collection('users').doc(uid).update({
         superappAccessToken: accessToken,
-        lastLogin: admin.firestore.FieldValue.serverTimestamp()
+        lastLogin: FieldValue.serverTimestamp()
       });
     }
 

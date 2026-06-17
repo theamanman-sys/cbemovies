@@ -11,7 +11,7 @@ module.exports = async (req, res) => {
   if (!uid || !superAdminUid) { res.status(400).json({ error: 'Missing required fields' }); return; }
 
   try {
-    const { db } = getFirebase();
+    const { db, FieldValue } = getFirebase();
     const superDoc = await db.collection('users').doc(superAdminUid).get();
     if (superDoc.data().role !== 'superadmin') {
       res.status(403).json({ error: 'Only super admin can create admins' });
@@ -22,7 +22,7 @@ module.exports = async (req, res) => {
     await db.collection('admins').doc(uid).set({
       uid, email, role: targetRole,
       addedBy: superAdminUid,
-      createdAt: admin.firestore.FieldValue.serverTimestamp()
+      createdAt: FieldValue.serverTimestamp()
     });
     res.json({ success: true, message: 'Admin created' });
   } catch (err) {

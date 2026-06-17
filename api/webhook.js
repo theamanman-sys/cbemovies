@@ -8,7 +8,7 @@ module.exports = async (req, res) => {
   if (req.method !== 'POST') { res.status(405).json({ error: 'Method not allowed' }); return; }
 
   try {
-    const { db, admin } = getFirebase();
+    const { db, FieldValue, Timestamp } = getFirebase();
     const { paymentId, transactionRef, secret } = req.body;
     if (secret !== process.env.WEBHOOK_SECRET) {
       res.status(403).json({ error: 'Invalid secret' });
@@ -25,11 +25,11 @@ module.exports = async (req, res) => {
     await paymentRef.update({
       status: 'verified',
       transactionRef: transactionRef || data.transactionRef,
-      verifiedAt: admin.firestore.FieldValue.serverTimestamp()
+      verifiedAt: FieldValue.serverTimestamp()
     });
     await db.collection('users').doc(data.userId).update({
       subscribed: true,
-      subscriptionEnd: admin.firestore.Timestamp.fromDate(end),
+      subscriptionEnd: Timestamp.fromDate(end),
       subscriptionPlan: data.plan
     });
     res.json({ success: true, message: 'Subscription activated' });
