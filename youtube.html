@@ -354,10 +354,26 @@
     await Auth.logout();
     window.location.href = 'login.html';
   });
-  document.addEventListener('DOMContentLoaded', () => {
-    Auth.onAuthStateChanged((user, doc) => {
-      setupUserNav(user, doc);
-    });
+  Auth.onAuthStateChanged((user, doc) => {
+    if (!user) {
+      window.location.href = 'login.html';
+      return;
+    }
+    if (doc && !Auth.canAccessContent(doc)) {
+      window.location.href = 'profile.html#subscription';
+      return;
+    }
+    if (!doc) {
+      Auth.refreshUserDoc().then((refreshed) => {
+        if (refreshed && !Auth.canAccessContent(refreshed)) {
+          window.location.href = 'profile.html#subscription';
+          return;
+        }
+        setupUserNav(user, refreshed);
+      });
+      return;
+    }
+    setupUserNav(user, doc);
   });
   </script>
 </body>

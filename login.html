@@ -113,6 +113,10 @@
       if (err.message === 'ACCOUNT_NOT_VERIFIED') {
         errorEl.textContent = 'Account not yet verified. Please wait for admin approval.';
         showToast('Account pending verification by admin');
+      } else if (err.message === 'ACCOUNT_NOT_SUBSCRIBED') {
+        errorEl.textContent = 'Please purchase a subscription before signing in.';
+        showToast('Subscription required to access content');
+        setTimeout(() => window.location.href = 'profile.html#subscription', 1500);
       } else {
         const msg = err.code === 'auth/user-not-found' ? 'No account found with this email' :
                     err.code === 'auth/wrong-password' ? 'Incorrect password' :
@@ -153,6 +157,13 @@
       const data = await res.json();
       if (!data.success) throw new Error(data.error || 'Auth failed');
       await auth.signInWithCustomToken(data.customToken);
+      const user = auth.currentUser;
+      if (user) {
+        const userDoc = await Auth.getUserDoc(user.uid);
+        if (!Auth.canAccessContent(userDoc)) {
+          throw new Error('Please purchase a subscription to access content');
+        }
+      }
       window.location.href = 'home.html';
     } catch (err) {
       errorEl.textContent = err.message;
@@ -217,6 +228,9 @@
     } catch (err) {
       if (err.message === 'ACCOUNT_NOT_VERIFIED') {
         phoneError.textContent = 'Account pending admin verification';
+      } else if (err.message === 'ACCOUNT_NOT_SUBSCRIBED') {
+        phoneError.textContent = 'Subscription required. Please purchase a plan.';
+        setTimeout(() => window.location.href = 'profile.html#subscription', 1500);
       } else {
         phoneError.textContent = 'Invalid OTP. Try again.';
       }

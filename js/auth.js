@@ -40,12 +40,23 @@ const Auth = {
     return cred;
   },
 
+  canAccessContent(userDoc) {
+    if (!userDoc) return false;
+    if (userDoc.role === 'admin' || userDoc.role === 'superadmin') return true;
+    if (userDoc.subscribed && userDoc.subscriptionEnd) {
+      const end = userDoc.subscriptionEnd.toDate ? userDoc.subscriptionEnd.toDate() : new Date(userDoc.subscriptionEnd);
+      if (end > new Date()) return true;
+    }
+    return false;
+  },
+
   async login(email, password) {
     const cred = await auth.signInWithEmailAndPassword(email, password);
     const doc = await db.collection('users').doc(cred.user.uid).get();
     if (!doc.exists) throw new Error('User document not found');
     const data = doc.data();
     if (!data.verified) throw new Error('ACCOUNT_NOT_VERIFIED');
+    if (!this.canAccessContent(data)) throw new Error('ACCOUNT_NOT_SUBSCRIBED');
     return cred;
   },
 
@@ -59,6 +70,7 @@ const Auth = {
     if (!doc.exists) throw new Error('Account not registered. Please register first.');
     const data = doc.data();
     if (!data.verified) throw new Error('ACCOUNT_NOT_VERIFIED');
+    if (!this.canAccessContent(data)) throw new Error('ACCOUNT_NOT_SUBSCRIBED');
     return cred;
   },
 

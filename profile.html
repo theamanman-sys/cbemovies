@@ -340,6 +340,10 @@
     if (!user) { window.location.href = 'login.html'; return; }
     userDoc = doc;
     setupUserNav(user, doc);
+    if (doc && !Auth.canAccessContent(doc) && location.hash !== '#subscription') {
+      showToast('Please subscribe to access content', '');
+      switchTab('subscription');
+    }
     renderProfile(doc);
   });
 
