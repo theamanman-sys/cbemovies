@@ -115,6 +115,7 @@
         email = snap.docs[0].data().email;
       }
       const cred = await Auth.login(email, passInp.value);
+      sessionStorage.setItem('cbe_welcome', '1');
       window.location.href = 'home.html';
     } catch (err) {
       if (err.message === 'ACCOUNT_NOT_VERIFIED') {
@@ -191,6 +192,7 @@
           throw new Error('Please purchase a subscription to access content');
         }
       }
+      sessionStorage.setItem('cbe_welcome', '1');
       window.location.href = 'home.html';
     } catch (err) {
       errorEl.textContent = err.message;
@@ -251,6 +253,7 @@
         await confirmationResult.confirm(code);
       }
       await Auth.checkPhoneAuthSubscription();
+      sessionStorage.setItem('cbe_welcome', '1');
       window.location.href = 'home.html';
     } catch (err) {
       if (err.message === 'ACCOUNT_NOT_VERIFIED') {

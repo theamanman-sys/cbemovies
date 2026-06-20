@@ -480,11 +480,21 @@
           return;
         }
         setupUserNav(user, refreshed);
+        showWelcome(refreshed);
       });
       return;
     }
     setupUserNav(user, doc);
+    showWelcome(doc);
   });
+
+  function showWelcome(doc) {
+    if (sessionStorage.getItem('cbe_welcome')) {
+      sessionStorage.removeItem('cbe_welcome');
+      const name = doc?.firstName || doc?.username || '';
+      showToast(name ? 'Welcome, ' + name + '!' : 'Welcome back!');
+    }
+  }
   </script>
 </body>
 </html>
