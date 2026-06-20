@@ -44,13 +44,13 @@ const API = {
   /* ── Player URL ── */
   getPlayerUrl(item, season = 1, episode = 1, pos = 0) {
     const id = item.tmdb_id || item.imdb_id;
-    let url;
-    if (!id) url = `${this.FALLBACK_PLAYER}/embed/movie/550?${this.PLAYER_THEME}`;
-    else if (item.type === 'tv') url = `${this.FALLBACK_PLAYER}/embed/tv/${id}/${season}/${episode}?${this.PLAYER_THEME}`;
-    else url = `${this.FALLBACK_PLAYER}/embed/movie/${id}?${this.PLAYER_THEME}`;
-    if (item.type === 'tv') url += '&autonext=true&showNextEpisode=true';
-    if (pos > 5) url += `&t=${Math.floor(pos)}`; // attempt to start video at saved position
-    return url;
+    let embedUrl;
+    if (!id) embedUrl = `${this.FALLBACK_PLAYER}/embed/movie/550?${this.PLAYER_THEME}`;
+    else if (item.type === 'tv') embedUrl = `${this.FALLBACK_PLAYER}/embed/tv/${id}/${season}/${episode}?${this.PLAYER_THEME}`;
+    else embedUrl = `${this.FALLBACK_PLAYER}/embed/movie/${id}?${this.PLAYER_THEME}`;
+    if (item.type === 'tv') embedUrl += '&autonext=true&showNextEpisode=true';
+    if (pos > 5) embedUrl += `&t=${Math.floor(pos)}`;
+    return `/api/player?url=${encodeURIComponent(embedUrl)}`;
   },
 
   async fetchImdbId(tmdbId, type = 'movie') {

@@ -1,14 +1,15 @@
-const ALLOWED_PREFIXES = ['https://vidphantom.com', 'https://player.cinezo.live'];
+const ALLOWED_DOMAINS = ['vidphantom.com', 'player.cinezo.live', 'brightpathsignals.com'];
 
 module.exports = async (req, res) => {
-  const { path } = req.query;
+  const { domain, path } = req.query;
   if (!path) {
     res.status(400).json({ error: 'Missing path' });
     return;
   }
 
-  const url = `https://vidphantom.com${path}`;
-  if (!ALLOWED_PREFIXES.some(p => url.startsWith(p))) {
+  const base = domain ? decodeURIComponent(domain) : 'https://vidphantom.com';
+  const url = `${base}${path}`;
+  if (!ALLOWED_DOMAINS.some(d => url.includes(d))) {
     res.status(403).json({ error: 'Domain not allowed' });
     return;
   }

@@ -40,11 +40,15 @@ module.exports = async (req, res) => {
     let html = await response.text();
     html = html.replace(/<script[^>]*>[\s\S]*?(?:die\(|self\.location|top\.location|parent\.location|frameElement|window\.(?:self|top|parent))[\s\S]*?<\/script>/gi, '');
     html = html.replace(/<script[^>]*>[\s\S]*?disable-devtool[\s\S]*?<\/script>/gi, '');
-    html = html.replace(/(src|href)="(\/[^"]*)"/g, function(m, attr, fullpath) {
-      if (fullpath.startsWith('//') || fullpath.startsWith('/api/')) return m;
-      return attr + '="/api/vp?path=' + encodeURIComponent(fullpath) + '"';
+    html = html.replace(/(?:src|href)="(https?:\/\/(?:[^"\/]+))?(\/[^"]*)"/g, function(m, domain, fullpath) {
+      if (fullpath.startsWith('/api/')) return m;
+      const base = domain || `https://${upstreamHost}`;
+      return `${m.startsWith('src') ? 'src' : 'href'}="/api/vp?domain=${encodeURIComponent(base)}&path=${encodeURIComponent(fullpath)}"`;
     });
-    html = html.replace(/(url\(['"]?)\/(?!\/)/g, '$1/api/vp?path=/');
+    html = html.replace(/(url\(['"]?)(https?:\/\/[^\/]+)?(\/(?!\/)[^)"']*)/g, function(m, prefix, domain, path) {
+      const base = domain || `https://${upstreamHost}`;
+      return `${prefix}/api/vp?domain=${encodeURIComponent(base)}&path=${encodeURIComponent(path)}`;
+    });
     res.setHeader('Content-Type', 'text/html');
     res.setHeader('X-Frame-Options', '');
     res.status(200).send(html);
