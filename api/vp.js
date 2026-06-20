@@ -1,14 +1,13 @@
 const ALLOWED_DOMAINS = ['vidphantom.com', 'player.cinezo.live', 'brightpathsignals.com'];
 
 module.exports = async (req, res) => {
-  const { domain, path } = req.query;
+  const { path } = req.query;
   if (!path) {
     res.status(400).json({ error: 'Missing path' });
     return;
   }
 
-  const base = domain ? decodeURIComponent(domain) : 'https://vidphantom.com';
-  const url = `${base}${path}`;
+  const url = `https://vidphantom.com${path}`;
   if (!ALLOWED_DOMAINS.some(d => url.includes(d))) {
     res.status(403).json({ error: 'Domain not allowed' });
     return;

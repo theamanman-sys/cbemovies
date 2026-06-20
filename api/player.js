@@ -27,7 +27,9 @@ module.exports = async (req, res) => {
     return;
   }
 
-  const upstreamHost = new URL(upstreamUrl).hostname;
+  const upstreamParsed = new URL(upstreamUrl);
+  const upstreamHost = upstreamParsed.hostname;
+  const upstreamOrigin = upstreamParsed.origin;
   try {
     const response = await fetch(upstreamUrl, {
       headers: {
@@ -40,17 +42,8 @@ module.exports = async (req, res) => {
     let html = await response.text();
     html = html.replace(/<script[^>]*>[\s\S]*?(?:die\(|self\.location|top\.location|parent\.location|frameElement|window\.(?:self|top|parent))[\s\S]*?<\/script>/gi, '');
     html = html.replace(/<script[^>]*>[\s\S]*?disable-devtool[\s\S]*?<\/script>/gi, '');
-    html = html.replace(/(?:src|href)="(https?:\/\/(?:[^"\/]+))?(\/[^"]*)"/g, function(m, domain, fullpath) {
-      if (fullpath.startsWith('/api/')) return m;
-      const base = domain || `https://${upstreamHost}`;
-      return `${m.startsWith('src') ? 'src' : 'href'}="/api/vp?domain=${encodeURIComponent(base)}&path=${encodeURIComponent(fullpath)}"`;
-    });
-    html = html.replace(/(url\(['"]?)(https?:\/\/[^\/]+)?(\/(?!\/)[^)"']*)/g, function(m, prefix, domain, path) {
-      const base = domain || `https://${upstreamHost}`;
-      return `${prefix}/api/vp?domain=${encodeURIComponent(base)}&path=${encodeURIComponent(path)}`;
-    });
+    html = html.replace('<head>', `<head><base href="${upstreamOrigin}">`);
     res.setHeader('Content-Type', 'text/html');
-    res.setHeader('X-Frame-Options', '');
     res.status(200).send(html);
   } catch { res.status(502).end(); }
 };
