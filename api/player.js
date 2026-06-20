@@ -30,6 +30,7 @@ module.exports = async (req, res) => {
   const upstreamParsed = new URL(upstreamUrl);
   const upstreamHost = upstreamParsed.hostname;
   const upstreamOrigin = upstreamParsed.origin;
+  const encodedOrigin = encodeURIComponent(upstreamOrigin);
   try {
     const response = await fetch(upstreamUrl, {
       headers: {
@@ -42,7 +43,8 @@ module.exports = async (req, res) => {
     let html = await response.text();
     html = html.replace(/<script[^>]*>[\s\S]*?(?:die\(|self\.location|top\.location|parent\.location|frameElement|window\.(?:self|top|parent))[\s\S]*?<\/script>/gi, '');
     html = html.replace(/<script[^>]*>[\s\S]*?disable-devtool[\s\S]*?<\/script>/gi, '');
-    html = html.replace('<head>', `<head><base href="${upstreamOrigin}">`);
+    html = html.replace(new RegExp(`(src|href)="${upstreamOrigin}([^"]*)"`, 'g'), `$1="/api/vp?domain=${encodedOrigin}&path=$2"`);
+    html = html.replace(new RegExp(`(url\\(['"]?)${upstreamOrigin}([^)"']*)`, 'g'), `$1/api/vp?domain=${encodedOrigin}&path=$2`);
     res.setHeader('Content-Type', 'text/html');
     res.status(200).send(html);
   } catch { res.status(502).end(); }

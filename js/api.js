@@ -50,7 +50,7 @@ const API = {
     else embedUrl = `${this.FALLBACK_PLAYER}/embed/movie/${id}?${this.PLAYER_THEME}`;
     if (item.type === 'tv') embedUrl += '&autonext=true&showNextEpisode=true';
     if (pos > 5) embedUrl += `&t=${Math.floor(pos)}`;
-    return `/api/player?url=${encodeURIComponent(embedUrl)}`;
+    return embedUrl;
   },
 
   async fetchImdbId(tmdbId, type = 'movie') {
