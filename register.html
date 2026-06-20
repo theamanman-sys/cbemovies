@@ -169,7 +169,6 @@
     regBtn.textContent = 'Creating account...';
     try {
       await Auth.register({ email, phone, username, password, firstName, lastName });
-      await auth.signOut();
       isRegistering = false;
       showSuccess(email);
     } catch (err) {
@@ -243,7 +242,6 @@
           });
         }
       }
-      await auth.signOut();
       showSuccess(user?.email || 'your email');
     } catch (err) {
       errorEl.textContent = err.message;

@@ -864,6 +864,11 @@ if (dom.playerFrame) {
 
 function playItem(item, season = 1, episode = 1) {
   if (!item) return showToast(__('No media selected'), true);
+  if (!Auth.currentUser || !Auth.canAccessContent(Auth.userDoc)) {
+    showToast(__('Subscribe to watch'), true);
+    setTimeout(() => window.location.href = 'profile.html#subscription', 1500);
+    return;
+  }
   state.currentItem = item;
   state.currentSeason = season;
   state.currentEpisode = episode;

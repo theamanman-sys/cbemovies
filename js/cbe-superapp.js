@@ -1,6 +1,5 @@
 const CbeSuperApp = {
   APP_CODE: '',
-  _callbacks: {},
   _callbackId: 0,
 
   get sdk() {
@@ -13,70 +12,68 @@ const CbeSuperApp = {
 
   _send(functionName, params, callbackName) {
     if (!this.isAvailable()) return;
-    const payload = JSON.stringify({ functionName, params, callbackName });
-    this.sdk.send(payload);
+    const msg = { functionName, params };
+    if (callbackName) msg.callbackName = callbackName;
+    this.sdk.send(JSON.stringify(msg));
   },
 
-  _makeCallback() {
-    const id = ++this._callbackId;
-    const name = '__cbe_cb_' + id;
-    return new Promise(resolve => {
-      this._callbacks[name] = resolve;
+  _makeCallback(timeout = 30000) {
+    const name = '__cbe_cb_' + (++this._callbackId);
+    const promise = new Promise(resolve => {
       window[name] = result => {
         delete window[name];
-        delete this._callbacks[name];
         resolve(result);
       };
       setTimeout(() => {
-        if (this._callbacks[name]) {
+        if (window[name]) {
           delete window[name];
-          delete this._callbacks[name];
           resolve(null);
         }
-      }, 30000);
+      }, timeout);
     });
+    return { name, promise };
   },
 
   async fetchAccessToken(appCode) {
     if (!this.isAvailable()) return null;
-    const callbackName = '__cbe_token_cb';
+    const cb = this._makeCallback();
     this._send('fetchAccessToken', {
       appcode: appCode || this.APP_CODE,
-      callbackName,
+      callbackName: cb.name,
       customer_identifier: ''
-    }, callbackName);
-    return this._makeCallback();
+    }, cb.name);
+    return cb.promise;
   },
 
   async initiatePayment(orderPayload, authPayload, appName) {
     if (!this.isAvailable()) return null;
-    const callbackName = '__cbe_pay_cb';
+    const cb = this._makeCallback();
     this._send('initiatePayment', {
       orderPayload,
       authPayload,
-      callbackName,
+      callbackName: cb.name,
       appName: appName || 'CBE Movies'
-    }, callbackName);
-    return this._makeCallback();
+    }, cb.name);
+    return cb.promise;
   },
 
   async requestPermissions(permissions) {
     if (!this.isAvailable()) return null;
-    const callbackName = '__cbe_perm_cb';
+    const cb = this._makeCallback();
     this._send('requestPermissions', {
       permissions,
-      callbackName
-    }, callbackName);
-    return this._makeCallback();
+      callbackName: cb.name
+    }, cb.name);
+    return cb.promise;
   },
 
   async fetchCurrentLocation() {
     if (!this.isAvailable()) return null;
-    const callbackName = '__cbe_loc_cb';
+    const cb = this._makeCallback();
     this._send('fetchCurrentLocation', {
-      callbackName
-    }, callbackName);
-    return this._makeCallback();
+      callbackName: cb.name
+    }, cb.name);
+    return cb.promise;
   }
 };
 

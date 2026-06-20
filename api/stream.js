@@ -1,3 +1,5 @@
+const ALLOWED_DOMAINS = ['brightpathsignals.com', 'streamdata.vaplayer.ru'];
+
 module.exports = async (req, res) => {
   const { url, imdb, type = 'movie', season, episode } = req.query;
   if (!url) {
@@ -5,6 +7,10 @@ module.exports = async (req, res) => {
     return;
   }
   const upstreamUrl = decodeURIComponent(url);
+  if (!ALLOWED_DOMAINS.some(d => upstreamUrl.includes(d))) {
+    res.status(403).json({ error: 'Domain not allowed' });
+    return;
+  }
   let response;
   try {
     response = await fetch(upstreamUrl, {

@@ -53,9 +53,9 @@ function showToast(msg, duration = 3000) {
 
 /* ── Player ── */
 function openPlayer(item) {
-  if (!Auth.currentUser || !Auth.userDoc?.subscribed) {
+  if (!Auth.currentUser || !Auth.canAccessContent(Auth.userDoc)) {
     showToast('Subscribe to watch', 'success');
-    setTimeout(() => window.location.href = 'profile.html', 1500);
+    setTimeout(() => window.location.href = 'profile.html#subscription', 1500);
     return;
   }
   tvState.currentItem = item;

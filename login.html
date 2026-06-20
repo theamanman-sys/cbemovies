@@ -86,6 +86,7 @@
   <script src="js/auth.js"></script>
   <script src="js/cbe-superapp.js"></script>
   <script>
+  let isLoggingIn = false;
   const $ = id => document.getElementById(id);
   const form = $('login-form');
   const emailInp = $('login-email');
@@ -105,6 +106,7 @@
     errorEl.textContent = '';
     loginBtn.disabled = true;
     loginBtn.textContent = 'Signing in...';
+    isLoggingIn = true;
     try {
       let email = emailInp.value.trim();
       if (!email.includes('@')) {
@@ -130,7 +132,7 @@
       } else if (err.message === 'ACCOUNT_NOT_SUBSCRIBED') {
         errorEl.textContent = 'Please purchase a subscription before signing in.';
         showToast('Subscription required to access content');
-        setTimeout(() => window.location.href = 'profile.html#subscription', 1500);
+        window.location.href = 'profile.html#subscription';
       } else {
         const msg = err.code === 'auth/user-not-found' ? 'No account found with this email' :
                     err.code === 'auth/wrong-password' ? 'Incorrect password' :
@@ -139,13 +141,14 @@
         errorEl.textContent = msg;
       }
     } finally {
+      isLoggingIn = false;
       loginBtn.disabled = false;
       loginBtn.textContent = 'Sign In';
     }
   });
 
   Auth.onAuthStateChanged((user) => {
-    if (user) window.location.href = 'home.html';
+    if (user && !isLoggingIn) window.location.href = 'home.html';
   });
 
   $('resend-verify-btn').addEventListener('click', async function() {
@@ -242,24 +245,26 @@
     if (!code) { phoneError.textContent = 'Enter OTP code'; return; }
     verifyOtp.disabled = true;
     verifyOtp.textContent = 'Verifying...';
+    isLoggingIn = true;
     try {
       if (confirmationResult) {
         await confirmationResult.confirm(code);
-      } else {
-        await Auth.confirmPhoneCode(confirmationResult.verificationId, code);
       }
+      await Auth.checkPhoneAuthSubscription();
       window.location.href = 'home.html';
     } catch (err) {
       if (err.message === 'ACCOUNT_NOT_VERIFIED') {
         phoneError.textContent = 'Account pending admin verification';
       } else if (err.message === 'ACCOUNT_NOT_SUBSCRIBED') {
         phoneError.textContent = 'Subscription required. Please purchase a plan.';
-        setTimeout(() => window.location.href = 'profile.html#subscription', 1500);
+        window.location.href = 'profile.html#subscription';
       } else {
         phoneError.textContent = 'Invalid OTP. Try again.';
       }
       verifyOtp.disabled = false;
       verifyOtp.textContent = 'Verify & Sign In';
+    } finally {
+      isLoggingIn = false;
     }
   });
   </script>

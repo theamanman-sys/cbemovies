@@ -1,3 +1,5 @@
+const ALLOWED_PREFIXES = ['https://vidphantom.com', 'https://player.cinezo.live'];
+
 module.exports = async (req, res) => {
   const { path } = req.query;
   if (!path) {
@@ -6,6 +8,10 @@ module.exports = async (req, res) => {
   }
 
   const url = `https://vidphantom.com${path}`;
+  if (!ALLOWED_PREFIXES.some(p => url.startsWith(p))) {
+    res.status(403).json({ error: 'Domain not allowed' });
+    return;
+  }
   try {
     const response = await fetch(url, {
       headers: {

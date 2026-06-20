@@ -77,14 +77,24 @@ const Auth = {
     return auth.signInWithPhoneNumber(phoneNumber, appVerifier);
   },
 
-  async confirmPhoneCode(verificationId, code) {
-    const cred = await auth.signInWithPhoneNumber(verificationId, code);
+  async confirmPhoneCode(confirmationResult, code) {
+    const cred = await confirmationResult.confirm(code);
     const doc = await db.collection('users').doc(cred.user.uid).get();
     if (!doc.exists) throw new Error('Account not registered. Please register first.');
     const data = doc.data();
     if (!data.verified) throw new Error('ACCOUNT_NOT_VERIFIED');
     if (!this.canAccessContent(data)) throw new Error('ACCOUNT_NOT_SUBSCRIBED');
     return cred;
+  },
+
+  async checkPhoneAuthSubscription() {
+    const user = this.currentUser;
+    if (!user) throw new Error('No user logged in');
+    const doc = await db.collection('users').doc(user.uid).get();
+    if (!doc.exists) throw new Error('Account not registered. Please register first.');
+    const data = doc.data();
+    if (!data.verified) throw new Error('ACCOUNT_NOT_VERIFIED');
+    if (!this.canAccessContent(data)) throw new Error('ACCOUNT_NOT_SUBSCRIBED');
   },
 
   async logout() {
@@ -217,6 +227,7 @@ const Auth = {
 
   async createAdminUser(uid, email, role = 'admin') {
     const superAdmin = this.currentUser;
+    if (!superAdmin) throw new Error('No user logged in');
     const isSuper = await this.isSuperAdmin(superAdmin.uid);
     if (!isSuper) throw new Error('Only super admin can create admins');
     const userDoc = await db.collection('users').doc(uid).get();
@@ -236,6 +247,7 @@ const Auth = {
 
   async removeAdmin(uid) {
     const superAdmin = this.currentUser;
+    if (!superAdmin) throw new Error('No user logged in');
     const isSuper = await this.isSuperAdmin(superAdmin.uid);
     if (!isSuper) throw new Error('Only super admin can remove admins');
     const adminDoc = await db.collection('admins').doc(uid).get();

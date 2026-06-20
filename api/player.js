@@ -1,3 +1,18 @@
+const ALLOWED_DOMAINS = [
+  'player.cinezo.live',
+  'vidsrc.pm',
+  'vidphantom.com',
+  'brightpathsignals.com',
+  'streamdata.vaplayer.ru',
+];
+
+function isAllowedUrl(url) {
+  try {
+    const parsed = new URL(url);
+    return ALLOWED_DOMAINS.some(d => parsed.hostname === d || parsed.hostname.endsWith('.' + d));
+  } catch { return false; }
+}
+
 module.exports = async (req, res) => {
   const { url } = req.query;
 
@@ -7,18 +22,24 @@ module.exports = async (req, res) => {
   }
 
   const upstreamUrl = decodeURIComponent(url);
+  if (!isAllowedUrl(upstreamUrl)) {
+    res.status(403).json({ error: 'Domain not allowed' });
+    return;
+  }
+
+  const upstreamHost = new URL(upstreamUrl).hostname;
   try {
     const response = await fetch(upstreamUrl, {
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36',
-        'Referer': 'https://vidsrc.pm/',
+        'Referer': `https://${upstreamHost}/`,
         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
       }
     });
     if (!response.ok) { res.status(response.status).end(); return; }
     let html = await response.text();
-    html = html.replace(/<script>[\s\S]*?(?:die\(|self\.location|top\.location|parent\.location|frameElement)[\s\S]*?<\/script>/gi, '');
-    html = html.replace(/<script[\s\S]*?disable-devtool[\s\S]*?<\/script>/gi, '');
+    html = html.replace(/<script[^>]*>[\s\S]*?(?:die\(|self\.location|top\.location|parent\.location|frameElement|window\.(?:self|top|parent))[\s\S]*?<\/script>/gi, '');
+    html = html.replace(/<script[^>]*>[\s\S]*?disable-devtool[\s\S]*?<\/script>/gi, '');
     html = html.replace(/(src|href)="(\/[^"]*)"/g, function(m, attr, fullpath) {
       if (fullpath.startsWith('//') || fullpath.startsWith('/api/')) return m;
       return attr + '="/api/vp?path=' + encodeURIComponent(fullpath) + '"';
