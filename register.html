@@ -21,55 +21,94 @@
       <h1 class="auth-title">Create Account</h1>
       <p class="auth-subtitle">Register to access premium content</p>
 
-      <form id="register-form" class="auth-form" onsubmit="return false">
-        <div class="form-row">
-          <div class="form-group">
-            <label for="reg-first">First Name</label>
-            <input type="text" id="reg-first" placeholder="First name" required>
+      <div id="register-form-container">
+        <form id="register-form" class="auth-form" onsubmit="return false">
+          <div class="form-row">
+            <div class="form-group">
+              <label for="reg-first">First Name</label>
+              <input type="text" id="reg-first" placeholder="First name" required>
+            </div>
+            <div class="form-group">
+              <label for="reg-last">Last Name</label>
+              <input type="text" id="reg-last" placeholder="Last name" required>
+            </div>
           </div>
           <div class="form-group">
-            <label for="reg-last">Last Name</label>
-            <input type="text" id="reg-last" placeholder="Last name" required>
+            <label for="reg-username">Username</label>
+            <input type="text" id="reg-username" placeholder="Choose a username" required autocomplete="username">
           </div>
-        </div>
-        <div class="form-group">
-          <label for="reg-username">Username</label>
-          <input type="text" id="reg-username" placeholder="Choose a username" required autocomplete="username">
-        </div>
-        <div class="form-group">
-          <label for="reg-email">Email</label>
-          <input type="email" id="reg-email" placeholder="Enter your email" required autocomplete="email">
-        </div>
-        <div class="form-group">
-          <label for="reg-phone">Phone Number (linked to CBE account)</label>
-          <input type="tel" id="reg-phone" placeholder="+251911234567" required>
-        </div>
-        <div class="form-group">
-          <label for="reg-password">Password</label>
-          <input type="password" id="reg-password" placeholder="Create a password (min 6 chars)" required minlength="6" autocomplete="new-password">
-        </div>
-        <div class="form-group">
-          <label for="reg-confirm">Confirm Password</label>
-          <input type="password" id="reg-confirm" placeholder="Confirm password" required autocomplete="new-password">
-        </div>
-        <div class="form-error" id="reg-error"></div>
-        <button type="submit" class="auth-btn" id="reg-btn">Create Account</button>
-      </form>
+          <div class="form-group">
+            <label for="reg-email">Email</label>
+            <input type="email" id="reg-email" placeholder="Enter your email" required autocomplete="email">
+          </div>
+          <div class="form-group">
+            <label for="reg-phone">Phone Number (linked to CBE account)</label>
+            <input type="tel" id="reg-phone" placeholder="+251911234567" required>
+          </div>
+          <div class="form-group">
+            <label for="reg-password">Password</label>
+            <input type="password" id="reg-password" placeholder="Create a password (min 6 chars)" required minlength="6" autocomplete="new-password">
+          </div>
+          <div class="form-group">
+            <label for="reg-confirm">Confirm Password</label>
+            <input type="password" id="reg-confirm" placeholder="Confirm password" required autocomplete="new-password">
+          </div>
+          <div class="form-error" id="reg-error"></div>
+          <button type="submit" class="auth-btn" id="reg-btn">Create Account</button>
+        </form>
 
-      <div class="auth-divider"><span>or</span></div>
+        <div class="auth-divider"><span>or</span></div>
 
-      <button class="auth-btn auth-btn-phone" id="cbe-superapp-reg-btn">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M17 1.01L7 1c-1.1 0-2 .9-2 2v18c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V3c0-1.1-.9-1.99-2-1.99zM17 19H7V5h10v14z"/></svg>
-        Register with CBE SuperApp
-      </button>
+        <button class="auth-btn auth-btn-phone" id="cbe-superapp-reg-btn">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M17 1.01L7 1c-1.1 0-2 .9-2 2v18c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V3c0-1.1-.9-1.99-2-1.99zM17 19H7V5h10v14z"/></svg>
+          Register with CBE SuperApp
+        </button>
 
-      <div id="cbe-superapp-reg-loading" style="display:none" class="auth-superapp-loading">
-        <div class="superapp-spinner"></div>
-        <p>Connecting to CBE SuperApp...</p>
+        <div id="cbe-superapp-reg-loading" style="display:none" class="auth-superapp-loading">
+          <div class="superapp-spinner"></div>
+          <p>Connecting to CBE SuperApp...</p>
+        </div>
+
+        <p class="auth-footer-text">Already have an account? <a href="login.html">Sign in</a></p>
+        <p class="auth-footer-text"><a href="/">Back to Home</a></p>
       </div>
 
-      <p class="auth-footer-text">Already have an account? <a href="login.html">Sign in</a></p>
-      <p class="auth-footer-text"><a href="/">Back to Home</a></p>
+      <div id="reg-success" style="display:none">
+        <div style="text-align:center;padding:24px 0">
+          <div style="font-size:64px;margin-bottom:16px">✅</div>
+          <h2 style="font-size:24px;margin-bottom:8px">Account Created!</h2>
+          <p style="color:var(--text-secondary);margin-bottom:24px;line-height:1.6">
+            Your account has been created successfully.<br>
+            Follow these steps to get started:
+          </p>
+          <div style="text-align:left;max-width:400px;margin:0 auto">
+            <div style="display:flex;gap:16px;margin-bottom:20px;align-items:flex-start">
+              <div style="width:32px;height:32px;border-radius:50%;background:#910096;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:700">1</div>
+              <div>
+                <strong>Verify your email</strong>
+                <p style="font-size:13px;color:var(--text-secondary);margin-top:2px">We sent a verification link to <span id="reg-success-email" style="color:#910096;font-weight:600"></span>. Click the link to confirm your email.</p>
+                <button class="auth-btn" id="resend-verification-btn" style="margin-top:8px;padding:8px 16px;font-size:13px">Resend email</button>
+                <span id="resend-verification-msg" style="font-size:12px;color:#4caf50;margin-left:8px;display:none">Sent!</span>
+              </div>
+            </div>
+            <div style="display:flex;gap:16px;margin-bottom:20px;align-items:flex-start">
+              <div style="width:32px;height:32px;border-radius:50%;background:var(--text-secondary);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:700;opacity:0.6">2</div>
+              <div style="opacity:0.6">
+                <strong>Wait for admin approval</strong>
+                <p style="font-size:13px;color:var(--text-secondary);margin-top:2px">An admin will review and activate your account within 24 hours.</p>
+              </div>
+            </div>
+            <div style="display:flex;gap:16px;align-items:flex-start">
+              <div style="width:32px;height:32px;border-radius:50%;background:var(--text-secondary);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:700;opacity:0.6">3</div>
+              <div style="opacity:0.6">
+                <strong>Subscribe & start watching</strong>
+                <p style="font-size:13px;color:var(--text-secondary);margin-top:2px">After approval, choose a subscription plan and enjoy unlimited content.</p>
+              </div>
+            </div>
+          </div>
+          <a href="login.html" class="auth-btn" style="display:inline-block;margin-top:24px;text-decoration:none;text-align:center">Go to Sign In</a>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -93,6 +132,12 @@
     t.textContent = msg;
     t.className = 'toast active ' + type;
     setTimeout(() => { t.className = 'toast'; }, 4000);
+  }
+
+  function showSuccess(email) {
+    $('register-form-container').style.display = 'none';
+    $('reg-success').style.display = 'block';
+    $('reg-success-email').textContent = email;
   }
 
   form.addEventListener('submit', async (e) => {
@@ -125,10 +170,8 @@
     try {
       await Auth.register({ email, phone, username, password, firstName, lastName });
       await auth.signOut();
-      regBtn.disabled = false;
-      regBtn.textContent = 'Create Account';
-      showToast('Account created! Please check your email to verify, then wait for admin approval.', 'success');
-      setTimeout(() => window.location.href = 'login.html', 3000);
+      isRegistering = false;
+      showSuccess(email);
     } catch (err) {
       isRegistering = false;
       const msg = err.code === 'auth/email-already-in-use' ? 'This email is already registered' :
@@ -138,6 +181,16 @@
       errorEl.textContent = msg;
       regBtn.disabled = false;
       regBtn.textContent = 'Create Account';
+    }
+  });
+
+  $('resend-verification-btn').addEventListener('click', async function() {
+    try {
+      await Auth.resendVerificationEmail();
+      $('resend-verification-msg').style.display = 'inline';
+      setTimeout(() => { $('resend-verification-msg').style.display = 'none'; }, 3000);
+    } catch (err) {
+      showToast(err.message || 'Could not resend. Try again later.');
     }
   });
 
@@ -168,8 +221,30 @@
       const data = await res.json();
       if (!data.success) throw new Error(data.error || 'Registration failed');
       await auth.signInWithCustomToken(data.customToken);
-      showToast('Account created via CBE SuperApp!', 'success');
-      setTimeout(() => window.location.href = 'home.html', 1000);
+      const user = auth.currentUser;
+      if (user) {
+        const existing = await db.collection('users').doc(user.uid).get();
+        if (!existing.exists) {
+          await db.collection('users').doc(user.uid).set({
+            email: user.email || '',
+            phone: user.phoneNumber || '',
+            username: user.email ? user.email.split('@')[0] : 'user',
+            firstName: data.firstName || 'CBE',
+            lastName: data.lastName || 'User',
+            role: 'user',
+            verified: false,
+            subscribed: false,
+            subscriptionEnd: null,
+            subscriptionPlan: null,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+            watchlist: [],
+            history: [],
+            settings: { autoPlay: true, quality: 'auto', subtitles: true }
+          });
+        }
+      }
+      await auth.signOut();
+      showSuccess(user?.email || 'your email');
     } catch (err) {
       errorEl.textContent = err.message;
       showToast(err.message);

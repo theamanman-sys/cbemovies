@@ -92,6 +92,7 @@
       <!-- Verification -->
       <section class="admin-section" id="section-verification">
         <h2>User Verification Requests</h2>
+        <p style="color:var(--text-secondary);font-size:13px;margin-bottom:12px">Review and approve pending users. Only approve after confirming the user has verified their email.</p>
         <div class="admin-table-wrap">
           <table class="admin-table">
             <thead><tr><th>Name</th><th>Email</th><th>Phone</th><th>Registered</th><th>Actions</th></tr></thead>
@@ -218,14 +219,17 @@
         <td><span class="role-badge ${u.role === 'superadmin' ? 'superadmin' : u.role === 'admin' ? 'admin' : ''}">${u.role || 'user'}</span></td>
         <td><span class="status-dot ${u.verified ? 'verified' : 'pending'}"></span> ${u.verified ? 'Verified' : 'Pending'}</td>
         <td class="action-cell">
-          ${!u.verified ? `<button class="admin-btn verify-btn" data-uid="${u.id}">Verify</button>` : ''}
+          ${!u.verified ? `<button class="admin-btn verify-btn" data-uid="${u.id}" data-name="${esc(u.firstName + ' ' + u.lastName)}">Verify</button>` : ''}
           <button class="admin-btn edit-btn" data-uid="${u.id}" data-first="${esc(u.firstName)}" data-last="${esc(u.lastName)}" data-phone="${esc(u.phone || '')}">Edit</button>
           ${u.role === 'user' ? `<button class="admin-btn" onclick="openAdminModal('${u.id}','${esc(u.email)}')">Make Admin</button>` : ''}
         </td>
       </tr>
     `).join('');
 
-    $('users-tbody').querySelectorAll('.verify-btn').forEach(b => b.addEventListener('click', () => verifyUser(b.dataset.uid)));
+    $('users-tbody').querySelectorAll('.verify-btn').forEach(b => b.addEventListener('click', function() {
+      if (!confirm(`Approve ${this.dataset.name}?`)) return;
+      verifyUser(this.dataset.uid);
+    }));
     $('users-tbody').querySelectorAll('.edit-btn').forEach(b => {
       b.addEventListener('click', () => {
         const uid = b.dataset.uid;
@@ -253,11 +257,18 @@
           <td>${esc(u.phone || 'N/A')}</td>
           <td>${u.createdAt ? new Date(u.createdAt.toMillis ? u.createdAt.toMillis() : u.createdAt).toLocaleDateString() : 'N/A'}</td>
           <td class="action-cell">
-            <button class="admin-btn verify-btn" data-uid="${u.id}">Approve</button>
+            <button class="admin-btn verify-btn" data-uid="${u.id}" data-name="${esc(u.firstName + ' ' + u.lastName)}" data-email="${esc(u.email)}">Approve</button>
           </td>
         </tr>
       `).join('');
-    $('verification-tbody').querySelectorAll('.verify-btn').forEach(b => b.addEventListener('click', () => verifyUser(b.dataset.uid)));
+    $('verification-tbody').querySelectorAll('.verify-btn').forEach(b => {
+      b.addEventListener('click', function() {
+        const name = this.dataset.name;
+        const email = this.dataset.email;
+        if (!confirm(`Approve ${name} (${email})?`)) return;
+        verifyUser(this.dataset.uid);
+      });
+    });
   }
 
   function renderPayments() {
@@ -290,9 +301,8 @@
   }
 
   async function verifyUser(uid) {
-    if (!confirm('Verify this user?')) return;
     await Auth.updateProfile(uid, { verified: true });
-    showToast('User verified', 'success');
+    showToast('User verified successfully', 'success');
     await loadData();
   }
 

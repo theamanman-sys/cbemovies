@@ -31,6 +31,11 @@
           <input type="password" id="login-password" placeholder="Enter your password" required autocomplete="current-password">
         </div>
         <div class="form-error" id="login-error"></div>
+        <div id="login-pending-info" style="display:none;padding:12px;background:rgba(145,0,150,0.1);border:1px solid rgba(145,0,150,0.3);border-radius:8px;margin-bottom:12px;font-size:13px;line-height:1.5">
+          <div id="pending-email-status" style="margin-bottom:8px"></div>
+          <button type="button" class="auth-btn" id="resend-verify-btn" style="padding:6px 14px;font-size:12px">Resend verification email</button>
+          <span id="resend-verify-msg" style="font-size:12px;color:#4caf50;margin-left:8px;display:none">Sent!</span>
+        </div>
         <button type="submit" class="auth-btn" id="login-btn">Sign In</button>
       </form>
 
@@ -113,6 +118,15 @@
       if (err.message === 'ACCOUNT_NOT_VERIFIED') {
         errorEl.textContent = 'Account not yet verified. Please wait for admin approval.';
         showToast('Account pending verification by admin');
+        $('login-pending-info').style.display = 'block';
+        Auth.checkEmailVerified().then((verified) => {
+          const statusEl = $('pending-email-status');
+          if (verified) {
+            statusEl.innerHTML = '✅ Email verified — awaiting admin approval.<br><span style="opacity:0.7">Admins have been notified of your registration.</span>';
+          } else {
+            statusEl.innerHTML = '⚠️ Please check your email and click the verification link.<br><span style="opacity:0.7">You can resend the email below if needed.</span>';
+          }
+        });
       } else if (err.message === 'ACCOUNT_NOT_SUBSCRIBED') {
         errorEl.textContent = 'Please purchase a subscription before signing in.';
         showToast('Subscription required to access content');
@@ -132,6 +146,16 @@
 
   Auth.onAuthStateChanged((user) => {
     if (user) window.location.href = 'home.html';
+  });
+
+  $('resend-verify-btn').addEventListener('click', async function() {
+    try {
+      await Auth.resendVerificationEmail();
+      $('resend-verify-msg').style.display = 'inline';
+      setTimeout(() => { $('resend-verify-msg').style.display = 'none'; }, 3000);
+    } catch (err) {
+      showToast(err.message || 'Could not resend');
+    }
   });
 
   /* ── CBE SuperApp Login ── */

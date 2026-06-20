@@ -40,6 +40,19 @@ const Auth = {
     return cred;
   },
 
+  async resendVerificationEmail() {
+    const user = auth.currentUser;
+    if (!user) throw new Error('No user logged in');
+    await user.sendEmailVerification();
+  },
+
+  async checkEmailVerified() {
+    const user = auth.currentUser;
+    if (!user) return false;
+    await user.reload();
+    return user.emailVerified;
+  },
+
   canAccessContent(userDoc) {
     if (!userDoc) return false;
     if (userDoc.role === 'admin' || userDoc.role === 'superadmin') return true;
