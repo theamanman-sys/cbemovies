@@ -1378,11 +1378,9 @@ function renderSubtitleMenu() {
   if (!list) return;
 
   const hasActive = subtitleState.currentLang !== null;
-  const amActive = subtitleState.currentLang === 'am';
 
   let html = '';
   html += `<button class="subtitle-menu-item${!hasActive ? ' active' : ''}" onclick="selectSubtitle('off')"><span class="check">✓</span><span class="label">Off</span></button>`;
-  html += `<button class="subtitle-menu-item${amActive ? ' active' : ''}" onclick="selectSubtitle('translate')"><span class="check">✓</span><span class="label">🇪🇹 Amharic (ትርጉም)</span></button>`;
 
   const savedItems = subtitleState.saved || [];
   if (savedItems.length) {
@@ -1439,11 +1437,10 @@ async function selectSubtitle(lang) {
   }
 
   const isSaved = lang.startsWith('saved:');
-  const langCode = isSaved ? lang.slice(6) : (lang === 'translate' ? 'am' : lang);
+  const langCode = isSaved ? lang.slice(6) : lang;
 
   try {
     let vtt;
-    let needsProgressiveTranslate = false;
 
     if (isSaved) {
       if (typeof getSubtitle === 'function') {
@@ -1464,9 +1461,7 @@ async function selectSubtitle(lang) {
       }
 
       if (!vtt) {
-        // For Amharic, fetch English VTT (fast) and translate progressively on client
-        const fetchLang = lang === 'translate' ? 'en' : langCode;
-        const url = `/api/subtitle?imdb=${encodeURIComponent(imdb)}&lang=${fetchLang}&from=en`;
+        const url = `/api/subtitle?imdb=${encodeURIComponent(imdb)}&lang=${langCode}&from=en`;
         const res = await fetch(url);
         if (!res.ok) {
           showToast(`Subtitles unavailable (${res.status})`, true);
@@ -1475,8 +1470,6 @@ async function selectSubtitle(lang) {
           return;
         }
         vtt = await res.text();
-
-        if (lang === 'translate') needsProgressiveTranslate = true;
       }
     }
     const cues = parseVTT(vtt);
@@ -1489,8 +1482,7 @@ async function selectSubtitle(lang) {
 
     // Restore saved position for this movie
     subtitleState.currentLang = langCode;
-    const label = lang === 'translate' ? 'አማ'
-      : (subtitleState.available.find(s => s.code === langCode)?.lang || langCode.toUpperCase().slice(0, 3));
+    const label = subtitleState.available.find(s => s.code === langCode)?.lang || langCode.toUpperCase().slice(0, 3);
     btn.textContent = label;
 
     subState.cues = cues;
@@ -1517,131 +1509,11 @@ async function selectSubtitle(lang) {
     renderSubtitleMenu();
     closeSubtitleMenu();
 
-    if (needsProgressiveTranslate) {
-      showToast(`Translating ${cues.length} cues to Amharic...`);
-      translateAllCues(imdb, cues).then(fullVtt => {
-        if (fullVtt && typeof saveSubtitle === 'function') {
-          saveSubtitle(imdb, 'am', fullVtt, '🇪🇹 Amharic').catch(() => {});
-        }
-      });
-    } else {
-      showToast(`Subtitles: ${label}`);
-    }
+    showToast(`Subtitles: ${label}`);
   } catch (err) {
     showToast('Failed to load subtitles', true);
     btn.textContent = 'CC';
     btn.classList.remove('active');
-  }
-}
-
-async function translateAllCues(imdb, cues) {
-  let translated = 0;
-  const total = cues.length;
-  const concurrency = 10;
-  const queue = cues.filter(c => c.t && c.t !== '');
-
-  for (let i = 0; i < queue.length; i += concurrency) {
-    const batch = queue.slice(i, i + concurrency);
-    await Promise.all(batch.map(async (cue) => {
-      try {
-        const res = await fetch('/api/subtitle', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ text: cue.t.slice(0, 500), from: 'en', target: 'am' }),
-        });
-        if (res.ok) {
-          const data = await res.json();
-          if (data.translatedText && data.translatedText !== cue.t) {
-            cue.t = data.translatedText;
-            translated++;
-          }
-        }
-      } catch {}
-    }));
-  }
-
-  if (translated > 0) {
-    subState.cues = cues;
-    showToast(`Translated ${translated}/${total} cues`);
-    return entriesToVtt(cues);
-  }
-  return null;
-}
-
-function entriesToVtt(cues) {
-  let vtt = 'WEBVTT\n\n';
-  for (const c of cues) {
-    if (!c.t) continue;
-    const s = formatVTTTime(c.s);
-    const e = formatVTTTime(c.e);
-    vtt += `${s} --> ${e}\n${c.t}\n\n`;
-  }
-  return vtt;
-}
-
-function formatVTTTime(t) {
-  const h = Math.floor(t / 3600);
-  const m = Math.floor((t % 3600) / 60);
-  const s = (t % 60).toFixed(3).padStart(6, '0');
-  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${s}`;
-}
-
-async function translateSubtitles() {
-  await selectSubtitle('translate');
-}
-
-async function uploadSubtitleFile(file) {
-  const raw = await file.text();
-  const imdb = state.currentItem?.imdb_id || state.currentItem?.tmdb_id || '';
-  const btn = document.getElementById('subtitle-btn');
-  if (!btn) return;
-  btn.textContent = '...';
-  btn.classList.add('active');
-
-  // Parse SRT client-side
-  const cues = parseSRT(raw);
-  if (!cues.length) {
-    showToast('No subtitle cues found in file', true);
-    btn.textContent = 'CC';
-    btn.classList.remove('active');
-    return;
-  }
-
-  subtitleState.currentLang = 'am';
-  btn.textContent = 'አማ';
-
-  subState.cues = cues;
-  subState.duration = cues.reduce((max, c) => Math.max(max, c.e), 0);
-  subState.gotEvent = false;
-  if (state.playerStartTime) {
-    subState.currentTime = (performance.now() - state.playerStartTime) / 1000;
-    subState.fallbackStart = state.playerStartTime;
-  } else {
-    subState.currentTime = 0;
-    subState.fallbackStart = performance.now();
-  }
-  tryReadVideoTime();
-  showSubtitleOverlay();
-  setupSubProgress();
-  subLoop();
-  showToast('Translating uploaded subtitles...');
-
-  translateAllCues(imdb, cues).then(fullVtt => {
-    if (fullVtt && typeof saveSubtitle === 'function') {
-      saveSubtitle(imdb, 'am', fullVtt, '📁 Uploaded (Amharic)').catch(() => {});
-    }
-    renderSubtitleMenu();
-  });
-}
-
-function setupSubtitleUpload() {
-  const input = document.getElementById('srt-upload-input');
-  if (input) {
-    input.addEventListener('change', (e) => {
-      const file = e.target.files?.[0];
-      if (file) uploadSubtitleFile(file);
-      input.value = '';
-    });
   }
 }
 
@@ -2486,5 +2358,5 @@ document.addEventListener('DOMContentLoaded', () => {
   window.addEventListener('resize', repositionHeroControls);
   loadContent();
   loadYTAPI();
-  setupSubtitleUpload();
+
 });

@@ -1,11 +1,6 @@
 const AdmZip = require('adm-zip');
 
 const YIFY_API = 'https://yifysubtitles.org/api/moviedetails';
-const MYMEMORY_API = 'https://api.mymemory.translated.net/get';
-const LIBRE_INSTANCES = [
-  'https://translate.argosopentech.com/translate',
-  'https://libretranslate.com/translate',
-];
 const CACHE_TTL = 86400;
 
 function srtToVtt(srt) {
@@ -20,46 +15,6 @@ function srtToVtt(srt) {
     const text = lines.slice(timeLineIdx + 1).join('\n').trim();
     if (!text) continue;
     vtt += `${timeLine}\n${text}\n\n`;
-  }
-  return vtt;
-}
-
-function parseSRT(text) {
-  const entries = [];
-  const blocks = text.trim().split(/\n\s*\n/);
-  for (const block of blocks) {
-    const lines = block.split('\n');
-    if (lines.length < 2) continue;
-    const timeLineIdx = lines.findIndex(l => l.includes('-->'));
-    if (timeLineIdx === -1) continue;
-    const text = lines.slice(timeLineIdx + 1).join('\n').trim();
-    if (!text) continue;
-    const [start, end] = lines[timeLineIdx].split('-->').map(t => t.trim());
-    entries.push({ start: parseTime(start), end: parseTime(end), text });
-  }
-  return entries;
-}
-
-function parseTime(t) {
-  const parts = t.replace(',', '.').split(/[:.]/);
-  if (parts.length >= 3) {
-    return (+parts[0]) * 3600 + (+parts[1]) * 60 + (+parts[2]) + (+(parts[3] || 0)) / 1000;
-  }
-  return 0;
-}
-
-function formatVTTTime(seconds) {
-  const h = Math.floor(seconds / 3600);
-  const m = Math.floor((seconds % 3600) / 60);
-  const s = seconds % 60;
-  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${s.toFixed(3).padStart(6, '0')}`;
-}
-
-function entriesToVtt(entries) {
-  let vtt = 'WEBVTT\n\n';
-  for (const entry of entries) {
-    if (!entry.text) continue;
-    vtt += `${formatVTTTime(entry.start)} --> ${formatVTTTime(entry.end)}\n${entry.text}\n\n`;
   }
   return vtt;
 }
@@ -160,113 +115,13 @@ async function downloadSubtitleZip(url) {
   } catch { return null; }
 }
 
-async function translateViaMyMemory(text, from, to) {
-  const params = new URLSearchParams({ q: text.slice(0, 500), langpair: `${from}|${to}` });
-  try {
-    const res = await fetch(`${MYMEMORY_API}?${params}`, {
-      headers: { 'User-Agent': 'Mozilla/5.0' },
-      signal: AbortSignal.timeout(2000)
-    });
-    if (res.ok) {
-      const data = await res.json();
-      if (data.responseStatus === 200 && data.responseData?.translatedText) {
-        const t = data.responseData.translatedText;
-        if (t !== text) return t;
-      }
-    }
-  } catch {}
-  return null;
-}
-
-async function translateViaLibre(text, from, to) {
-  const body = JSON.stringify({ q: text.slice(0, 500), source: from, target: to, format: 'text' });
-  for (const url of LIBRE_INSTANCES) {
-    try {
-      const res = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body,
-        signal: AbortSignal.timeout(3000)
-      });
-      if (res.ok) {
-        const data = await res.json();
-        if (data.translatedText) return data.translatedText;
-      }
-    } catch {}
-  }
-  return null;
-}
-
-async function translateEntry(entry, from, to) {
-  const text = entry.text.trim();
-  if (!text) return { ...entry };
-
-  // Try MyMemory first (fast, good for short text)
-  let translated = await translateViaMyMemory(text, from, to);
-  // Fall back to LibreTranslate if MyMemory returned unchanged text
-  if (!translated) translated = await translateViaLibre(text, from, to);
-
-  return { ...entry, text: translated || text };
-}
-
-async function translateEntries(entries, from, to) {
-  const concurrency = 5;
-  const results = [];
-  for (let i = 0; i < entries.length; i += concurrency) {
-    const batch = entries.slice(i, i + concurrency);
-    const translated = await Promise.all(batch.map(e => translateEntry(e, from, to)));
-    results.push(...translated);
-  }
-  return results;
-}
-
-function getLanguageName(code) {
-  const names = {
-    am: 'Amharic', en: 'English', es: 'Spanish', fr: 'French', de: 'German',
-    it: 'Italian', pt: 'Portuguese', ru: 'Russian', ja: 'Japanese', ko: 'Korean',
-    zh: 'Chinese', ar: 'Arabic', hi: 'Hindi', bn: 'Bengali', sw: 'Swahili',
-    ti: 'Tigrinya', om: 'Oromo', so: 'Somali',
-  };
-  return names[code] || code.toUpperCase();
-}
-
 module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
   if (req.method === 'OPTIONS') {
     res.status(200).end();
-    return;
-  }
-
-  // POST: translate single text (fast, for progressive client-side translation)
-  if (req.method === 'POST') {
-    const { content, text, imdb, from: srcLang = 'en', target = 'am' } = req.body || {};
-
-    // Single text translation (used by client progressive translation)
-    if (text) {
-      let translated = await translateViaMyMemory(text.slice(0, 500), srcLang, target);
-      if (!translated) translated = await translateViaLibre(text.slice(0, 500), srcLang, target);
-      res.setHeader('Content-Type', 'application/json');
-      res.status(200).json({ translatedText: translated || text });
-      return;
-    }
-
-    // Full SRT upload translation
-    if (!content) {
-      res.status(400).json({ error: 'Missing text or content' });
-      return;
-    }
-    const entries = parseSRT(content);
-    if (!entries.length) {
-      res.status(400).json({ error: 'No subtitle entries found in content' });
-      return;
-    }
-    const translated = await translateEntries(entries, srcLang, target);
-    const vtt = entriesToVtt(translated);
-    res.setHeader('Content-Type', 'text/vtt; charset=utf-8');
-    res.status(200).send(vtt);
     return;
   }
 
@@ -329,18 +184,8 @@ module.exports = async (req, res) => {
     return;
   }
 
-  // For Amharic, just return English VTT — client does progressive translation
-  if (lang.toLowerCase().slice(0, 2) !== from.toLowerCase().slice(0, 2) && lang !== from && lang !== 'am') {
-    const entries = parseSRT(srtText);
-    const translated = await translateEntries(entries, from, lang.slice(0, 2));
-    const vtt = entriesToVtt(translated);
-    res.setHeader('Content-Type', 'text/vtt; charset=utf-8');
-    res.setHeader('Cache-Control', `public, max-age=${CACHE_TTL}`);
-    res.status(200).send(vtt);
-  } else {
-    const vtt = srtToVtt(srtText);
-    res.setHeader('Content-Type', 'text/vtt; charset=utf-8');
-    res.setHeader('Cache-Control', `public, max-age=${CACHE_TTL}`);
-    res.status(200).send(vtt);
-  }
+  const vtt = srtToVtt(srtText);
+  res.setHeader('Content-Type', 'text/vtt; charset=utf-8');
+  res.setHeader('Cache-Control', `public, max-age=${CACHE_TTL}`);
+  res.status(200).send(vtt);
 };
