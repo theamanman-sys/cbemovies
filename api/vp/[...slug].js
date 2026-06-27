@@ -9,28 +9,24 @@ const ALLOWED_DOMAINS = [
 ];
 
 module.exports = async (req, res) => {
-  const fullUrl = req.url;
-  const prefix = '/api/vp/';
-  const qIndex = fullUrl.indexOf('?');
-  const pathPart = qIndex === -1 ? fullUrl : fullUrl.slice(0, qIndex);
-  const queryPart = qIndex === -1 ? '' : fullUrl.slice(qIndex);
-
-  if (!pathPart.startsWith(prefix)) {
+  const { slug } = req.query;
+  if (!slug || slug.length < 2) {
     res.status(400).json({ error: 'Invalid path' });
     return;
   }
 
-  const rest = pathPart.slice(prefix.length);
-  const firstSlash = rest.indexOf('/');
-  if (firstSlash === -1) {
-    res.status(400).json({ error: 'Missing asset path' });
+  const qIndex = req.url.indexOf('?');
+  const query = qIndex === -1 ? '' : req.url.slice(qIndex);
+  const reconstructed = decodeURIComponent(slug.join('/'));
+  let parsedUrl;
+  try {
+    parsedUrl = new URL(reconstructed + query);
+  } catch {
+    res.status(400).json({ error: 'Invalid URL' });
     return;
   }
 
-  const encodedDomain = rest.slice(0, firstSlash);
-  const assetPath = rest.slice(firstSlash);
-  const baseDomain = decodeURIComponent(encodedDomain);
-  const url = `${baseDomain}${assetPath}${queryPart}`;
+  const url = parsedUrl.href;
   if (!ALLOWED_DOMAINS.some(d => url.includes(d))) {
     res.status(403).json({ error: 'Domain not allowed' });
     return;
