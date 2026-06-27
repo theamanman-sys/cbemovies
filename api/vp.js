@@ -9,14 +9,28 @@ const ALLOWED_DOMAINS = [
 ];
 
 module.exports = async (req, res) => {
-  const { domain, path } = req.query;
-  if (!path) {
-    res.status(400).json({ error: 'Missing path' });
+  const fullUrl = req.url;
+  const prefix = '/api/vp/';
+  const qIndex = fullUrl.indexOf('?');
+  const pathPart = qIndex === -1 ? fullUrl : fullUrl.slice(0, qIndex);
+  const queryPart = qIndex === -1 ? '' : fullUrl.slice(qIndex);
+
+  if (!pathPart.startsWith(prefix)) {
+    res.status(400).json({ error: 'Invalid path' });
     return;
   }
 
-  const baseDomain = domain ? decodeURIComponent(domain) : 'https://vidphantom.com';
-  const url = `${baseDomain}${path}`;
+  const rest = pathPart.slice(prefix.length);
+  const firstSlash = rest.indexOf('/');
+  if (firstSlash === -1) {
+    res.status(400).json({ error: 'Missing asset path' });
+    return;
+  }
+
+  const encodedDomain = rest.slice(0, firstSlash);
+  const assetPath = rest.slice(firstSlash);
+  const baseDomain = decodeURIComponent(encodedDomain);
+  const url = `${baseDomain}${assetPath}${queryPart}`;
   if (!ALLOWED_DOMAINS.some(d => url.includes(d))) {
     res.status(403).json({ error: 'Domain not allowed' });
     return;

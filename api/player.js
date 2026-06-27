@@ -46,11 +46,12 @@ module.exports = async (req, res) => {
     html = html.replace(/<script[^>]*>[\s\S]*?(?:die\(|self\.location|top\.location|parent\.location|frameElement|window\.(?:self|top|parent))[\s\S]*?<\/script>/gi, '');
     html = html.replace(/<script[^>]*>[\s\S]*?disable-devtool[\s\S]*?<\/script>/gi, '');
     // Rewrite full origin URLs (src="https://upstream/...") through our proxy
-    html = html.replace(new RegExp(`((?:src|href)=)["']${upstreamOrigin}([^"']*)["']`, 'gi'), `$1"/api/vp?domain=${encodedOrigin}&path=$2"`);
-    html = html.replace(new RegExp(`(url\\(['"]?)${upstreamOrigin}([^)"']*)`, 'g'), `$1/api/vp?domain=${encodedOrigin}&path=$2`);
+    html = html.replace(new RegExp(`((?:src|href)=)["']${upstreamOrigin}([^"']*)["']`, 'gi'), `$1"/api/vp/${encodedOrigin}$2"`);
+    html = html.replace(new RegExp(`(url\\(['"]?)${upstreamOrigin}([^)"']*)`, 'g'), `$1/api/vp/${encodedOrigin}$2`);
     // Rewrite absolute path URLs on asset elements (scripts, styles, images, video sources)
     // to go through our proxy, avoiding CORS issues with module scripts
-    html = html.replace(/(<(?:script|link|img|source|video|audio)[^>]*\s(?:src|href)=["'])\/(?!\/|api\/)([^"']*)(["'])/gi, `$1/api/vp?domain=${encodedOrigin}&path=/$2$3`);
+    // Uses path-based URLs so module scripts can resolve relative import('./foo.js') correctly
+    html = html.replace(/(<(?:script|link|img|source|video|audio)[^>]*\s(?:src|href)=["'])\/(?!\/|api\/)([^"']*)(["'])/gi, `$1/api/vp/${encodedOrigin}/$2$3`);
     // Inject <base> tag so relative paths resolve against the upstream origin
     html = html.replace('<head>', `<head><base href="${upstreamOrigin}/">`);
     // If the page is from a source that sends postMessage progress events natively,
