@@ -499,6 +499,7 @@ nav.scrolled {
   overflow-x: auto;
   scroll-snap-type: x mandatory;
   -webkit-overflow-scrolling: touch;
+  touch-action: pan-x;
   padding-bottom: 8px;
   scrollbar-width: none;
 }
@@ -975,7 +976,7 @@ nav.scrolled {
 .subtitle-overlay.hidden { display: none; }
 .subtitle-text {
   text-align: center; font-size: 1.2em; color: #fff;
-  font-family: 'Noto Sans Ethiopic', 'Ebrima', 'Nyala', 'Kefa', 'Abyssinica SIL', 'Segoe UI Historic', sans-serif;
+  font-family: sans-serif;
   text-shadow: 0 2px 6px rgba(0,0,0,0.9);
   line-height: 1.5; pointer-events: auto; max-width: 90%; margin-bottom: 8px;
 }
@@ -2158,23 +2159,23 @@ footer {
   .hero-meta { font-size: 11px; gap: 6px; }
   .hero-badge { font-size: 10px; padding: 4px 10px; }
   .hero-desc { font-size: 13px; }
-  .hero-actions .btn { padding: 6px 14px; font-size: 12px; }
+  .hero-actions .btn { padding: 10px 18px; font-size: 13px; min-height: 44px; }
   .hero-controls.mobile-below { padding: 8px 12px; }
   .section { padding: 16px 12px 32px; }
   .section-header { margin-bottom: 16px; }
   .section-header h2 { font-size: 17px; }
-  .section-nav button { width: 32px; height: 32px; font-size: 12px; }
+  .section-nav button { width: 44px; height: 44px; font-size: 14px; }
   .modal-backdrop { height: 160px; }
   .modal-body { padding: 12px 14px 20px; }
   .modal-body h2 { font-size: 18px; }
   .modal-body .meta { font-size: 12px; gap: 8px; }
   .modal-body p { font-size: 13px; }
-  .modal-close { width: 34px; height: 34px; font-size: 15px; top: 10px; right: 10px; }
-  .search-overlay { padding: 56px 12px; }
-  .search-overlay input { font-size: 16px; padding: 12px 44px 12px 14px; }
+  .modal-close { width: 44px; height: 44px; font-size: 16px; top: 8px; right: 8px; }
+  .search-overlay { padding: 56px 12px; overscroll-behavior: contain; }
+  .search-overlay input { font-size: 16px; padding: 12px 50px 12px 16px; min-height: 48px; }
   .search-results { grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 10px; }
-  .search-tab { padding: 4px 10px; font-size: 11px; }
-  .admin-sidebar .admin-nav-item { font-size:12px; padding:8px 10px; }
+  .search-tab { padding: 8px 12px; font-size: 12px; min-height: 44px; }
+  .admin-sidebar .admin-nav-item { font-size:12px; padding:10px 12px; }
   .cast-card { flex: 0 0 60px; }
   .cast-card img { width: 40px; height: 40px; }
   .cast-card .name { font-size: 10px; }
@@ -2184,15 +2185,15 @@ footer {
   .featured-item .featured-info h3 { font-size: 14px; }
   .featured-item .featured-info p { font-size: 11px; }
   .tv-selector { padding: 10px; }
-  .episode-item { padding: 6px 8px; gap: 6px; }
+  .episode-item { padding: 8px 10px; gap: 8px; }
   .episode-title { font-size: 12px; }
   .episode-meta { font-size: 10px; }
   .episode-overview { font-size: 11px; -webkit-line-clamp: 1; }
   .episode-still { width: 56px; height: 32px; }
-  .episode-num { width: 24px; height: 24px; font-size: 10px; }
+  .episode-num { width: 28px; height: 28px; font-size: 11px; }
   .facts-grid { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 8px; padding: 10px; }
   .footer-grid { gap: 16px; }
-  footer { padding: 20px 12px 24px; }
+  .footer { padding: 20px 12px 24px; }
   .footer-col h4 { font-size: 12px; }
   .footer-col a { font-size: 12px; }
   .youtube-brand h2 { font-size: 17px; }
@@ -2201,16 +2202,16 @@ footer {
   .youtube-card-body p { font-size: 12px; }
   .browse-hero { padding: 80px 16px 24px; }
   .browse-hero h1 { font-size: 22px; }
-  .filter-bar { padding: 10px 12px; gap: 6px; }
+  .filter-bar { padding: 12px 12px; gap: 8px; }
   .filter-group label { font-size: 10px; }
-  .filter-group select { min-width: 90px; font-size: 11px; padding: 5px 8px; }
-  .filter-actions .btn { padding: 6px 12px; font-size: 11px; }
+  .filter-group select { min-width: 90px; font-size: 12px; padding: 8px 10px; min-height: 44px; }
+  .filter-actions .btn { padding: 10px 16px; font-size: 12px; min-height: 44px; }
   .browse-section { padding: 12px; }
   .browse-grid { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
   .browse-header { margin-bottom: 10px; }
   .browse-header .result-count { font-size: 12px; }
   .pagination { padding: 20px 0 32px; gap: 6px; }
-  .pagination .page-btn { padding: 6px 10px; font-size: 12px; min-width: 30px; }
+  .pagination .page-btn { padding: 10px 14px; font-size: 13px; min-width: 44px; min-height: 44px; }
 }
 
 /* ── Mobile Landscape ── */
