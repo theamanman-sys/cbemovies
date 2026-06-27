@@ -9,28 +9,27 @@ const ALLOWED_DOMAINS = [
 ];
 
 module.exports = async (req, res) => {
-  const { slug } = req.query;
-  if (!slug || slug.length < 2) {
-    res.status(400).json({ error: 'Invalid path' });
+  const { target } = req.query;
+  if (!target) {
+    res.status(400).json({ error: 'Missing target' });
     return;
   }
 
-  const qIndex = req.url.indexOf('?');
-  const query = qIndex === -1 ? '' : req.url.slice(qIndex);
-  const reconstructed = decodeURIComponent(slug.join('/'));
-  let parsedUrl;
-  try {
-    parsedUrl = new URL(reconstructed + query);
-  } catch {
-    res.status(400).json({ error: 'Invalid URL' });
+  const firstSlash = target.indexOf('/');
+  if (firstSlash === -1) {
+    res.status(400).json({ error: 'Missing asset path' });
     return;
   }
 
-  const url = parsedUrl.href;
+  const hostname = target.slice(0, firstSlash);
+  const assetPath = target.slice(firstSlash);
+  const url = `https://${hostname}${assetPath}`;
+
   if (!ALLOWED_DOMAINS.some(d => url.includes(d))) {
     res.status(403).json({ error: 'Domain not allowed' });
     return;
   }
+
   try {
     const response = await fetch(url, {
       headers: {
