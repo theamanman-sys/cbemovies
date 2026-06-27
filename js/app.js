@@ -850,21 +850,25 @@ let _playerSources = [];
 let _playerSourceIndex = 0;
 let _sourceFallbackTimer = null;
 
+function tryNextSource() {
+  if (_playerSourceIndex + 1 < _playerSources.length) {
+    _playerSourceIndex++;
+    _currentPlayerUrl = _playerSources[_playerSourceIndex];
+    _expectedIframeNav = true;
+    dom.playerFrame.src = _currentPlayerUrl;
+    state.playerStartTime = performance.now();
+    startSourceFallbackTimer();
+  } else {
+    showToast('All player sources failed', true);
+  }
+}
+
 function startSourceFallbackTimer() {
   clearSourceFallbackTimer();
   _sourceFallbackTimer = setTimeout(() => {
     _sourceFallbackTimer = null;
     if (!dom.playerPage || dom.playerPage.classList.contains('hidden')) return;
-    if (_playerSourceIndex + 1 < _playerSources.length) {
-      _playerSourceIndex++;
-      _currentPlayerUrl = _playerSources[_playerSourceIndex];
-      _expectedIframeNav = true;
-      dom.playerFrame.src = _currentPlayerUrl;
-      state.playerStartTime = performance.now();
-      startSourceFallbackTimer();
-    } else {
-      showToast('All player sources failed', true);
-    }
+    tryNextSource();
   }, 15000);
 }
 
@@ -875,11 +879,19 @@ function clearSourceFallbackTimer() {
   }
 }
 
+let _iframeReloadCount = 0;
 if (dom.playerFrame) {
   dom.playerFrame.addEventListener('load', () => {
     if (_expectedIframeNav) { _expectedIframeNav = false; return; }
     if (!_currentPlayerUrl) return;
-    // Embed navigated internally (next-ep button, autonext) — advance our state too
+    _iframeReloadCount++;
+    // Embed navigated internally — limit reloads to prevent redirect loops
+    if (_iframeReloadCount > 3) {
+      _iframeReloadCount = 0;
+      clearSourceFallbackTimer();
+      tryNextSource();
+      return;
+    }
     if (state.currentItem?.type === 'tv') {
       _expectedIframeNav = true;
       nextEpisode();

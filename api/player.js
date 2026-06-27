@@ -48,9 +48,9 @@ module.exports = async (req, res) => {
     // Rewrite full origin URLs (src="https://upstream/...") through our proxy
     html = html.replace(new RegExp(`((?:src|href)=)["']${upstreamOrigin}([^"']*)["']`, 'gi'), `$1"/api/vp?domain=${encodedOrigin}&path=$2"`);
     html = html.replace(new RegExp(`(url\\(['"]?)${upstreamOrigin}([^)"']*)`, 'g'), `$1/api/vp?domain=${encodedOrigin}&path=$2`);
-    // Rewrite absolute path URLs (src="/path/...") through our proxy too
-    // This catches module scripts and assets that need CORS (e.g. Cinezo)
-    html = html.replace(/((?:src|href)=["'])\/(?!\/|api\/)([^"']*)(["'])/g, `$1/api/vp?domain=${encodedOrigin}&path=/$2$3`);
+    // Rewrite absolute path URLs on asset elements (scripts, styles, images, video sources)
+    // to go through our proxy, avoiding CORS issues with module scripts
+    html = html.replace(/(<(?:script|link|img|source|video|audio)[^>]*\s(?:src|href)=["'])\/(?!\/|api\/)([^"']*)(["'])/gi, `$1/api/vp?domain=${encodedOrigin}&path=/$2$3`);
     // Inject <base> tag so relative paths resolve against the upstream origin
     html = html.replace('<head>', `<head><base href="${upstreamOrigin}/">`);
     // If the page is from a source that sends postMessage progress events natively,
