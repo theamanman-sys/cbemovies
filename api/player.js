@@ -45,12 +45,12 @@ module.exports = async (req, res) => {
     let html = await response.text();
     html = html.replace(/<script[^>]*>[\s\S]*?(?:die\(|self\.location|top\.location|parent\.location|frameElement|window\.(?:self|top|parent))[\s\S]*?<\/script>/gi, '');
     html = html.replace(/<script[^>]*>[\s\S]*?disable-devtool[\s\S]*?<\/script>/gi, '');
-    // Rewrite absolute URLs from upstream origin through our proxy first
+    // Rewrite absolute URLs from upstream origin through our proxy
     html = html.replace(new RegExp(`((?:src|href)=)["']${upstreamOrigin}([^"']*)["']`, 'gi'), `$1"/api/vp?domain=${encodedOrigin}&path=$2"`);
     html = html.replace(new RegExp(`(url\\(['"]?)${upstreamOrigin}([^)"']*)`, 'g'), `$1/api/vp?domain=${encodedOrigin}&path=$2`);
-    // Inject <base> tag AFTER URL rewriting so its own href is not rewritten
-    // Use actual upstream origin so relative paths (_next/static/...) resolve correctly
-    html = html.replace('<head>', `<head><base href="${upstreamOrigin}/">`);
+    // Inject <base> tag pointing to our proxy so all relative asset paths go through it
+    // This avoids CORS issues when the upstream blocks cross-origin asset loading
+    html = html.replace('<head>', `<head><base href="/api/vp?domain=${encodedOrigin}&path=">`);
     // If the page is from a source that sends postMessage progress events natively,
     // we only inject our progress relay for sources that lack native support
     html = html.replace('</body>', '<script>\n' +
