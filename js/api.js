@@ -59,7 +59,7 @@ const API = {
 
   getPlayerUrls(item, season = 1, episode = 1, pos = 0) {
     return [
-      this._proxyUrl(this._buildPlayerUrl(this.PRIMARY_PLAYER, item, season, episode, pos)),
+      this._buildPlayerUrl(this.PRIMARY_PLAYER, item, season, episode, pos),
       this._proxyUrl(this._buildPlayerUrl(this.FALLBACK_PLAYER, item, season, episode, pos)),
     ];
   },
