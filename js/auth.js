@@ -13,6 +13,8 @@ const Auth = {
   },
 
   async register({ email, phone, username, password, firstName, lastName }) {
+    const existing = await db.collection('users').where('username', '==', username).get();
+    if (!existing.empty) throw new Error('Username is already taken');
     const cred = await auth.createUserWithEmailAndPassword(email, password);
     const uid = cred.user.uid;
     const doc = {
@@ -172,7 +174,8 @@ const Auth = {
     if (!doc.exists) return false;
     const data = doc.data();
     if (!data.subscribed || !data.subscriptionEnd) return false;
-    return data.subscriptionEnd.toDate() > new Date();
+    const end = data.subscriptionEnd.toDate ? data.subscriptionEnd.toDate() : new Date(data.subscriptionEnd);
+    return end > new Date();
   },
 
   async getAllUsers() {

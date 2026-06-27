@@ -24,12 +24,26 @@ function stableStringify(obj) {
 module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   if (req.method === 'OPTIONS') { res.status(200).end(); return; }
   if (req.method !== 'POST') { res.status(405).json({ error: 'Method not allowed' }); return; }
 
   try {
+    const { db, FieldValue, auth } = getFirebase();
+
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      res.status(401).json({ error: 'Missing or invalid authorization header' });
+      return;
+    }
+    const idToken = authHeader.split('Bearer ')[1];
+    const decodedToken = await auth.verifyIdToken(idToken);
+
     const { uid, plan, merchantReference } = req.body;
+    if (decodedToken.uid !== uid) {
+      res.status(403).json({ error: 'Unauthorized: token UID does not match request UID' });
+      return;
+    }
 
     const appCode = process.env.CBE_APP_CODE || '';
     const merchantCode = process.env.CBE_MERCHANT_CODE || '';
@@ -77,7 +91,6 @@ module.exports = async (req, res) => {
       sign = fromByteArray(sig);
     }
 
-    const { db, FieldValue } = getFirebase();
     const paymentRef = await db.collection('payments').add({
       userId: uid,
       amount,

@@ -464,9 +464,10 @@
     superappPayLoading.style.display = 'block';
     $('payment-error').textContent = '';
     try {
+      const idToken = await Auth.currentUser.getIdToken();
       const signRes = await fetch('/api/cbe-payment', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + idToken },
         body: JSON.stringify({ uid: Auth.currentUser.uid, plan })
       });
       const signData = await signRes.json();
@@ -590,8 +591,9 @@
     if (!confirm('Are you sure? This permanently deletes your account and all data.')) return;
     if (!confirm('This cannot be undone. Continue?')) return;
     try {
-      await db.collection('users').doc(Auth.currentUser.uid).delete();
+      const uid = Auth.currentUser.uid;
       await Auth.currentUser.delete();
+      await db.collection('users').doc(uid).delete();
       showToast('Account deleted', 'success');
       setTimeout(() => window.location.href = 'login.html', 1500);
     } catch (err) {

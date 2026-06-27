@@ -846,14 +846,42 @@ function closeYouTubePlayer() {
 /* ── Player ── */
 let _currentPlayerUrl = '';
 let _expectedIframeNav = false;
+let _playerSources = [];
+let _playerSourceIndex = 0;
+let _sourceFallbackTimer = null;
+
+function startSourceFallbackTimer() {
+  clearSourceFallbackTimer();
+  _sourceFallbackTimer = setTimeout(() => {
+    _sourceFallbackTimer = null;
+    if (!dom.playerPage || dom.playerPage.classList.contains('hidden')) return;
+    if (_playerSourceIndex + 1 < _playerSources.length) {
+      _playerSourceIndex++;
+      _currentPlayerUrl = _playerSources[_playerSourceIndex];
+      _expectedIframeNav = true;
+      dom.playerFrame.src = _currentPlayerUrl;
+      state.playerStartTime = performance.now();
+      startSourceFallbackTimer();
+    } else {
+      showToast('All player sources failed', true);
+    }
+  }, 15000);
+}
+
+function clearSourceFallbackTimer() {
+  if (_sourceFallbackTimer) {
+    clearTimeout(_sourceFallbackTimer);
+    _sourceFallbackTimer = null;
+  }
+}
 
 if (dom.playerFrame) {
   dom.playerFrame.addEventListener('load', () => {
     if (_expectedIframeNav) { _expectedIframeNav = false; return; }
     if (!_currentPlayerUrl) return;
-    // Cinezo navigated internally (next-ep button, autonext) — advance our state too
+    // Embed navigated internally (next-ep button, autonext) — advance our state too
     if (state.currentItem?.type === 'tv') {
-      _expectedIframeNav = true; // prevent re-entrancy from playItem's src=''
+      _expectedIframeNav = true;
       nextEpisode();
       return;
     }
@@ -886,13 +914,17 @@ function playItem(item, season = 1, episode = 1) {
   subState.duration = 0;
   subState.saveCounter = 0;
   dom.playerFrame.src = '';
-  const savedPos = loadSubPos(item.imdb_id || '');
-  _currentPlayerUrl = API.getPlayerUrl(item, season, episode, savedPos);
+  const savedPos = loadSubPos(item.imdb_id || item.tmdb_id || '');
+  _playerSources = API.getPlayerUrls(item, season, episode, savedPos);
+  _playerSourceIndex = 0;
+  _currentPlayerUrl = _playerSources[_playerSourceIndex];
   state.playerStartTime = 0;
+  clearSourceFallbackTimer();
   setTimeout(() => {
     _expectedIframeNav = true;
     dom.playerFrame.src = _currentPlayerUrl;
     state.playerStartTime = performance.now();
+    startSourceFallbackTimer();
   }, 50);
   const nextBtn = document.getElementById('substep-next-btn');
   if (nextBtn) nextBtn.style.display = item.type === 'tv' ? '' : 'none';
@@ -945,6 +977,9 @@ function playItem(item, season = 1, episode = 1) {
 }
 
 function closePlayer() {
+  clearSourceFallbackTimer();
+  _playerSources = [];
+  _playerSourceIndex = 0;
   dom.playerFrame.src = '';
   _currentPlayerUrl = '';
   _expectedIframeNav = false;
@@ -1086,7 +1121,7 @@ function subLoop() {
   updateSubProgress(subState.currentTime);
   subState.saveCounter++;
   if (subState.saveCounter % 150 === 0) {
-    const imdb = state.currentItem?.imdb_id;
+    const imdb = state.currentItem?.imdb_id || state.currentItem?.tmdb_id;
     if (imdb) saveSubPos(imdb, subState.currentTime);
   }
 
@@ -1227,7 +1262,7 @@ function setupSubProgress() {
     subState.currentTime = pct * dur;
     subState.fallbackStart = performance.now() - subState.currentTime * 1000;
     subState.gotEvent = false;
-    const imdb = state.currentItem?.imdb_id;
+    const imdb = state.currentItem?.imdb_id || state.currentItem?.tmdb_id;
     if (imdb) saveSubPos(imdb, subState.currentTime);
     updateSubProgress(subState.currentTime);
     cancelAutoNext();
@@ -1378,7 +1413,7 @@ async function selectSubtitle(lang) {
     subtitleState.currentLang = null;
     document.getElementById('subtitle-btn').textContent = 'CC';
     document.getElementById('subtitle-btn').classList.remove('active');
-    const imdb = state.currentItem?.imdb_id;
+    const imdb = state.currentItem?.imdb_id || state.currentItem?.tmdb_id;
     if (imdb) clearSubPos(imdb);
     renderSubtitleMenu();
     closeSubtitleMenu();
@@ -1557,7 +1592,7 @@ async function translateSubtitles() {
 
 async function uploadSubtitleFile(file) {
   const raw = await file.text();
-  const imdb = state.currentItem?.imdb_id || '';
+  const imdb = state.currentItem?.imdb_id || state.currentItem?.tmdb_id || '';
   const btn = document.getElementById('subtitle-btn');
   if (!btn) return;
   btn.textContent = '...';
@@ -1630,7 +1665,7 @@ function subStep(delta) {
   if (!subState.gotEvent && subState.fallbackStart) {
     subState.fallbackStart = performance.now() - subState.currentTime * 1000;
   }
-  const imdb = state.currentItem?.imdb_id;
+  const imdb = state.currentItem?.imdb_id || state.currentItem?.tmdb_id;
   if (imdb) saveSubPos(imdb, subState.currentTime);
   if (!subState.timerId) subLoop();
 }
@@ -1788,7 +1823,16 @@ function listenPlayerProgress() {
     dom.playerPage._messageHandler = null;
   }
 
-  // Receive video time from postMessage events (hnembed relay or injected script)
+  function onVideoTime(time) {
+    if (typeof time === 'number' && isFinite(time)) {
+      subState.currentTime = time;
+      subState.gotEvent = true;
+      subState.fallbackStart = performance.now() - time * 1000;
+      clearSourceFallbackTimer();
+    }
+  }
+
+  // Receive video time from postMessage events (hnembed relay, proxy-injected, or source-native)
   const handler = (event) => {
     if (!dom.playerPage || dom.playerPage.classList.contains('hidden')) return;
     if (!_currentPlayerUrl) return;
@@ -1797,9 +1841,15 @@ function listenPlayerProgress() {
     if (data.context === 'player.js') {
       // embedly/player.js protocol: { context:'player.js', event:'timeupdate', value:{ seconds, duration } }
       if (data.event === 'timeupdate' && data.value && typeof data.value.seconds === 'number') {
-        subState.currentTime = data.value.seconds;
-        subState.gotEvent = true;
-        subState.fallbackStart = performance.now() - data.value.seconds * 1000;
+        onVideoTime(data.value.seconds);
+      }
+      return;
+    }
+    // VixSrc PLAYER_EVENT protocol: { type:"PLAYER_EVENT", data:{ event, currentTime, duration } }
+    if (data.type === 'PLAYER_EVENT' && data.data) {
+      if (typeof data.data.currentTime === 'number') {
+        onVideoTime(data.data.currentTime);
+        if (data.data.duration > 0) subState.duration = data.data.duration;
       }
       return;
     }
@@ -1813,11 +1863,7 @@ function listenPlayerProgress() {
     } else if (data.event === 'timeupdate' && data.currentTime !== undefined) {
       time = data.currentTime;
     }
-    if (typeof time === 'number' && isFinite(time)) {
-      subState.currentTime = time;
-      subState.gotEvent = true;
-      subState.fallbackStart = performance.now() - time * 1000;
-    }
+    onVideoTime(time);
   };
 
   dom.playerPage._messageHandler = handler;
@@ -2242,11 +2288,16 @@ async function loadFeaturedMovies() {
     }
 
     const results = [];
-    for (const title of titles) {
-      try {
-        const items = await API.searchTmdbMovie(title);
-        if (items.length > 0) results.push(items[0]);
-      } catch {}
+    const concurrency = 5;
+    for (let i = 0; i < titles.length; i += concurrency) {
+      const batch = titles.slice(i, i + concurrency);
+      const batchResults = await Promise.all(batch.map(async (title) => {
+        try {
+          const items = await API.searchTmdbMovie(title);
+          return items.length > 0 ? items[0] : null;
+        } catch { return null; }
+      }));
+      for (const r of batchResults) { if (r) results.push(r); }
     }
 
     state.featuredItems = indexItems(results);

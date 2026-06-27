@@ -226,12 +226,16 @@
       </tr>
     `).join('');
 
-    $('users-tbody').querySelectorAll('.verify-btn').forEach(b => b.addEventListener('click', function() {
+    $('users-tbody').querySelectorAll('.verify-btn').forEach(b => b.addEventListener('click', async function() {
       if (!confirm(`Approve ${this.dataset.name}?`)) return;
-      verifyUser(this.dataset.uid);
+      try {
+        await verifyUser(this.dataset.uid);
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
     }));
     $('users-tbody').querySelectorAll('.edit-btn').forEach(b => {
-      b.addEventListener('click', () => {
+      b.addEventListener('click', async () => {
         const uid = b.dataset.uid;
         const first = prompt('First Name:', b.dataset.first);
         if (first === null) return;
@@ -239,9 +243,13 @@
         if (last === null) return;
         const phone = prompt('Phone:', b.dataset.phone);
         if (phone === null) return;
-        Auth.updateProfile(uid, { firstName: first, lastName: last, phone });
-        showToast('User updated', 'success');
-        loadData();
+        try {
+          await Auth.updateProfile(uid, { firstName: first, lastName: last, phone });
+          showToast('User updated', 'success');
+          await loadData();
+        } catch (err) {
+          showToast(err.message, 'error');
+        }
       });
     });
   }
@@ -262,11 +270,15 @@
         </tr>
       `).join('');
     $('verification-tbody').querySelectorAll('.verify-btn').forEach(b => {
-      b.addEventListener('click', function() {
+      b.addEventListener('click', async function() {
         const name = this.dataset.name;
         const email = this.dataset.email;
         if (!confirm(`Approve ${name} (${email})?`)) return;
-        verifyUser(this.dataset.uid);
+        try {
+          await verifyUser(this.dataset.uid);
+        } catch (err) {
+          showToast(err.message, 'error');
+        }
       });
     });
   }
@@ -297,7 +309,7 @@
         <small>${n.createdAt ? new Date(n.createdAt.toMillis ? n.createdAt.toMillis() : n.createdAt).toLocaleString() : ''}</small>
       </div>
     `).join('');
-    notifs.filter(n => !n.read).forEach(n => Auth.markNotificationRead(n.id));
+    await Promise.all(notifs.filter(n => !n.read).map(n => Auth.markNotificationRead(n.id).catch(() => {})));
   }
 
   async function verifyUser(uid) {
@@ -306,12 +318,16 @@
     await loadData();
   }
 
-  function openAdminModal(uid, email) {
+  async function openAdminModal(uid, email) {
     const role = prompt('Assign role (admin or superadmin):', 'admin');
     if (!role || (role !== 'admin' && role !== 'superadmin')) return;
-    Auth.createAdminUser(uid, email, role);
-    showToast('Admin created', 'success');
-    loadData();
+    try {
+      await Auth.createAdminUser(uid, email, role);
+      showToast('Admin created', 'success');
+      await loadData();
+    } catch (err) {
+      showToast(err.message, 'error');
+    }
   }
 
   $('user-search').addEventListener('input', renderUsers);

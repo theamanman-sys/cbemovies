@@ -3,17 +3,27 @@ const getFirebase = require('./_firebase');
 module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   if (req.method === 'OPTIONS') { res.status(200).end(); return; }
   if (req.method !== 'POST') { res.status(405).json({ error: 'Method not allowed' }); return; }
 
-  const { uid, email, role, superAdminUid } = req.body;
-  if (!uid || !superAdminUid) { res.status(400).json({ error: 'Missing required fields' }); return; }
+  const { uid, email, role } = req.body;
+  if (!uid) { res.status(400).json({ error: 'Missing required fields' }); return; }
 
   try {
-    const { db, FieldValue } = getFirebase();
-    const superDoc = await db.collection('users').doc(superAdminUid).get();
-    if (superDoc.data().role !== 'superadmin') {
+    const { db, FieldValue, auth } = getFirebase();
+
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      res.status(401).json({ error: 'Missing or invalid authorization header' });
+      return;
+    }
+    const idToken = authHeader.split('Bearer ')[1];
+    const decodedToken = await auth.verifyIdToken(idToken);
+    const requesterUid = decodedToken.uid;
+
+    const requesterDoc = await db.collection('users').doc(requesterUid).get();
+    if (!requesterDoc.exists || requesterDoc.data().role !== 'superadmin') {
       res.status(403).json({ error: 'Only super admin can create admins' });
       return;
     }
@@ -21,7 +31,7 @@ module.exports = async (req, res) => {
     await db.collection('users').doc(uid).update({ role: targetRole, verified: true });
     await db.collection('admins').doc(uid).set({
       uid, email, role: targetRole,
-      addedBy: superAdminUid,
+      addedBy: requesterUid,
       createdAt: FieldValue.serverTimestamp()
     });
     res.json({ success: true, message: 'Admin created' });

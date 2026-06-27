@@ -1,4 +1,6 @@
 const ALLOWED_DOMAINS = [
+  'vixsrc.to',
+  'vidcore.org',
   'player.cinezo.live',
   'vidsrc.pm',
   'vidphantom.com',
@@ -43,8 +45,25 @@ module.exports = async (req, res) => {
     let html = await response.text();
     html = html.replace(/<script[^>]*>[\s\S]*?(?:die\(|self\.location|top\.location|parent\.location|frameElement|window\.(?:self|top|parent))[\s\S]*?<\/script>/gi, '');
     html = html.replace(/<script[^>]*>[\s\S]*?disable-devtool[\s\S]*?<\/script>/gi, '');
-    html = html.replace(new RegExp(`(src|href)="${upstreamOrigin}([^"]*)"`, 'g'), `$1="/api/vp?domain=${encodedOrigin}&path=$2"`);
+    // Rewrite absolute URLs from upstream origin through our proxy first
+    html = html.replace(new RegExp(`((?:src|href)=)["']${upstreamOrigin}([^"']*)["']`, 'gi'), `$1"/api/vp?domain=${encodedOrigin}&path=$2"`);
     html = html.replace(new RegExp(`(url\\(['"]?)${upstreamOrigin}([^)"']*)`, 'g'), `$1/api/vp?domain=${encodedOrigin}&path=$2`);
+    // Inject <base> tag AFTER URL rewriting so its own href is not rewritten
+    // Use actual upstream origin so relative paths (_next/static/...) resolve correctly
+    html = html.replace('<head>', `<head><base href="${upstreamOrigin}/">`);
+    // If the page is from a source that sends postMessage progress events natively,
+    // we only inject our progress relay for sources that lack native support
+    html = html.replace('</body>', '<script>\n' +
+'(function(){\n' +
+'  var v=document.querySelector(\'video\');\n' +
+'  if(!v)return;\n' +
+'  function send(){try{parent.postMessage({type:\'cbemovies-progress\',currentTime:v.currentTime},\'*\')}catch(e){}}\n' +
+'  v.addEventListener(\'timeupdate\',send);\n' +
+'  v.addEventListener(\'play\',send);\n' +
+'  v.addEventListener(\'seeked\',send);\n' +
+'  send();\n' +
+'})();\n' +
+'</script></body>');
     res.setHeader('Content-Type', 'text/html');
     res.status(200).send(html);
   } catch { res.status(502).end(); }

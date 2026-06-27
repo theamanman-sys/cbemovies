@@ -52,6 +52,62 @@ function showToast(msg, duration = 3000) {
 }
 
 /* ── Player ── */
+let _playerSources = [];
+let _playerSourceIndex = 0;
+let _currentPlayerUrl = '';
+let _expectedIframeNav = false;
+let _sourceFallbackTimer = null;
+
+function startSourceFallbackTimer() {
+  clearSourceFallbackTimer();
+  _sourceFallbackTimer = setTimeout(() => {
+    _sourceFallbackTimer = null;
+    if (!dom.playerPage || dom.playerPage.classList.contains('hidden')) return;
+    if (_playerSourceIndex + 1 < _playerSources.length) {
+      _playerSourceIndex++;
+      _currentPlayerUrl = _playerSources[_playerSourceIndex];
+      _expectedIframeNav = true;
+      dom.playerFrame.src = _currentPlayerUrl;
+      startSourceFallbackTimer();
+    } else {
+      showToast('All player sources failed', true);
+    }
+  }, 15000);
+}
+
+function clearSourceFallbackTimer() {
+  if (_sourceFallbackTimer) {
+    clearTimeout(_sourceFallbackTimer);
+    _sourceFallbackTimer = null;
+  }
+}
+
+if (dom.playerFrame) {
+  dom.playerFrame.addEventListener('load', () => {
+    if (_expectedIframeNav) { _expectedIframeNav = false; return; }
+    if (!_currentPlayerUrl) return;
+    _expectedIframeNav = true;
+    dom.playerFrame.src = _currentPlayerUrl;
+  });
+}
+
+function listenPlayerProgress() {
+  if (dom.playerPage._messageHandler) {
+    window.removeEventListener('message', dom.playerPage._messageHandler);
+  }
+  const handler = (event) => {
+    if (!dom.playerPage || dom.playerPage.classList.contains('hidden')) return;
+    if (!_currentPlayerUrl) return;
+    const data = event.data;
+    if (!data || typeof data !== 'object') return;
+    if (data.type === 'cbemovies-progress' || data.type === 'timeupdate') {
+      clearSourceFallbackTimer();
+    }
+  };
+  dom.playerPage._messageHandler = handler;
+  window.addEventListener('message', handler);
+}
+
 function openPlayer(item) {
   if (!Auth.currentUser || !Auth.canAccessContent(Auth.userDoc)) {
     showToast('Subscribe to watch', 'success');
@@ -59,17 +115,35 @@ function openPlayer(item) {
     return;
   }
   tvState.currentItem = item;
-  const url = API.getPlayerUrl(item);
-  dom.playerFrame.src = url;
+  _playerSources = API.getPlayerUrls(item);
+  _playerSourceIndex = 0;
+  _currentPlayerUrl = _playerSources[_playerSourceIndex];
+  dom.playerFrame.src = '';
+  clearSourceFallbackTimer();
+  setTimeout(() => {
+    _expectedIframeNav = true;
+    dom.playerFrame.src = _currentPlayerUrl;
+    startSourceFallbackTimer();
+  }, 50);
   dom.playerPage.classList.remove('hidden');
   dom.playerSidebarContent.innerHTML = renderPlayerSidebar(item);
   unlockScroll();
+  listenPlayerProgress();
 }
 
 function closePlayer() {
-  dom.playerPage.classList.add('hidden');
+  clearSourceFallbackTimer();
+  _playerSources = [];
+  _playerSourceIndex = 0;
   dom.playerFrame.src = '';
+  _currentPlayerUrl = '';
+  _expectedIframeNav = false;
   tvState.currentItem = null;
+  if (dom.playerPage._messageHandler) {
+    window.removeEventListener('message', dom.playerPage._messageHandler);
+    dom.playerPage._messageHandler = null;
+  }
+  dom.playerPage.classList.add('hidden');
   lockScroll();
 }
 

@@ -292,6 +292,7 @@
         <small>${n.createdAt ? new Date(n.createdAt.toMillis ? n.createdAt.toMillis() : n.createdAt).toLocaleString() : ''}</small>
       </div>
     `).join('');
+    await Promise.all(notifs.filter(n => !n.read).map(n => Auth.markNotificationRead(n.id).catch(() => {})));
   }
 
   async function loadFeatureFlags() {
@@ -304,7 +305,7 @@
         $('ff-subscriptions').checked = data.subscriptions !== false;
         $('ff-maintenance').checked = data.maintenance === true;
       }
-    } catch (e) {}
+    } catch (e) { console.warn('Failed to load feature flags:', e); }
   }
 
   /* Create Admin */
@@ -337,7 +338,7 @@
     }
   };
 
-  window.superEditUser = (uid) => {
+  window.superEditUser = async (uid) => {
     const u = allUsers.find(x => x.id === uid);
     if (!u) return;
     const first = prompt('First Name:', u.firstName || '');
@@ -350,15 +351,23 @@
     if (phone === null) return;
     const role = prompt('Role (user/admin/superadmin):', u.role || 'user');
     if (role === null) return;
-    Auth.updateProfile(uid, { firstName: first, lastName: last, email, phone, role });
-    showToast('User updated', 'success');
-    loadAll();
+    try {
+      await Auth.updateProfile(uid, { firstName: first, lastName: last, email, phone, role });
+      showToast('User updated', 'success');
+      await loadAll();
+    } catch (err) {
+      showToast(err.message, 'error');
+    }
   };
 
   window.superVerifyUser = async (uid) => {
-    await Auth.updateProfile(uid, { verified: true });
-    showToast('User verified', 'success');
-    loadAll();
+    try {
+      await Auth.updateProfile(uid, { verified: true });
+      showToast('User verified', 'success');
+      await loadAll();
+    } catch (err) {
+      showToast(err.message, 'error');
+    }
   };
 
   window.superDeleteUser = async (uid) => {
@@ -367,7 +376,7 @@
     try {
       await db.collection('users').doc(uid).delete();
       showToast('User deleted', 'success');
-      loadAll();
+      await loadAll();
     } catch (err) {
       showToast(err.message);
     }
@@ -377,13 +386,17 @@
 
   /* Save Feature Flags */
   $('save-features-btn').addEventListener('click', async () => {
-    await db.collection('settings').doc('features').set({
-      registration: $('ff-registration').checked,
-      verification: $('ff-verification').checked,
-      subscriptions: $('ff-subscriptions').checked,
-      maintenance: $('ff-maintenance').checked
-    });
-    showToast('Feature flags saved', 'success');
+    try {
+      await db.collection('settings').doc('features').set({
+        registration: $('ff-registration').checked,
+        verification: $('ff-verification').checked,
+        subscriptions: $('ff-subscriptions').checked,
+        maintenance: $('ff-maintenance').checked
+      });
+      showToast('Feature flags saved', 'success');
+    } catch (err) {
+      showToast('Failed to save: ' + err.message, 'error');
+    }
   });
 
   /* Sections */

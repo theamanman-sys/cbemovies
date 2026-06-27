@@ -1,7 +1,8 @@
 const API = {
   VIDAPI_BASE: 'https://vidapi.ru',
-  FALLBACK_PLAYER: 'https://player.cinezo.live',
-  PLAYER_THEME: 'primarycolor=D4A017',
+  PRIMARY_PLAYER: 'https://www.vidcore.org/embed',
+  FALLBACK_PLAYER: 'https://player.cinezo.live/embed',
+  PLAYER_THEME: 'primaryColor=910096',
   TMDB_BASE: 'https://api.themoviedb.org/3',
   IMG_BASE: 'https://image.tmdb.org/t/p',
   TMDB_TOKEN: 'eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJhMzQyZWNhZjBjNzNmYzU1NmI1NDk3NzQwYmJmZmE5MiIsIm5iZiI6MTc3NTIyMDE5OS42MDA5OTk4LCJzdWIiOiI2OWNmYjVlNzY4YjcwYWNmYjgyZjc2MmQiLCJzY29wZXMiOlsiYXBpX3JlYWQiXSwidmVyc2lvbiI6MX0.jxycsZVC7uLmewooOKm20BvZUZ5s5H4qPsalI3FBmok',
@@ -33,24 +34,51 @@ const API = {
     return `${this.IMG_BASE}/${size}${path}`;
   },
 
-  /* ── VidAPI ── */
-  getMoviePage(page = 1) {
-    return this.fetchJSON(`${this.VIDAPI_BASE}/movies/latest/page-${page}.json`);
+  /* ── VidAPI (with TMDB fallback) ── */
+  async getMoviePage(page = 1) {
+    try {
+      return await this.fetchJSON(`${this.VIDAPI_BASE}/movies/latest/page-${page}.json`);
+    } catch {
+      const data = await this.tmdbFetch(`/movie/now_playing?page=${page}`);
+      return { items: this.resolveTmdbItems(data, 'movie') };
+    }
   },
-  getTVPage(page = 1) {
-    return this.fetchJSON(`${this.VIDAPI_BASE}/tvshows/latest/page-${page}.json`);
+  async getTVPage(page = 1) {
+    try {
+      return await this.fetchJSON(`${this.VIDAPI_BASE}/tvshows/latest/page-${page}.json`);
+    } catch {
+      const data = await this.tmdbFetch(`/tv/popular?page=${page}`);
+      return { items: this.resolveTmdbItems(data, 'tv') };
+    }
   },
 
   /* ── Player URL ── */
   getPlayerUrl(item, season = 1, episode = 1, pos = 0) {
+    return this._buildPlayerUrl(this.PRIMARY_PLAYER, item, season, episode, pos);
+  },
+
+  getPlayerUrls(item, season = 1, episode = 1, pos = 0) {
+    return [
+      this._buildPlayerUrl(this.PRIMARY_PLAYER, item, season, episode, pos),
+      this._proxyUrl(this._buildPlayerUrl(this.FALLBACK_PLAYER, item, season, episode, pos)),
+    ];
+  },
+
+  _proxyUrl(embedUrl) {
+    return `/api/player?url=${encodeURIComponent(embedUrl)}`;
+  },
+
+  _buildPlayerUrl(base, item, season = 1, episode = 1, pos = 0) {
     const id = item.tmdb_id || item.imdb_id;
-    let embedUrl;
-    if (!id) embedUrl = `${this.FALLBACK_PLAYER}/embed/movie/550?${this.PLAYER_THEME}`;
-    else if (item.type === 'tv') embedUrl = `${this.FALLBACK_PLAYER}/embed/tv/${id}/${season}/${episode}?${this.PLAYER_THEME}`;
-    else embedUrl = `${this.FALLBACK_PLAYER}/embed/movie/${id}?${this.PLAYER_THEME}`;
-    if (item.type === 'tv') embedUrl += '&autonext=true&showNextEpisode=true';
-    if (pos > 5) embedUrl += `&t=${Math.floor(pos)}`;
-    return embedUrl;
+    if (!id) return `${base}/movie/550?${this.PLAYER_THEME}`;
+    if (item.type === 'tv') {
+      let url = `${base}/tv/${id}/${season}/${episode}?${this.PLAYER_THEME}&autonext=true`;
+      if (pos > 5) url += `&startAt=${Math.floor(pos)}`;
+      return url;
+    }
+    let url = `${base}/movie/${id}?${this.PLAYER_THEME}`;
+    if (pos > 5) url += `&startAt=${Math.floor(pos)}`;
+    return url;
   },
 
   async fetchImdbId(tmdbId, type = 'movie') {
@@ -85,7 +113,7 @@ const API = {
       poster_url: this.imgUrl(m.poster_path, 'w500'),
       popularity: m.popularity?.toFixed(2) || '0',
       type: 'movie',
-      embed_url: `${this.FALLBACK_PLAYER}/embed/movie/${m.id}`,
+      embed_url: this._buildPlayerUrl(this.PRIMARY_PLAYER, { tmdb_id: m.id, type: 'movie' }),
       _backdrop: this.imgUrl(m.backdrop_path, 'original'),
       _overview: m.overview || '',
       _poster: this.imgUrl(m.poster_path, 'w500'),
@@ -107,7 +135,7 @@ const API = {
       poster_url: this.imgUrl(t.poster_path, 'w500'),
       popularity: t.popularity?.toFixed(2) || '0',
       type: 'tv',
-      embed_url: `${this.FALLBACK_PLAYER}/embed/tv/${t.id}/1/1`,
+      embed_url: this._buildPlayerUrl(this.PRIMARY_PLAYER, { tmdb_id: t.id, type: 'tv', season: 1, episode: 1 }),
       _backdrop: this.imgUrl(t.backdrop_path, 'original'),
       _overview: t.overview || '',
       _poster: this.imgUrl(t.poster_path, 'w500'),

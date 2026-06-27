@@ -122,6 +122,7 @@
   <script src="js/cbe-superapp.js"></script>
   <script>
   let isRegistering = false;
+  let showingSuccess = false;
   const $ = id => document.getElementById(id);
   const form = $('register-form');
   const errorEl = $('reg-error');
@@ -135,6 +136,7 @@
   }
 
   function showSuccess(email) {
+    showingSuccess = true;
     $('register-form-container').style.display = 'none';
     $('reg-success').style.display = 'block';
     $('reg-success-email').textContent = email;
@@ -176,6 +178,7 @@
       const msg = err.code === 'auth/email-already-in-use' ? 'This email is already registered' :
                   err.code === 'auth/weak-password' ? 'Password is too weak' :
                   err.code === 'auth/invalid-email' ? 'Invalid email address' :
+                  err.message === 'Username is already taken' ? 'This username is already taken' :
                   err.message;
       errorEl.textContent = msg;
       regBtn.disabled = false;
@@ -194,7 +197,7 @@
   });
 
   auth.onAuthStateChanged((user) => {
-    if (user && !isRegistering) window.location.href = 'home.html';
+    if (user && !isRegistering && !showingSuccess) window.location.href = 'home.html';
   });
 
   /* ── CBE SuperApp Registration ── */

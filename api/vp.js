@@ -1,13 +1,22 @@
-const ALLOWED_DOMAINS = ['vidphantom.com', 'player.cinezo.live', 'brightpathsignals.com'];
+const ALLOWED_DOMAINS = [
+  'vixsrc.to',
+  'vidcore.org',
+  'player.cinezo.live',
+  'vidsrc.pm',
+  'vidphantom.com',
+  'brightpathsignals.com',
+  'streamdata.vaplayer.ru',
+];
 
 module.exports = async (req, res) => {
-  const { path } = req.query;
+  const { domain, path } = req.query;
   if (!path) {
     res.status(400).json({ error: 'Missing path' });
     return;
   }
 
-  const url = `https://vidphantom.com${path}`;
+  const baseDomain = domain ? decodeURIComponent(domain) : 'https://vidphantom.com';
+  const url = `${baseDomain}${path}`;
   if (!ALLOWED_DOMAINS.some(d => url.includes(d))) {
     res.status(403).json({ error: 'Domain not allowed' });
     return;
