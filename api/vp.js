@@ -23,7 +23,11 @@ module.exports = async (req, res) => {
 
   const hostname = target.slice(0, firstSlash);
   const assetPath = target.slice(firstSlash);
-  const url = `https://${hostname}${assetPath}`;
+
+  // Pass through additional query params (used by VidCore API calls)
+  const { target: _, ...extraParams } = req.query;
+  const qs = new URLSearchParams(extraParams).toString();
+  const url = `https://${hostname}${assetPath}${qs ? '?' + qs : ''}`;
 
   if (!ALLOWED_DOMAINS.some(d => url.includes(d))) {
     res.status(403).json({ error: 'Domain not allowed' });

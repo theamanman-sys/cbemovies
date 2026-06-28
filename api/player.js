@@ -55,7 +55,10 @@ module.exports = async (req, res) => {
     // Also inject fetch/XHR override so the anti-embed redirect is blocked
     // (no allow-same-origin in sandbox), and API calls get proxied through our
     // vidcore-proxy endpoint to avoid CORS failures.
-    html = html.replace('<head>', `<head><script>(function(){var P='/api/vidcore-proxy',f=window.fetch;window.fetch=function(u,i){if(typeof u==='string'&&(u.indexOf('/api/sources')===0||u.indexOf('/api/tmdb')===0||u.indexOf('/api/subtitles')===0))u=P+u;return f.call(this,u,i)};var X=XMLHttpRequest.prototype.open;XMLHttpRequest.prototype.open=function(m,u){if(typeof u==='string'&&(u.indexOf('/api/sources')===0||u.indexOf('/api/tmdb')===0||u.indexOf('/api/subtitles')===0))arguments[1]=P+u;return X.apply(this,arguments)}})();</script><base href="${upstreamOrigin}/">`);
+    // Also inject fetch/XHR override: redirect VidCore API calls through our
+    // existing /api/vp proxy (which adds CORS headers). This prevents
+    // cross-origin failures when allow-same-origin is not in the sandbox.
+    html = html.replace('<head>', `<head><script>(function(){var P='/api/vp/vidcore.org',f=window.fetch;window.fetch=function(u,i){if(typeof u==='string'&&(u.indexOf('/api/sources')===0||u.indexOf('/api/tmdb')===0||u.indexOf('/api/subtitles')===0))u=P+u;return f.call(this,u,i)};var X=XMLHttpRequest.prototype.open;XMLHttpRequest.prototype.open=function(m,u){if(typeof u==='string'&&(u.indexOf('/api/sources')===0||u.indexOf('/api/tmdb')===0||u.indexOf('/api/subtitles')===0))arguments[1]=P+u;return X.apply(this,arguments)}})();</script><base href="${upstreamOrigin}/">`);
     // If the page is from a source that sends postMessage progress events natively,
     // we only inject our progress relay for sources that lack native support
     html = html.replace('</body>', '<script>\n' +
