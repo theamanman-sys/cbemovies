@@ -249,16 +249,10 @@ async function openTVDetail(tmdbId) {
   try {
     const item = await API.enrichItem({ tmdb_id: tmdbId, type: 'tv' });
     renderTVModal(item);
-    setupModalTrailer(item);
+    setTimeout(() => tryAutoPlayTrailer(item), 1000);
   } catch {
     dom.modal.innerHTML = '<div style="padding:40px;text-align:center;color:var(--text-secondary)">Failed to load details.</div>';
   }
-}
-
-function closeModal() {
-  destroyModalTrailer();
-  dom.modalOverlay.classList.remove('active');
-  unlockScroll();
 }
 
 function renderTVModal(item) {
@@ -353,22 +347,6 @@ function playFromModal(tmdbId) {
   openPlayer(item);
 }
 
-/* ── Trailer ── */
-function openTrailer(key) {
-  const existing = document.getElementById('trailer-modal');
-  if (existing) {
-    existing.classList.add('active');
-    const iframe = existing.querySelector('iframe');
-    iframe.src = `https://www.youtube.com/embed/${key}?autoplay=1&muted=1&playsinline=1&controls=0&rel=0`;
-    return;
-  }
-  const div = document.createElement('div');
-  div.className = 'trailer-modal active';
-  div.id = 'trailer-modal';
-  div.innerHTML = `<button class="trailer-close" onclick="this.parentElement.classList.remove('active');this.nextElementSibling.src=''">&times;</button><iframe src="https://www.youtube.com/embed/${key}?autoplay=1&muted=1&playsinline=1&controls=0&rel=0" allow="autoplay;fullscreen"></iframe>`;
-  document.body.appendChild(div);
-}
-
 /* ── View Toggle ── */
 function toggleCardView(view) {
   _cardView = view;
@@ -400,58 +378,6 @@ function renderClassicCard(item, tmdbType) {
       </div>
     </div>
   `;
-}
-
-/* ── Modal Trailer Autoplay ── */
-let _modalYTPlayer = null;
-
-function setupModalTrailer(item) {
-  const trailer = item._trailer;
-  if (!trailer) return;
-  const backdrop = dom.modal.querySelector('.modal-backdrop');
-  if (!backdrop) return;
-  const wrapper = document.createElement('div');
-  wrapper.style.cssText = 'position:relative;flex:none;width:100%;aspect-ratio:16/9;z-index:5;overflow:hidden;display:none';
-  wrapper.dataset.modalTrailer = '';
-  backdrop.parentNode.insertBefore(wrapper, backdrop.nextSibling);
-  setTimeout(() => {
-    if (!dom.modalOverlay.classList.contains('active')) return;
-    backdrop.style.display = 'none';
-    wrapper.style.display = 'block';
-    wrapper.insertAdjacentHTML('beforeend', '<div style="position:absolute;top:-12px;left:0;right:0;height:56px;background:var(--bg-secondary);z-index:2;pointer-events:none"></div><div style="position:absolute;bottom:0;left:0;right:0;height:48px;background:#0a0a0f;z-index:2;pointer-events:none"></div>');
-    _loadCardYTAPI(() => {
-      if (!wrapper.isConnected) return;
-      const ytDiv = document.createElement('div');
-      ytDiv.id = 'modal-yt-' + Date.now();
-      wrapper.appendChild(ytDiv);
-      _modalYTPlayer = new YT.Player(ytDiv.id, {
-        height: '100%', width: '100%',
-        videoId: trailer.key,
-        playerVars: {
-          autoplay: 1, mute: 1, playsinline: 1,
-          controls: 0, rel: 0, modestbranding: 1,
-          iv_load_policy: 3, loop: 1, playlist: trailer.key
-        },
-        events: {
-          onReady: (e) => {
-            e.target.mute();
-            e.target.playVideo();
-          }
-        }
-      });
-    });
-  }, 1000);
-}
-
-function destroyModalTrailer() {
-  const wrapper = dom.modal?.querySelector('[data-modal-trailer]');
-  if (wrapper) wrapper.remove();
-  if (_modalYTPlayer) {
-    try { _modalYTPlayer.destroy(); } catch {}
-    _modalYTPlayer = null;
-  }
-  const backdrop = dom.modal?.querySelector('.modal-backdrop');
-  if (backdrop) backdrop.style.display = '';
 }
 
 /* ── Filters ── */
@@ -539,134 +465,6 @@ async function fetchAndRender() {
     tvState.loading = false;
     dom.loading.style.display = 'none';
   }
-}
-
-async function playTrailer(tmdbId, type) {
-  try {
-    const data = await API.tmdbFetch(`/${type}/${tmdbId}/videos`);
-    const videos = data.results || [];
-    const trailer = videos.find(v => v.site === 'YouTube' && (v.type === 'Trailer' || v.type === 'Teaser')) || videos.find(v => v.site === 'YouTube');
-    if (trailer) {
-      openTrailer(trailer.key);
-    } else {
-      alert('No trailer available');
-    }
-  } catch {
-    alert('Failed to load trailer');
-  }
-}
-window.playTrailer = playTrailer;
-
-/* ── Card Trailer Autoplay on Hover ── */
-let _cardYTReady = false;
-let _cardYTLoading = false;
-const _cardPlayers = new Map();
-
-function _loadCardYTAPI(cb) {
-  if (_cardYTReady) { if (cb) cb(); return; }
-  if (_cardYTLoading) { setTimeout(() => _loadCardYTAPI(cb), 200); return; }
-  _cardYTLoading = true;
-  const tag = document.createElement('script');
-  tag.src = 'https://www.youtube.com/iframe_api';
-  tag.onload = () => { _cardYTReady = true; _cardYTLoading = false; if (cb) cb(); };
-  tag.onerror = () => { _cardYTLoading = false; setTimeout(() => _loadCardYTAPI(cb), 1000); };
-  document.head.appendChild(tag);
-}
-window.onYouTubeIframeAPIReady = () => {
-  _cardYTReady = true;
-  _cardYTLoading = false;
-};
-
-function _initCardTrailer(card) {
-  if (_cardPlayers.has(card)) return;
-  const tmdbId = card.dataset.tmdb;
-  const type = card.dataset.type;
-  const wrap = card.querySelector('.browse-card-backdrop-wrap');
-  const playerDiv = wrap.querySelector('.browse-card-trailer-player');
-  if (!playerDiv) return;
-  API.tmdbFetch(`/${type}/${tmdbId}/videos`).then(data => {
-    const videos = data.results || [];
-    const trailer = videos.find(v => v.site === 'YouTube' && (v.type === 'Trailer' || v.type === 'Teaser')) || videos.find(v => v.site === 'YouTube');
-    if (!trailer) return;
-    _loadCardYTAPI(() => {
-      if (!playerDiv.isConnected) return;
-      const ytDiv = document.createElement('div');
-      ytDiv.id = 'card-yt-' + tmdbId;
-      playerDiv.appendChild(ytDiv);
-      playerDiv.style.display = 'block';
-      const backdrop = wrap.querySelector('.browse-card-backdrop');
-      if (backdrop) backdrop.style.opacity = '0';
-      const player = new YT.Player(ytDiv.id, {
-        height: '100%', width: '100%',
-        videoId: trailer.key,
-        playerVars: {
-          autoplay: 1, mute: 1, playsinline: 1,
-          controls: 0, rel: 0, modestbranding: 1,
-          iv_load_policy: 3, loop: 1, playlist: trailer.key
-        },
-        events: {
-          onReady: (e) => {
-            e.target.mute();
-            e.target.playVideo();
-          }
-        }
-      });
-      const topCover = wrap.querySelector('.browse-card-trailer-cover-top');
-      const bottomCover = wrap.querySelector('.browse-card-trailer-cover-bottom');
-      if (topCover) topCover.style.display = 'block';
-      if (bottomCover) bottomCover.style.display = 'block';
-      _cardPlayers.set(card, { player, playerDiv, backdrop, wrap, key: trailer.key, topCover, bottomCover });
-      const muteBtn = wrap.querySelector('.browse-card-trailer-mute-btn');
-      if (muteBtn) {
-        muteBtn.style.display = 'flex';
-        muteBtn.dataset.muted = '1';
-        muteBtn.onclick = (e) => {
-          e.stopPropagation();
-          if (muteBtn.dataset.muted === '1') {
-            player.unMute();
-            muteBtn.dataset.muted = '0';
-            muteBtn.textContent = '🔊';
-          } else {
-            player.mute();
-            muteBtn.dataset.muted = '1';
-            muteBtn.textContent = '🔇';
-          }
-        };
-      }
-    });
-  }).catch(() => {});
-}
-
-function _destroyCardPlayer(card) {
-  const entry = _cardPlayers.get(card);
-  if (!entry) return;
-  if (entry.player && entry.player.destroy) entry.player.destroy();
-  if (entry.backdrop) entry.backdrop.style.opacity = '1';
-  if (entry.playerDiv) {
-    entry.playerDiv.innerHTML = '';
-    entry.playerDiv.style.display = 'none';
-  }
-  if (entry.topCover) entry.topCover.style.display = 'none';
-  if (entry.bottomCover) entry.bottomCover.style.display = 'none';
-  const muteBtn = entry.wrap?.querySelector('.browse-card-trailer-mute-btn');
-  if (muteBtn) muteBtn.style.display = 'none';
-  _cardPlayers.delete(card);
-}
-
-function setupCardTrailers() {
-  dom.grid.querySelectorAll('.browse-card').forEach(card => {
-    const wrap = card.querySelector('.browse-card-backdrop-wrap');
-    if (!wrap || wrap._trailerListeners) return;
-    wrap._trailerListeners = true;
-    let leaveTimer;
-    wrap.addEventListener('mouseenter', () => {
-      clearTimeout(leaveTimer);
-      _initCardTrailer(card);
-    });
-    wrap.addEventListener('mouseleave', () => {
-      leaveTimer = setTimeout(() => _destroyCardPlayer(card), 500);
-    });
-  });
 }
 
 function renderGrid(items) {

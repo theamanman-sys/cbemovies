@@ -402,9 +402,7 @@ function setupModalAutoplay(item) {
   }, 2000);
 }
 
-let _ytReady = typeof YT !== 'undefined' && typeof YT.Player !== 'undefined';
-let _ytLoading = false;
-
+/* ── Browse Card Trailers (shared across pages) ── */
 function tryAutoPlayTrailer(item) {
   if (state.autoPlayDone || !item?._trailer || !dom.modalOverlay.classList.contains('active')) return;
   let div = state._trailerDiv;
@@ -418,85 +416,163 @@ function tryAutoPlayTrailer(item) {
     backdrop.style.display = 'none';
     state._trailerDiv = div;
   }
-  if (div.hasAttribute('data-yt-ready')) return;
+  if (div.hasAttribute('data-trailer-ready')) return;
   state.autoPlayDone = true;
-  div.setAttribute('data-yt-ready', '');
+  div.setAttribute('data-trailer-ready', '');
+
+  const iframe = document.createElement('iframe');
+  iframe.src = `https://www.youtube.com/embed/${item._trailer.key}?autoplay=1&muted=1&playsinline=1&controls=0&rel=0&iv_load_policy=3&cc_load_policy=0&enablejsapi=1&loop=1&playlist=${item._trailer.key}`;
+  iframe.allow = 'autoplay;fullscreen';
+  iframe.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;border:0';
+  iframe.setAttribute('loading', 'lazy');
+  iframe.title = 'YouTube trailer';
+
+  div.innerHTML = '';
+  div.appendChild(iframe);
+
   div.insertAdjacentHTML('beforeend', `
-    <div style="position:absolute;top:0;left:0;right:0;bottom:0;z-index:1"></div>
-    <div style="position:absolute;top:0;left:0;right:0;height:56px;background:var(--bg-secondary);z-index:2"></div>
-    <div style="position:absolute;bottom:0;left:0;right:0;height:60px;background:linear-gradient(to top,#12121a,#08080c);z-index:2"></div>
+    <div style="position:absolute;top:0;left:0;right:0;bottom:0;z-index:1;pointer-events:none"></div>
+    <div style="position:absolute;top:0;left:0;right:0;height:56px;background:var(--bg-secondary);z-index:2;pointer-events:none"></div>
+    <div style="position:absolute;bottom:0;left:0;right:0;height:60px;background:linear-gradient(to top,#12121a,#08080c);z-index:2;pointer-events:none"></div>
     <button class="trailer-mute-btn" data-muted="1" style="position:absolute;bottom:8px;right:8px;z-index:3;width:36px;height:36px;border-radius:50%;border:none;background:rgba(255,148,202,0.25);color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:18px;line-height:1;transition:background .2s" title="Unmute">🔇</button>
   `);
   div.style.opacity = '1';
-  if (!_ytReady) {
-    loadYTAPI(() => createYTPlayer(div, item._trailer.key));
-  } else {
-    createYTPlayer(div, item._trailer.key);
-  }
-}
-function loadYTAPI(cb) {
-  if (_ytReady) { if (cb) cb(); return; }
-  if (_ytLoading) { setTimeout(() => loadYTAPI(cb), 200); return; }
-  _ytLoading = true;
-  const tag = document.createElement('script');
-  tag.src = 'https://www.youtube.com/iframe_api';
-  tag.onload = () => {
-    _ytReady = true;
-    _ytLoading = false;
-    if (cb) cb();
-  };
-  tag.onerror = () => { _ytLoading = false; setTimeout(() => loadYTAPI(cb), 1000); };
-  const first = document.getElementsByTagName('script')[0];
-  first.parentNode.insertBefore(tag, first);
-}
-window.onYouTubeIframeAPIReady = () => {
-  _ytReady = true;
-  _ytLoading = false;
-};
-function createYTPlayer(div, key) {
-  if (!_ytReady) { setTimeout(() => createYTPlayer(div, key), 200); return; }
-  if (!div.isConnected) return;
-  if (div._ytPlayer) return;
-  const playerDiv = document.createElement('div');
-  playerDiv.id = 'yt-trailer-' + Date.now();
-  div.insertBefore(playerDiv, div.firstChild);
+
   const btn = div.querySelector('.trailer-mute-btn');
-  div._ytPlayer = new YT.Player(playerDiv.id, {
-    height: '100%', width: '100%',
-    videoId: key,
-    playerVars: {
-      autoplay: 1, mute: 1, playsinline: 1,
-      controls: 0, rel: 0, modestbranding: 1,
-      iv_load_policy: 3, cc_load_policy: 0,
-      loop: 1, playlist: key, hl: 'en'
-    },
-    events: {
-      onReady: (e) => {
-        e.target.mute();
-        e.target.playVideo();
-      }
-    }
-  });
   if (btn) {
+    const send = (cmd) => {
+      try { iframe.contentWindow.postMessage(JSON.stringify({ event: 'command', func: cmd, args: '' }), '*'); } catch {}
+    };
     btn.onmouseover = () => { btn.style.background = 'rgba(255,148,202,0.5)'; };
     btn.onmouseout = () => { btn.style.background = 'rgba(255,148,202,0.25)'; };
     btn.onclick = (e) => {
       e.stopPropagation();
-      const p = div._ytPlayer;
-      if (!p) return;
       if (btn.dataset.muted === '1') {
-        p.unMute();
+        send('unMute');
         btn.dataset.muted = '0';
         btn.textContent = '🔊';
         btn.title = 'Mute';
       } else {
-        p.mute();
+        send('mute');
         btn.dataset.muted = '1';
         btn.textContent = '🔇';
         btn.title = 'Unmute';
       }
     };
   }
+}
+
+/* ── Browse Card Trailers (shared across pages) ── */
+const _cardPlayers = new Map();
+
+function _initCardTrailer(card) {
+  if (_cardPlayers.has(card)) return;
+  const tmdbId = card.dataset.tmdb;
+  const type = card.dataset.type;
+  const wrap = card.querySelector('.browse-card-backdrop-wrap');
+  const playerDiv = wrap?.querySelector('.browse-card-trailer-player');
+  if (!playerDiv) return;
+  const cacheKey = `videos_${type}_${tmdbId}`;
+  let promise = API._videoCache?.[cacheKey];
+  if (!promise) {
+    if (!API._videoCache) API._videoCache = {};
+    promise = API.tmdbFetch(`/${type}/${tmdbId}/videos`).catch(() => null);
+    API._videoCache[cacheKey] = promise;
+  }
+  promise.then(data => {
+    if (!data) return;
+    const videos = data.results || [];
+    const trailer = videos.find(v => v.site === 'YouTube' && (v.type === 'Trailer' || v.type === 'Teaser')) || videos.find(v => v.site === 'YouTube');
+    if (!trailer) return;
+    if (!playerDiv.isConnected) return;
+    playerDiv.innerHTML = '';
+    const iframe = document.createElement('iframe');
+    iframe.src = `https://www.youtube.com/embed/${trailer.key}?autoplay=1&muted=1&playsinline=1&controls=0&rel=0&iv_load_policy=3&loop=1&playlist=${trailer.key}&enablejsapi=1`;
+    iframe.allow = 'autoplay;fullscreen';
+    iframe.style.cssText = 'width:100%;height:100%;border:0';
+    iframe.setAttribute('loading', 'lazy');
+    iframe.title = 'YouTube trailer';
+    playerDiv.appendChild(iframe);
+    playerDiv.style.display = 'block';
+    const backdrop = wrap.querySelector('.browse-card-backdrop');
+    if (backdrop) backdrop.style.opacity = '0';
+    const topCover = wrap.querySelector('.browse-card-trailer-cover-top');
+    const bottomCover = wrap.querySelector('.browse-card-trailer-cover-bottom');
+    if (topCover) topCover.style.display = 'block';
+    if (bottomCover) bottomCover.style.display = 'block';
+    _cardPlayers.set(card, { playerDiv, backdrop, wrap, topCover, bottomCover, key: trailer.key });
+    const muteBtn = wrap.querySelector('.browse-card-trailer-mute-btn');
+    if (muteBtn) {
+      muteBtn.style.display = 'flex';
+      muteBtn.dataset.muted = '1';
+      muteBtn.onclick = (e) => {
+        e.stopPropagation();
+        const ifr = playerDiv.querySelector('iframe');
+        if (!ifr) return;
+        const cmd = muteBtn.dataset.muted === '1' ? 'unMute' : 'mute';
+        try { ifr.contentWindow.postMessage(JSON.stringify({ event: 'command', func: cmd, args: '' }), '*'); } catch {}
+        muteBtn.dataset.muted = muteBtn.dataset.muted === '1' ? '0' : '1';
+        muteBtn.textContent = muteBtn.dataset.muted === '0' ? '🔊' : '🔇';
+      };
+    }
+  });
+}
+
+function _destroyCardPlayer(card) {
+  const entry = _cardPlayers.get(card);
+  if (!entry) return;
+  if (entry.backdrop) entry.backdrop.style.opacity = '1';
+  if (entry.playerDiv) {
+    entry.playerDiv.innerHTML = '';
+    entry.playerDiv.style.display = 'none';
+  }
+  if (entry.topCover) entry.topCover.style.display = 'none';
+  if (entry.bottomCover) entry.bottomCover.style.display = 'none';
+  const muteBtn = entry.wrap?.querySelector('.browse-card-trailer-mute-btn');
+  if (muteBtn) muteBtn.style.display = 'none';
+  _cardPlayers.delete(card);
+}
+
+async function playTrailer(tmdbId, type) {
+  try {
+    const data = await API.tmdbFetch(`/${type}/${tmdbId}/videos`);
+    const videos = data.results || [];
+    const trailer = videos.find(v => v.site === 'YouTube' && (v.type === 'Trailer' || v.type === 'Teaser')) || videos.find(v => v.site === 'YouTube');
+    if (trailer) {
+      openTrailer(trailer.key);
+    } else {
+      alert('No trailer available');
+    }
+  } catch {
+    alert('Failed to load trailer');
+  }
+}
+window.playTrailer = playTrailer;
+
+function setupCardTrailers() {
+  dom.grid.querySelectorAll('.browse-card').forEach(card => {
+    const wrap = card.querySelector('.browse-card-backdrop-wrap');
+    if (!wrap || wrap._trailerListeners) return;
+    wrap._trailerListeners = true;
+    let leaveTimer;
+    wrap.addEventListener('mouseenter', () => {
+      clearTimeout(leaveTimer);
+      _initCardTrailer(card);
+    });
+    wrap.addEventListener('mouseleave', () => {
+      leaveTimer = setTimeout(() => _destroyCardPlayer(card), 500);
+    });
+    if ('ontouchstart' in window) {
+      wrap.addEventListener('click', (e) => {
+        if (e.target.closest('.play-btn, .browse-card-trailer-btn, .browse-card-trailer-mute-btn, .browse-card-poster, .browse-card-body')) return;
+        if (_cardPlayers.has(card)) {
+          _destroyCardPlayer(card);
+        } else {
+          _initCardTrailer(card);
+        }
+      });
+    }
+  });
 }
 function rerenderModal(item) {
   const trailerEl = dom.modal.querySelector('[data-trailer-wrapper]');
@@ -702,10 +778,6 @@ function closeModal() {
   if (state.autoPlayTimer) { clearTimeout(state.autoPlayTimer); state.autoPlayTimer = null; }
   state.autoPlayDone = false;
   if (state._trailerDiv) {
-    if (state._trailerDiv._ytPlayer) {
-      state._trailerDiv._ytPlayer.destroy();
-      delete state._trailerDiv._ytPlayer;
-    }
     state._trailerDiv.remove();
     state._trailerDiv = null;
   }
@@ -2364,6 +2436,5 @@ document.addEventListener('DOMContentLoaded', () => {
   repositionHeroControls();
   window.addEventListener('resize', repositionHeroControls);
   loadContent();
-  loadYTAPI();
 
 });

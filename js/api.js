@@ -2,6 +2,7 @@ const API = {
   VIDAPI_BASE: 'https://vidapi.ru',
   PRIMARY_PLAYER: 'https://vidphantom.com',
   FALLBACK_PLAYER: 'https://apiplayer.ru/embed',
+  FALLBACK_PLAYER_2: 'https://vidsrc.sbs/embed',
   PLAYER_THEME: 'primaryColor=910096',
   TMDB_BASE: 'https://api.themoviedb.org/3',
   IMG_BASE: 'https://image.tmdb.org/t/p',
@@ -61,6 +62,7 @@ const API = {
     return [
       this._buildPlayerUrl(this.PRIMARY_PLAYER, item, season, episode, pos) + '&accentColor=910096&secondaryColor=12121a&autoplay',
       this._buildPlayerUrl(this.FALLBACK_PLAYER, item, season, episode, pos),
+      this._buildPlayerUrl(this.FALLBACK_PLAYER_2, item, season, episode, pos),
     ];
   },
 

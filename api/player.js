@@ -8,6 +8,7 @@ const ALLOWED_DOMAINS = [
   'streamdata.vaplayer.ru',
   'yapgrid.com',
   'apiplayer.ru',
+  'vidsrc.sbs',
 ];
 
 function isAllowedUrl(url) {

@@ -182,7 +182,15 @@
   <script src="js/cbe-superapp.js"></script>
   <script src="js/i18n.js"></script>
   <script src="js/api.js"></script>
+  <script src="js/subtitle-storage.js"></script>
+  <script src="js/app.js"></script>
   <script src="js/tv.js"></script>
+  <!-- Trailer Modal -->
+  <div class="trailer-modal" id="trailer-modal">
+    <button class="trailer-close" onclick="closeTrailer()">✕</button>
+    <iframe id="trailer-frame" allow="autoplay;fullscreen"></iframe>
+  </div>
+
   <script>
   function setupUserNav(user, doc) {
     const wrapper = document.getElementById('nav-user-wrapper');

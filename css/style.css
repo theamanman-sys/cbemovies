@@ -2291,6 +2291,7 @@ footer {
 @media (hover: none) {
   .movie-card-overlay { opacity: 1; background: linear-gradient(180deg, transparent 40%, rgba(0,0,0,0.95) 100%); }
   .movie-card .play-btn { transform: translate(-50%, -50%) scale(0.8); }
+  .browse-card-trailer-btn { opacity: 1; }
 }
 @media (hover: hover) {
   .movie-card:hover .movie-card-overlay { opacity: 1; }
