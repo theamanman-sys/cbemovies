@@ -865,11 +865,11 @@ function tryNextSource() {
 
 function startSourceFallbackTimer() {
   clearSourceFallbackTimer();
-  _sourceFallbackTimer = setTimeout(() => {
+    _sourceFallbackTimer = setTimeout(() => {
     _sourceFallbackTimer = null;
     if (!dom.playerPage || dom.playerPage.classList.contains('hidden')) return;
     tryNextSource();
-  }, 15000);
+  }, 30000);
 }
 
 function clearSourceFallbackTimer() {

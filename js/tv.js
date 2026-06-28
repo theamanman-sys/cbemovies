@@ -72,7 +72,7 @@ function startSourceFallbackTimer() {
     } else {
       showToast('All player sources failed', true);
     }
-  }, 15000);
+  }, 30000);
 }
 
 function clearSourceFallbackTimer() {

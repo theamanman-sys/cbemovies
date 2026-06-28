@@ -6,6 +6,8 @@ const ALLOWED_DOMAINS = [
   'vidphantom.com',
   'brightpathsignals.com',
   'streamdata.vaplayer.ru',
+  'yapgrid.com',
+  'apiplayer.ru',
 ];
 
 function isAllowedUrl(url) {
@@ -42,34 +44,35 @@ module.exports = async (req, res) => {
     });
     if (!response.ok) { res.status(response.status).end(); return; }
     let html = await response.text();
+    // Strip anti-embed scripts that detect iframe context
     html = html.replace(/<script[^>]*>[\s\S]*?(?:die\(|self\.location|top\.location|parent\.location|frameElement|window\.(?:self|top|parent))[\s\S]*?<\/script>/gi, '');
     html = html.replace(/<script[^>]*>[\s\S]*?disable-devtool[\s\S]*?<\/script>/gi, '');
-    // Rewrite full origin URLs (src="https://upstream/...") through our proxy
+    // Strip known ad/tracker CDN scripts
+    html = html.replace(/<script[^>]*\s+src=["'](?:https?:)?\/\/(?:acscdn\.com|dpjf9a2rbjbvp\.cloudfront\.net|s10\.histats\.com)[^"']*["'][^>]*><\/script>/gi, '');
+    // Cloudflare Turnstile may be needed by HLS proxy to serve streams
+    // Rewrite full origin URLs through our proxy
     html = html.replace(new RegExp(`((?:src|href)=)["']${upstreamOrigin}([^"']*)["']`, 'gi'), `$1"/api/vp/${upstreamHost}$2"`);
     html = html.replace(new RegExp(`(url\\(['"]?)${upstreamOrigin}([^)"']*)`, 'g'), `$1/api/vp/${upstreamHost}$2`);
-    // Rewrite absolute path URLs on asset elements (scripts, styles, images, video sources)
-    // to go through our proxy, avoiding CORS issues with module scripts
-    // Uses path-based URLs so module scripts can resolve relative import('./foo.js') correctly
+    // Rewrite absolute path URLs on asset elements through proxy
     html = html.replace(/(<(?:script|link|img|source|video|audio)[^>]*\s(?:src|href)=["'])\/(?!\/|api\/)([^"']*)(["'])/gi, `$1/api/vp/${upstreamHost}/$2$3`);
-    // Inject <base> tag so relative paths resolve against the upstream origin.
-    // Also inject fetch/XHR override so the anti-embed redirect is blocked
-    // (no allow-same-origin in sandbox), and API calls get proxied through our
-    // vidcore-proxy endpoint to avoid CORS failures.
-    // Also inject fetch/XHR override: redirect VidCore API calls through our
-    // existing /api/vp proxy (which adds CORS headers). This prevents
-    // cross-origin failures when allow-same-origin is not in the sandbox.
-    html = html.replace('<head>', `<head><script>(function(){var P='/api/vp/vidcore.org',f=window.fetch;window.fetch=function(u,i){if(typeof u==='string'&&(u.indexOf('/api/sources')===0||u.indexOf('/api/tmdb')===0||u.indexOf('/api/subtitles')===0))u=P+u;return f.call(this,u,i)};var X=XMLHttpRequest.prototype.open;XMLHttpRequest.prototype.open=function(m,u){if(typeof u==='string'&&(u.indexOf('/api/sources')===0||u.indexOf('/api/tmdb')===0||u.indexOf('/api/subtitles')===0))arguments[1]=P+u;return X.apply(this,arguments)}})();</script><base href="${upstreamOrigin}/">`);
-    // If the page is from a source that sends postMessage progress events natively,
-    // we only inject our progress relay for sources that lack native support
+    // Inject base tag so relative paths resolve against upstream origin
+    html = html.replace('<head>', `<head><base href="${upstreamOrigin}/">`);
+    // Inject postMessage progress relay from video element
     html = html.replace('</body>', '<script>\n' +
 '(function(){\n' +
-'  var v=document.querySelector(\'video\');\n' +
-'  if(!v)return;\n' +
-'  function send(){try{parent.postMessage({type:\'cbemovies-progress\',currentTime:v.currentTime},\'*\')}catch(e){}}\n' +
-'  v.addEventListener(\'timeupdate\',send);\n' +
-'  v.addEventListener(\'play\',send);\n' +
-'  v.addEventListener(\'seeked\',send);\n' +
-'  send();\n' +
+'  function hook(v){\n' +
+'    function send(){try{parent.postMessage({type:\'cbemovies-progress\',currentTime:v.currentTime},\'*\')}catch(e){}}\n' +
+'    v.addEventListener(\'timeupdate\',send);\n' +
+'    v.addEventListener(\'play\',send);\n' +
+'    v.addEventListener(\'seeked\',send);\n' +
+'    send();\n' +
+'  }\n' +
+'  function poll(){\n' +
+'    var v=document.querySelector(\'video\');\n' +
+'    if(v){hook(v);return;}\n' +
+'    setTimeout(poll,300);\n' +
+'  }\n' +
+'  poll();\n' +
 '})();\n' +
 '</script></body>');
     res.setHeader('Content-Type', 'text/html');

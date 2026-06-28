@@ -6,6 +6,8 @@ const ALLOWED_DOMAINS = [
   'vidphantom.com',
   'brightpathsignals.com',
   'streamdata.vaplayer.ru',
+  'yapgrid.com',
+  'apiplayer.ru',
 ];
 
 module.exports = async (req, res) => {
