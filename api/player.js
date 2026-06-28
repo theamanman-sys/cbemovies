@@ -50,12 +50,7 @@ module.exports = async (req, res) => {
     // Strip known ad/tracker CDN scripts
     html = html.replace(/<script[^>]*\s+src=["'](?:https?:)?\/\/(?:acscdn\.com|dpjf9a2rbjbvp\.cloudfront\.net|s10\.histats\.com)[^"']*["'][^>]*><\/script>/gi, '');
     // Cloudflare Turnstile may be needed by HLS proxy to serve streams
-    // Rewrite full origin URLs through our proxy
-    html = html.replace(new RegExp(`((?:src|href)=)["']${upstreamOrigin}([^"']*)["']`, 'gi'), `$1"/api/vp/${upstreamHost}$2"`);
-    html = html.replace(new RegExp(`(url\\(['"]?)${upstreamOrigin}([^)"']*)`, 'g'), `$1/api/vp/${upstreamHost}$2`);
-    // Rewrite absolute path URLs on asset elements through proxy
-    html = html.replace(/(<(?:script|link|img|source|video|audio)[^>]*\s(?:src|href)=["'])\/(?!\/|api\/)([^"']*)(["'])/gi, `$1/api/vp/${upstreamHost}/$2$3`);
-    // Inject base tag so relative paths resolve against upstream origin
+    // Inject base tag so relative/absolute paths resolve against upstream origin
     html = html.replace('<head>', `<head><base href="${upstreamOrigin}/">`);
     // Inject postMessage progress relay from video element
     html = html.replace('</body>', '<script>\n' +
