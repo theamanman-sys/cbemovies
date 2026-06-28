@@ -1,5 +1,6 @@
 {
   "rewrites": [
-    { "source": "/api/vp/(.+)", "destination": "/api/vp?target=$1" }
+    { "source": "/api/vp/(.+)", "destination": "/api/vp?target=$1" },
+    { "source": "/api/vidcore-proxy/(.+)", "destination": "/api/vidcore-proxy?target=$1" }
   ]
 }
