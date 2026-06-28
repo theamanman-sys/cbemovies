@@ -34,7 +34,7 @@ module.exports = async (req, res) => {
         createdAt: FieldValue.serverTimestamp(),
         watchlist: [],
         history: [],
-        settings: { autoPlay: true, quality: 'auto', subtitles: true }
+        settings: { autoPlay: true, quality: 'auto' }
       });
       uid = newUserRef.id;
       await newUserRef.update({ uid });

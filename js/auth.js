@@ -28,7 +28,7 @@ const Auth = {
       createdAt: firebase.firestore.FieldValue.serverTimestamp(),
       watchlist: [],
       history: [],
-      settings: { autoPlay: true, quality: 'auto', subtitles: true }
+      settings: { autoPlay: true, quality: 'auto' }
     };
     await db.collection('users').doc(uid).set(doc);
     await db.collection('notifications').add({

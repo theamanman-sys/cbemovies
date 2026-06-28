@@ -203,10 +203,7 @@
               <option value="sd">SD</option>
             </select>
           </div>
-          <div class="setting-row">
-            <label>Subtitles enabled</label>
-            <label class="toggle"><input type="checkbox" id="setting-subtitles" checked><span class="toggle-slider"></span></label>
-          </div>
+
           <button class="auth-btn" id="save-settings-btn">Save Settings</button>
         </div>
         <div class="profile-card" style="margin-top:16px;border-color:rgba(255,50,50,0.3)">
@@ -366,7 +363,6 @@
     if (doc.settings) {
       $('setting-autoplay').checked = doc.settings.autoPlay !== false;
       $('setting-quality').value = doc.settings.quality || 'auto';
-      $('setting-subtitles').checked = doc.settings.subtitles !== false;
     }
 
     renderSubscription(doc);
@@ -413,7 +409,6 @@
       settings: {
         autoPlay: $('setting-autoplay').checked,
         quality: $('setting-quality').value,
-        subtitles: $('setting-subtitles').checked
       }
     };
     await Auth.updateProfile(Auth.currentUser.uid, data);

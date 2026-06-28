@@ -25,6 +25,9 @@ const state = {
   playerStartTime: 0,
   watchTimerId: null,
   _autoNextFallback: null,
+  autoNextCountdown: null,
+  autoNextTimer: null,
+  autoNextDismissed: false,
 };
 
 const $ = (s, ctx = document) => ctx.querySelector(s);
@@ -985,19 +988,9 @@ function playItem(item, season = 1, episode = 1) {
   state.currentEpisode = episode;
   state.playerSimilarItems = null;
   state._autoPlayTriggered = false;
-  subtitleState.currentLang = null;
-  subtitleState.available = [];
-  hideSubtitleOverlay();
-  cancelAutoNext();
-  subState.autoNextDismissed = false;
-  subState.cues = [];
-  subState.currentTime = 0;
-  subState.gotEvent = false;
-  subState.fallbackStart = 0;
-  subState.duration = 0;
-  subState.saveCounter = 0;
+  state.autoNextDismissed = false;
   dom.playerFrame.src = '';
-  const savedPos = loadSubPos(item.imdb_id || item.tmdb_id || '');
+  const savedPos = 0;
   _playerSources = API.getPlayerUrls(item, season, episode, savedPos);
   _playerSourceIndex = 0;
   _currentPlayerUrl = _playerSources[_playerSourceIndex];
@@ -1009,8 +1002,6 @@ function playItem(item, season = 1, episode = 1) {
     state.playerStartTime = performance.now();
     startSourceFallbackTimer();
   }, 50);
-  const nextBtn = document.getElementById('substep-next-btn');
-  if (nextBtn) nextBtn.style.display = item.type === 'tv' ? '' : 'none';
   if (item.type === 'tv') {
     if (state.watchTimerId) { clearInterval(state.watchTimerId); state.watchTimerId = null; }
     state.watchTimerId = setInterval(watchLoop, 1000);
@@ -1020,9 +1011,7 @@ function playItem(item, season = 1, episode = 1) {
   lockScroll();
   renderPlayerSidebar(item);
   listenPlayerProgress();
-  setupSubtitleIdle();
   loadPlayerSimilar(item);
-  loadSubtitles(item);
   if (item.type === 'tv' && item.tmdb_id) {
     API.fetchTVSeason(item.tmdb_id, season).then(data => {
       const eps = (data?.episodes || []).filter(ep => ep.episode_number > 0);
@@ -1066,20 +1055,10 @@ function closePlayer() {
   dom.playerFrame.src = '';
   _currentPlayerUrl = '';
   _expectedIframeNav = false;
-  subtitleState.currentLang = null;
-  subtitleState.available = [];
-  hideSubtitleOverlay();
-  subState.cues = [];
-  subState.currentTime = 0;
-  subState.gotEvent = false;
-  subState.fallbackStart = 0;
-  subState.duration = 0;
   state.playerStartTime = 0;
   if (state.watchTimerId) { clearInterval(state.watchTimerId); state.watchTimerId = null; }
   if (state._autoNextFallback) { clearTimeout(state._autoNextFallback); state._autoNextFallback = null; }
   cancelAutoNext();
-  const subBtn = document.getElementById('subtitle-btn');
-  if (subBtn) { subBtn.textContent = 'CC'; subBtn.classList.remove('active'); }
   dom.playerPage.classList.add('hidden');
   unlockScroll();  state.playerSimilarItems = null;
   if (dom.playerPage._messageHandler) window.removeEventListener('message', dom.playerPage._messageHandler);
@@ -1087,141 +1066,14 @@ function closePlayer() {
   dom.playerPage.querySelector('.player-sidebar-overlay')?.remove();
 }
 
-/* ── Subtitle System ── */
-let subtitleState = {
-  currentLang: null,
-  available: [],
-  saved: [],
-};
+/* ── Wall-clock watch loop for TV autoplay ── */
+/* ── Wall-clock watch loop for TV autoplay ── */
 
-/* ── Subtitle overlay synced via fallback timer + user steps ── */
-const subState = {
-  cues: [],          // [{s,e,t}] parsed VTT cues
-  currentTime: 0,    // fallback timer (elapsed since subtitle load) + user nudges
-  timerId: null,
-  idleTimer: null,   // mouse idle timeout for auto-hide
-  fallbackStart: 0,  // performance.now() when fallback timer started
-  gotEvent: false,   // always false (Cinezo doesn't send progress events)
-  duration: 0,       // total subtitle duration (last cue end time)
-  saveCounter: 0,    // frame counter for periodic position save
-  autoNextCountdown: null, // seconds until next episode auto-plays (or null)
-  autoNextTimer: null,     // interval ID for countdown
-  autoNextDismissed: false, // true if user dismissed the banner
-};
-
-function parseVTT(text) {
-  const cues = [];
-  const lines = text.split('\n');
-  let cue = null;
-  for (const line of lines) {
-    const m = line.match(/(\d{2}):(\d{2}):(\d{2})\.(\d{3})\s*-->\s*(\d{2}):(\d{2}):(\d{2})\.(\d{3})/);
-    if (m) {
-      if (cue) cues.push(cue);
-      cue = { s: +m[1]*3600 + +m[2]*60 + +m[3] + +m[4]/1000, e: +m[5]*3600 + +m[6]*60 + +m[7] + +m[8]/1000, t: '' };
-    } else if (cue && line.trim() && !line.startsWith('WEBVTT') && !line.startsWith('NOTE')) {
-      cue.t += (cue.t ? '\n' : '') + line.trim();
-    }
-  }
-  if (cue) cues.push(cue);
-  return cues;
-}
-
-function parseSRT(text) {
-  const cues = [];
-  const blocks = text.trim().split(/\n\s*\n/);
-  for (const block of blocks) {
-    const lines = block.split('\n');
-    if (lines.length < 2) continue;
-    const timeIdx = lines.findIndex(l => l.includes('-->'));
-    if (timeIdx === -1) continue;
-    const [start, end] = lines[timeIdx].split('-->').map(t => t.trim().replace(/,/g, '.'));
-    const s = parseSRTTime(start);
-    const e = parseSRTTime(end);
-    const t = lines.slice(timeIdx + 1).join('\n').trim();
-    if (t && !isNaN(s) && !isNaN(e)) cues.push({ s, e, t });
-  }
-  return cues;
-}
-
-function parseSRTTime(t) {
-  const parts = t.split(':');
-  if (parts.length < 2) return 0;
-  const secs = parts[parts.length - 1];
-  const mins = parts[parts.length - 2];
-  const hrs = parts.length > 2 ? parts[0] : '0';
-  return +hrs * 3600 + +mins * 60 + +secs;
-}
-
-function saveSubPos(imdb, time) {
-  try { localStorage.setItem(`sub_pos_${imdb}`, Math.floor(time)); } catch {}
-}
-
-function loadSubPos(imdb) {
-  try { const v = localStorage.getItem(`sub_pos_${imdb}`); return v ? +v : 0; } catch { return 0; }
-}
-
-function clearSubPos(imdb) {
-  try { localStorage.removeItem(`sub_pos_${imdb}`); } catch {}
-}
-
-function tryReadVideoTime() {
-  try {
-    const video = dom.playerFrame?.contentDocument?.querySelector('video');
-    if (video && typeof video.currentTime === 'number' && isFinite(video.currentTime)) {
-      subState.currentTime = video.currentTime;
-      subState.fallbackStart = performance.now() - subState.currentTime * 1000;
-      return true;
-    }
-  } catch (e) {}
-  return false;
-}
-
-function subLoop() {
-  if (!subState.cues.length) { subState.timerId = null; return; }
-  if (!subState.gotEvent) {
-    if (!tryReadVideoTime() && subState.fallbackStart) {
-      subState.currentTime = (performance.now() - subState.fallbackStart) / 1000;
-    }
-  }
-  let text = '';
-  for (const c of subState.cues) {
-    if (subState.currentTime >= c.s && subState.currentTime < c.e) { text = c.t; break; }
-  }
-  const el = document.getElementById('subtitle-text');
-  if (el) el.textContent = text;
-  const dbg = document.getElementById('subtitle-debug');
-  if (dbg) {
-    dbg.textContent = text ? `[${text.length}ch] ${text.slice(0, 30)}` : '';
-  }
-  const timeEl = document.getElementById('subtitle-time');
-  if (timeEl) {
-    const t = subState.currentTime;
-    const h = Math.floor(t / 3600);
-    const m = Math.floor((t % 3600) / 60);
-    const s = Math.floor(t % 60);
-    timeEl.textContent = `${h}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
-  }
-  updateSubProgress(subState.currentTime);
-  subState.saveCounter++;
-  if (subState.saveCounter % 150 === 0) {
-    const imdb = state.currentItem?.imdb_id || state.currentItem?.tmdb_id;
-    if (imdb) saveSubPos(imdb, subState.currentTime);
-  }
-
-  /* ── Autoplay next episode ── */
-  subState.timerId = requestAnimationFrame(subLoop);
-}
-
-/* ── Wall-clock watch loop for TV autoplay (runs even without subtitles) ── */
 function getWatchTime() {
-  if (subState.timerId && subState.fallbackStart) {
-    return subState.currentTime;
-  }
   return state.playerStartTime ? (performance.now() - state.playerStartTime) / 1000 : 0;
 }
 
 function getWatchDuration() {
-  if (subState.duration > 0) return subState.duration;
   const item = state.currentItem;
   if (item?.type === 'tv') {
     const ep = state.tvEpisodes?.find(e => e.episode_number === state.currentEpisode);
@@ -1233,13 +1085,13 @@ function getWatchDuration() {
 
 function scheduleAutoNextFallback(item, season, episode) {
   if (state._autoNextFallback) { clearTimeout(state._autoNextFallback); state._autoNextFallback = null; }
-  let fallbackMs = 27 * 60 * 1000; // 27 min default (covers most 20-25min episodes)
+  let fallbackMs = 27 * 60 * 1000;
   if (item._runtime) fallbackMs = (item._runtime + 2) * 60 * 1000;
   const ep = state.tvEpisodes?.find(e => e.episode_number === episode);
   if (ep?.runtime) fallbackMs = (ep.runtime + 2) * 60 * 1000;
   state._autoNextFallback = setTimeout(() => {
     if (!state.autoPlayNext || state.currentItem?._id !== item._id) return;
-    if (subState.autoNextCountdown === null && !subState.autoNextDismissed) {
+    if (state.autoNextCountdown === null && !state.autoNextDismissed) {
       startAutoNextCountdown(10);
     }
   }, fallbackMs);
@@ -1255,14 +1107,13 @@ function watchLoop() {
     const time = getWatchTime();
     const dur = getWatchDuration();
     if (dur <= 0) return;
-    // Fallback: 15s past expected end — Cinezo's internal autonext should have fired by now
     const pastEnd = time >= dur + 15;
     const beforeEnd = time < dur - 10;
-    if (pastEnd && subState.autoNextCountdown === null && !subState.autoNextDismissed) {
+    if (pastEnd && state.autoNextCountdown === null && !state.autoNextDismissed) {
       startAutoNextCountdown(5);
     } else if (beforeEnd) {
-      if (subState.autoNextCountdown !== null || subState.autoNextDismissed) {
-        subState.autoNextDismissed = false;
+      if (state.autoNextCountdown !== null || state.autoNextDismissed) {
+        state.autoNextDismissed = false;
         cancelAutoNext();
       }
     }
@@ -1270,33 +1121,33 @@ function watchLoop() {
 }
 
 function startAutoNextCountdown(seconds) {
-  subState.autoNextCountdown = seconds;
+  state.autoNextCountdown = seconds;
   updateAutoNextBanner();
-  if (subState.autoNextTimer) clearInterval(subState.autoNextTimer);
-  subState.autoNextTimer = setInterval(() => {
-    subState.autoNextCountdown--;
+  if (state.autoNextTimer) clearInterval(state.autoNextTimer);
+  state.autoNextTimer = setInterval(() => {
+    state.autoNextCountdown--;
     updateAutoNextBanner();
-    if (subState.autoNextCountdown <= 0) {
-      clearInterval(subState.autoNextTimer);
-      subState.autoNextTimer = null;
-      subState.autoNextCountdown = null;
+    if (state.autoNextCountdown <= 0) {
+      clearInterval(state.autoNextTimer);
+      state.autoNextTimer = null;
+      state.autoNextCountdown = null;
       nextEpisode();
     }
   }, 1000);
 }
 
 function cancelAutoNext() {
-  if (subState.autoNextTimer) {
-    clearInterval(subState.autoNextTimer);
-    subState.autoNextTimer = null;
+  if (state.autoNextTimer) {
+    clearInterval(state.autoNextTimer);
+    state.autoNextTimer = null;
   }
-  subState.autoNextCountdown = null;
+  state.autoNextCountdown = null;
   const banner = document.getElementById('subtitle-next-banner');
   if (banner) banner.classList.add('hidden');
 }
 
 function dismissAutoNext() {
-  subState.autoNextDismissed = true;
+  state.autoNextDismissed = true;
   cancelAutoNext();
 }
 
@@ -1305,12 +1156,12 @@ function updateAutoNextBanner() {
   const countdown = document.getElementById('subtitle-next-countdown');
   const text = document.getElementById('subtitle-next-text');
   if (!banner || !countdown || !text) return;
-  if (subState.autoNextCountdown === null) {
+  if (state.autoNextCountdown === null) {
     banner.classList.add('hidden');
     return;
   }
   banner.classList.remove('hidden');
-  countdown.textContent = subState.autoNextCountdown + 's';
+  countdown.textContent = state.autoNextCountdown + 's';
   const item = state.currentItem;
   if (item?.type === 'tv') {
     const idx = state.tvEpisodes.findIndex(ep => ep.episode_number === state.currentEpisode);
@@ -1321,327 +1172,6 @@ function updateAutoNextBanner() {
     text.textContent = 'Next Episode';
   }
 }
-
-function updateSubProgress(time) {
-  const fill = document.getElementById('subtitle-progress-fill');
-  const thumb = document.getElementById('subtitle-progress-thumb');
-  if (!fill || !thumb) return;
-  const dur = subState.duration || 1;
-  const pct = Math.min(100, Math.max(0, (time / dur) * 100));
-  fill.style.width = pct + '%';
-  thumb.style.left = pct + '%';
-}
-
-function setupSubProgress() {
-  const track = document.getElementById('subtitle-progress-track');
-  if (!track) return;
-
-  let dragging = false;
-
-  const seekFromEvent = (clientX) => {
-    const rect = track.getBoundingClientRect();
-    const pct = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
-    const dur = subState.duration || 1;
-    subState.currentTime = pct * dur;
-    subState.fallbackStart = performance.now() - subState.currentTime * 1000;
-    subState.gotEvent = false;
-    const imdb = state.currentItem?.imdb_id || state.currentItem?.tmdb_id;
-    if (imdb) saveSubPos(imdb, subState.currentTime);
-    updateSubProgress(subState.currentTime);
-    cancelAutoNext();
-  };
-
-  const onPointerDown = (e) => {
-    e.preventDefault();
-    dragging = true;
-    track.setPointerCapture(e.pointerId);
-    seekFromEvent(e.clientX);
-  };
-
-  const onPointerMove = (e) => {
-    e.preventDefault();
-    if (dragging) seekFromEvent(e.clientX);
-  };
-
-  const onPointerUp = (e) => {
-    if (!dragging) return;
-    dragging = false;
-    track.releasePointerCapture(e.pointerId);
-    seekFromEvent(e.clientX);
-  };
-
-  track.addEventListener('pointerdown', onPointerDown);
-  track.addEventListener('pointermove', onPointerMove);
-  track.addEventListener('pointerup', onPointerUp);
-  track.addEventListener('pointerleave', (e) => {
-    if (dragging) { dragging = false; track.releasePointerCapture(e.pointerId); }
-  });
-}
-
-function showSubtitleOverlay() {
-  const ov = document.getElementById('subtitle-overlay');
-  if (!ov) return;
-  ov.classList.remove('hidden');
-  ov.classList.remove('idle');
-  startSubtitleIdleTimer();
-}
-
-function startSubtitleIdleTimer() {
-  if (subState.idleTimer) clearTimeout(subState.idleTimer);
-  subState.idleTimer = setTimeout(() => {
-    const ov = document.getElementById('subtitle-overlay');
-    if (ov && !ov.classList.contains('hidden')) ov.classList.add('idle');
-  }, 3000);
-}
-
-function setupSubtitleIdle() {
-  const container = document.querySelector('.player-container');
-  if (!container || container._subtitleIdleSetup) return;
-  container._subtitleIdleSetup = true;
-  container.addEventListener('mousemove', () => {
-    const ov = document.getElementById('subtitle-overlay');
-    if (!ov || ov.classList.contains('hidden')) return;
-    ov.classList.remove('idle');
-    startSubtitleIdleTimer();
-  });
-}
-
-function hideSubtitleOverlay() {
-  if (subState.timerId) { cancelAnimationFrame(subState.timerId); subState.timerId = null; }
-  if (subState.idleTimer) { clearTimeout(subState.idleTimer); subState.idleTimer = null; }
-  const ov = document.getElementById('subtitle-overlay');
-  if (ov) ov.classList.add('hidden');
-  const el = document.getElementById('subtitle-text');
-  if (el) el.textContent = '';
-  const fill = document.getElementById('subtitle-progress-fill');
-  if (fill) fill.style.width = '0%';
-  const thumb = document.getElementById('subtitle-progress-thumb');
-  if (thumb) thumb.style.left = '0%';
-}
-
-async function loadSubtitles(item) {
-  let imdb = item.imdb_id || '';
-  if (!imdb && item.tmdb_id) {
-    imdb = await API.fetchImdbId(item.tmdb_id, item.type) || '';
-    if (imdb) item.imdb_id = imdb;
-  }
-  const list = document.getElementById('subtitle-list');
-  const btn = document.getElementById('subtitle-btn');
-  if (!list || !btn) return;
-
-  list.innerHTML = '<div class="subtitle-menu-item" style="cursor:default;opacity:0.5">Loading...</div>';
-
-  // Load saved subtitles from IndexedDB
-  if (typeof getSubtitlesByImdb === 'function') {
-    try {
-      const saved = await getSubtitlesByImdb(imdb);
-      subtitleState.saved = saved.map(s => ({ code: s.lang, lang: s.label, _internal: true }));
-    } catch { subtitleState.saved = []; }
-  } else {
-    subtitleState.saved = [];
-  }
-
-  try {
-    const res = await fetch(`/api/subtitle?imdb=${encodeURIComponent(imdb)}&list=1`);
-    const data = await res.json();
-    if (data.success && data.subtitles?.length) {
-      subtitleState.available = data.subtitles;
-    } else {
-      subtitleState.available = [];
-    }
-  } catch {
-    subtitleState.available = [];
-  }
-  renderSubtitleMenu();
-}
-
-function renderSubtitleMenu() {
-  const list = document.getElementById('subtitle-list');
-  const footer = document.getElementById('subtitle-footer');
-  if (!list) return;
-
-  const hasActive = subtitleState.currentLang !== null;
-
-  let html = '';
-  html += `<button class="subtitle-menu-item${!hasActive ? ' active' : ''}" onclick="selectSubtitle('off')"><span class="check">✓</span><span class="label">Off</span></button>`;
-
-  const savedItems = subtitleState.saved || [];
-  if (savedItems.length) {
-    html += '<div class="subtitle-menu-header" style="font-size:11px;padding:6px 14px">Saved</div>';
-    savedItems.forEach(sub => {
-      const active = subtitleState.currentLang === sub.code;
-      const label = sub.label || sub.lang.toUpperCase();
-      html += `<button class="subtitle-menu-item${active ? ' active' : ''}" onclick="selectSubtitle('saved:${sub.code}')"><span class="check">✓</span><span class="label">💾 ${label}</span></button>`;
-    });
-  }
-
-  if (subtitleState.available.length > 0) {
-    html += '<div class="subtitle-menu-header" style="font-size:11px;padding:6px 14px">Online</div>';
-    subtitleState.available.forEach(sub => {
-      const active = subtitleState.currentLang === sub.code;
-      html += `<button class="subtitle-menu-item${active ? ' active' : ''}" onclick="selectSubtitle('${sub.code}')"><span class="check">✓</span><span class="label">${sub.lang}</span></button>`;
-    });
-  } else if (!savedItems.length) {
-    html += '<div class="subtitle-menu-item" style="cursor:default;opacity:0.4;font-size:12px">No subtitles available</div>';
-  }
-
-  list.innerHTML = html;
-  if (footer) footer.innerHTML = '';
-}
-
-async function selectSubtitle(lang) {
-  if (lang === 'off') {
-    subtitleState.currentLang = null;
-    document.getElementById('subtitle-btn').textContent = 'CC';
-    document.getElementById('subtitle-btn').classList.remove('active');
-    const imdb = state.currentItem?.imdb_id || state.currentItem?.tmdb_id;
-    if (imdb) clearSubPos(imdb);
-    renderSubtitleMenu();
-    closeSubtitleMenu();
-    hideSubtitleOverlay();
-    return;
-  }
-
-  const btn = document.getElementById('subtitle-btn');
-  btn.textContent = '...';
-  btn.classList.add('active');
-
-  const item = state.currentItem;
-  let imdb = item?.imdb_id || '';
-  if (!imdb && item?.tmdb_id) {
-    imdb = await API.fetchImdbId(item.tmdb_id, item.type) || '';
-    if (imdb) item.imdb_id = imdb;
-  }
-  if (!imdb) {
-    showToast('No IMDB ID for subtitles', true);
-    btn.textContent = 'CC';
-    btn.classList.remove('active');
-    return;
-  }
-
-  const isSaved = lang.startsWith('saved:');
-  const langCode = isSaved ? lang.slice(6) : lang;
-
-  try {
-    let vtt;
-
-    if (isSaved) {
-      if (typeof getSubtitle === 'function') {
-        const saved = await getSubtitle(imdb, langCode);
-        if (saved) vtt = saved.vtt;
-      }
-      if (!vtt) {
-        showToast('Saved subtitle not found', true);
-        btn.textContent = 'CC';
-        btn.classList.remove('active');
-        return;
-      }
-    } else {
-      // Check IndexedDB cache first
-      if (typeof getSubtitle === 'function') {
-        const cached = await getSubtitle(imdb, langCode);
-        if (cached) vtt = cached.vtt;
-      }
-
-      if (!vtt) {
-        const url = `/api/subtitle?imdb=${encodeURIComponent(imdb)}&lang=${langCode}&from=en`;
-        const res = await fetch(url);
-        if (!res.ok) {
-          showToast(`Subtitles unavailable (${res.status})`, true);
-          btn.textContent = 'CC';
-          btn.classList.remove('active');
-          return;
-        }
-        vtt = await res.text();
-      }
-    }
-    const cues = parseVTT(vtt);
-    if (!cues.length) {
-      showToast('No subtitle cues found', true);
-      btn.textContent = 'CC';
-      btn.classList.remove('active');
-      return;
-    }
-
-    // Restore saved position for this movie
-    subtitleState.currentLang = langCode;
-    const label = subtitleState.available.find(s => s.code === langCode)?.lang || langCode.toUpperCase().slice(0, 3);
-    btn.textContent = label;
-
-    subState.cues = cues;
-    subState.duration = cues.reduce((max, c) => Math.max(max, c.e), 0);
-    subState.gotEvent = false;
-    if (state.playerStartTime) {
-      subState.currentTime = (performance.now() - state.playerStartTime) / 1000;
-      subState.fallbackStart = state.playerStartTime;
-    } else {
-      subState.currentTime = 0;
-      subState.fallbackStart = performance.now();
-    }
-    // Restore saved position — overrides smart timer on page reload
-    const savedPos = loadSubPos(imdb);
-    if (savedPos > 0 && savedPos < subState.duration) {
-      subState.currentTime = savedPos;
-      subState.fallbackStart = performance.now() - savedPos * 1000;
-      subState.gotEvent = false;
-    }
-    tryReadVideoTime();
-    showSubtitleOverlay();
-    setupSubProgress();
-    subLoop();
-    renderSubtitleMenu();
-    closeSubtitleMenu();
-
-    showToast(`Subtitles: ${label}`);
-  } catch (err) {
-    showToast('Failed to load subtitles', true);
-    btn.textContent = 'CC';
-    btn.classList.remove('active');
-  }
-}
-
-function toggleSubtitleMenu() {
-  const menu = document.getElementById('subtitle-menu');
-  if (!menu) return;
-  const hidden = menu.classList.toggle('hidden');
-  if (!hidden) renderSubtitleMenu();
-}
-
-function closeSubtitleMenu() {
-  const menu = document.getElementById('subtitle-menu');
-  if (menu) menu.classList.add('hidden');
-}
-
-function subStep(delta) {
-  if (!subState.cues.length) return;
-  cancelAutoNext();
-  tryReadVideoTime();
-  subState.currentTime = Math.max(0, subState.currentTime + delta);
-  if (!subState.gotEvent && subState.fallbackStart) {
-    subState.fallbackStart = performance.now() - subState.currentTime * 1000;
-  }
-  const imdb = state.currentItem?.imdb_id || state.currentItem?.tmdb_id;
-  if (imdb) saveSubPos(imdb, subState.currentTime);
-  if (!subState.timerId) subLoop();
-}
-
-document.addEventListener('keydown', (e) => {
-  if (e.altKey && e.key === 'd') {
-    const ov = document.getElementById('subtitle-overlay');
-    if (ov && !ov.classList.contains('hidden')) ov.classList.toggle('show-debug');
-    return;
-  }
-  if (!subState.cues.length) return;
-  if (e.altKey && e.key === 'ArrowLeft') { subStep(-0.5); e.preventDefault(); }
-  if (e.altKey && e.key === 'ArrowRight') { subStep(0.5); e.preventDefault(); }
-  if (e.key === 'ArrowLeft' && e.shiftKey) { subStep(-5); e.preventDefault(); }
-  if (e.key === 'ArrowRight' && e.shiftKey) { subStep(5); e.preventDefault(); }
-});
-
-document.addEventListener('click', (e) => {
-  const wrap = document.getElementById('subtitle-wrap');
-  if (wrap && !wrap.contains(e.target)) closeSubtitleMenu();
-});
 
 function renderPlayerSidebar(item) {
   if (!item) return;
@@ -1778,65 +1308,29 @@ function listenPlayerProgress() {
     dom.playerPage._messageHandler = null;
   }
 
-  function onVideoTime(time) {
-    if (typeof time === 'number' && isFinite(time)) {
-      subState.currentTime = time;
-      subState.gotEvent = true;
-      subState.fallbackStart = performance.now() - time * 1000;
-      clearSourceFallbackTimer();
-    }
-  }
-
-  // Receive video time from postMessage events (hnembed relay, proxy-injected, or source-native)
   const handler = (event) => {
     if (!dom.playerPage || dom.playerPage.classList.contains('hidden')) return;
     if (!_currentPlayerUrl) return;
     const data = event.data;
     if (!data || typeof data !== 'object') return;
-    if (data.context === 'player.js') {
-      // embedly/player.js protocol: { context:'player.js', event:'timeupdate', value:{ seconds, duration } }
-      if (data.event === 'timeupdate' && data.value && typeof data.value.seconds === 'number') {
-        onVideoTime(data.value.seconds);
-      }
+    if (data.context === 'player.js' && data.event === 'timeupdate' && data.value && typeof data.value.seconds === 'number') {
+      clearSourceFallbackTimer();
       return;
     }
-    // VixSrc PLAYER_EVENT protocol: { type:"PLAYER_EVENT", data:{ event, currentTime, duration } }
-    if (data.type === 'PLAYER_EVENT' && data.data) {
-      if (typeof data.data.currentTime === 'number') {
-        onVideoTime(data.data.currentTime);
-        if (data.data.duration > 0) subState.duration = data.data.duration;
-      }
+    if (data.type === 'PLAYER_EVENT' && data.data && typeof data.data.currentTime === 'number') {
+      clearSourceFallbackTimer();
       return;
     }
-    let time;
     if (data.type === 'cbemovies-progress' || data.type === 'timeupdate' || data.type === 'playing') {
-      time = data.currentTime;
-    } else if (data.currentTime !== undefined && data.currentTime !== null) {
-      time = data.currentTime;
-    } else if (data.seconds !== undefined && data.seconds !== null) {
-      time = data.seconds;
-    } else if (data.event === 'timeupdate' && data.currentTime !== undefined) {
-      time = data.currentTime;
+      clearSourceFallbackTimer();
     }
-    onVideoTime(time);
   };
 
   dom.playerPage._messageHandler = handler;
   window.addEventListener('message', handler);
-  tryReadVideoTime();
 }
 
-function resyncSubtitles() {
-  if (!subState.cues.length) return;
-  if (state.playerStartTime) {
-    subState.currentTime = (performance.now() - state.playerStartTime) / 1000;
-    subState.fallbackStart = state.playerStartTime;
-    subState.gotEvent = false;
-    showToast('Subtitles resynced');
-  } else {
-    showToast('Cannot resync: no start time', true);
-  }
-}
+
 
 /* ── Player TV Controls ── */
 function updatePlayerTV(season, episode) {
