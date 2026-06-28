@@ -549,8 +549,10 @@ async function playTrailer(tmdbId, type) {
 }
 window.playTrailer = playTrailer;
 
-function setupCardTrailers() {
-  dom.grid.querySelectorAll('.browse-card').forEach(card => {
+function setupCardTrailers(gridEl) {
+  const grid = gridEl || dom.grid;
+  if (!grid) return;
+  grid.querySelectorAll('.browse-card').forEach(card => {
     const wrap = card.querySelector('.browse-card-backdrop-wrap');
     if (!wrap || wrap._trailerListeners) return;
     wrap._trailerListeners = true;
@@ -784,7 +786,8 @@ function closeModal() {
   const backdrop = dom.modal.querySelector('.modal-backdrop');
   if (backdrop) backdrop.style.display = '';
   dom.modalOverlay.classList.remove('active');
-  unlockScroll();}
+  unlockScroll();
+}
 
 const youtubeData = {
   'wvTRae6Awas': { title: 'Fasika (Easter) FCY Ad', description: 'Commercial Bank of Ethiopia Easter celebration advertisement.' },
@@ -913,7 +916,8 @@ function closeYouTubePlayer() {
   const modal = document.getElementById('youtube-modal');
   if (frame) frame.src = '';
   if (modal) modal.classList.remove('active');
-  unlockScroll();}
+  unlockScroll();
+}
 
 /* ── Player ── */
 let _currentPlayerUrl = '';
@@ -1883,7 +1887,8 @@ function openSearch() {
 function closeSearch() {
   dom.searchOverlay.classList.remove('active');
   dom.searchDropdown?.classList.remove('active');
-  unlockScroll();}
+  unlockScroll();
+}
 
 function setSearchTab(tab) {
   state.searchTab = tab;

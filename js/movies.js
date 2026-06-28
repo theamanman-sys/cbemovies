@@ -126,7 +126,7 @@ async function openPlayer(item) {
   }, 50);
   dom.playerPage.classList.remove('hidden');
   dom.playerSidebarContent.innerHTML = renderPlayerSidebar(item);
-  unlockScroll();
+  lockScroll();
   listenPlayerProgress();
   try {
     const enriched = await API.enrichItem({ tmdb_id: item.tmdb_id, type: item.type || 'movie' });
@@ -152,7 +152,7 @@ function closePlayer() {
     dom.playerPage._messageHandler = null;
   }
   dom.playerPage.classList.add('hidden');
-  lockScroll();
+  unlockScroll();
 }
 
 function togglePlayerFullscreen() {
@@ -488,7 +488,7 @@ async function fetchAndRender() {
     mState.totalPages = Math.min(data.total_pages || 1, 500);
     mState.totalResults = data.total_results || 0;
     renderGrid(items);
-    setupCardTrailers();
+    setupCardTrailers(dom.grid);
     renderPagination();
     dom.count.textContent = `${mState.totalResults.toLocaleString()} movies found`;
   } catch {
@@ -616,14 +616,6 @@ function goToPage(p) {
   mState.page = p;
   fetchAndRender();
   dom.grid.scrollIntoView({ behavior: 'smooth', block: 'start' });
-}
-
-/* ── Scroll lock ── */
-function lockScroll() {
-  document.body.style.overflow = 'hidden';
-}
-function unlockScroll() {
-  document.body.style.overflow = '';
 }
 
 /* ── Mobile Nav ── */

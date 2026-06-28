@@ -127,7 +127,7 @@ function openPlayer(item) {
   }, 50);
   dom.playerPage.classList.remove('hidden');
   dom.playerSidebarContent.innerHTML = renderPlayerSidebar(item);
-  unlockScroll();
+  lockScroll();
   listenPlayerProgress();
 }
 
@@ -144,7 +144,7 @@ function closePlayer() {
     dom.playerPage._messageHandler = null;
   }
   dom.playerPage.classList.add('hidden');
-  lockScroll();
+  unlockScroll();
 }
 
 function togglePlayerFullscreen() {
@@ -455,7 +455,7 @@ async function fetchAndRender() {
     tvState.totalPages = Math.min(data.total_pages || 1, 500);
     tvState.totalResults = data.total_results || 0;
     renderGrid(items);
-    setupCardTrailers();
+    setupCardTrailers(dom.grid);
     renderPagination();
     dom.count.textContent = `${tvState.totalResults.toLocaleString()} TV shows found`;
   } catch {
@@ -550,14 +550,6 @@ function goToPage(p) {
   tvState.page = p;
   fetchAndRender();
   dom.grid.scrollIntoView({ behavior: 'smooth', block: 'start' });
-}
-
-/* ── Scroll lock ── */
-function lockScroll() {
-  document.body.style.overflow = 'hidden';
-}
-function unlockScroll() {
-  document.body.style.overflow = '';
 }
 
 /* ── Mobile Nav ── */

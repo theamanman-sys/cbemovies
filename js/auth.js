@@ -105,7 +105,9 @@ const Auth = {
   },
 
   async handleLogout(redirectUrl = 'login.html') {
-    await auth.signOut();
+    try {
+      await auth.signOut();
+    } catch {}
     window.location.href = redirectUrl;
   },
 
