@@ -223,7 +223,7 @@ function toggleMobileNav() {
     <hr style="border-color:var(--glass-border);margin:4px 0">
     <a href="profile.html" style="color:var(--text-secondary);font-size:16px;font-weight:500;text-decoration:none;padding:12px 0">👤 Dashboard</a>
     <a href="profile.html#settings" style="color:var(--text-secondary);font-size:16px;font-weight:500;text-decoration:none;padding:12px 0">⚙️ Settings</a>
-    <button style="color:#ff4444;font-size:16px;font-weight:500;background:none;border:none;padding:12px 0;cursor:pointer;font-family:inherit;text-align:left" onclick="Auth.logout();window.location.href='index.html'">🚪 Sign Out</button>
+    <button style="color:#ff4444;font-size:16px;font-weight:500;background:none;border:none;padding:12px 0;cursor:pointer;font-family:inherit;text-align:left" onclick="Auth.handleLogout('index.html')">🚪 Sign Out</button>
   ` : `
     <hr style="border-color:var(--glass-border);margin:4px 0">
     <a href="login.html" style="color:var(--accent);font-size:16px;font-weight:600;text-decoration:none;padding:12px 0">🔑 Sign In</a>

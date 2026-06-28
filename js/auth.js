@@ -13,6 +13,7 @@ const Auth = {
   },
 
   async register({ email, phone, username, password, firstName, lastName }) {
+    await auth.signOut();
     const existing = await db.collection('users').where('username', '==', username).get();
     if (!existing.empty) throw new Error('Username is already taken');
     const cred = await auth.createUserWithEmailAndPassword(email, password);
@@ -101,6 +102,11 @@ const Auth = {
 
   async logout() {
     await auth.signOut();
+  },
+
+  async handleLogout(redirectUrl = 'login.html') {
+    await auth.signOut();
+    window.location.href = redirectUrl;
   },
 
   async getUserDoc(uid) {
