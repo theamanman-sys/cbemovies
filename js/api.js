@@ -61,8 +61,6 @@ const API = {
   getPlayerUrls(item, season = 1, episode = 1, pos = 0) {
     return [
       this._buildPlayerUrl(this.PRIMARY_PLAYER, item, season, episode, pos) + '&autoplay=1',
-      this._buildPlayerUrl(this.FALLBACK_PLAYER, item, season, episode, pos) + '&accentColor=910096&secondaryColor=12121a&autoplay',
-      this._buildPlayerUrl(this.FALLBACK_PLAYER_2, item, season, episode, pos),
     ];
   },
 
