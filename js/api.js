@@ -1,7 +1,7 @@
 const API = {
   VIDAPI_BASE: 'https://vidapi.ru',
   PRIMARY_PLAYER: 'https://vidphantom.com',
-  FALLBACK_PLAYER: 'https://ezvidapi.com/embed',
+  FALLBACK_PLAYER: 'https://apiplayer.ru/embed',
   PLAYER_THEME: 'primaryColor=910096',
   TMDB_BASE: 'https://api.themoviedb.org/3',
   IMG_BASE: 'https://image.tmdb.org/t/p',
@@ -59,7 +59,7 @@ const API = {
 
   getPlayerUrls(item, season = 1, episode = 1, pos = 0) {
     return [
-      this._buildPlayerUrl(this.PRIMARY_PLAYER, item, season, episode, pos) + '&accentColor=910096&secondaryColor=12121a&autoplay=true',
+      this._buildPlayerUrl(this.PRIMARY_PLAYER, item, season, episode, pos) + '&accentColor=910096&secondaryColor=12121a&autoplay',
       this._buildPlayerUrl(this.FALLBACK_PLAYER, item, season, episode, pos),
     ];
   },
@@ -72,7 +72,7 @@ const API = {
     const id = item.tmdb_id || item.imdb_id;
     if (!id) return `${base}/movie/550?${this.PLAYER_THEME}`;
     if (item.type === 'tv') {
-      let url = `${base}/tv/${id}/${season}/${episode}?${this.PLAYER_THEME}&autonext=true`;
+      let url = `${base}/tv/${id}/${season}/${episode}?${this.PLAYER_THEME}`;
       if (pos > 5) url += `&startAt=${Math.floor(pos)}`;
       return url;
     }

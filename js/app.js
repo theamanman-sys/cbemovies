@@ -892,11 +892,6 @@ if (dom.playerFrame) {
       tryNextSource();
       return;
     }
-    if (state.currentItem?.type === 'tv') {
-      _expectedIframeNav = true;
-      nextEpisode();
-      return;
-    }
     _expectedIframeNav = true;
     dom.playerFrame.src = _currentPlayerUrl;
   });
