@@ -1,8 +1,8 @@
 const API = {
   VIDAPI_BASE: 'https://vidapi.ru',
-  PRIMARY_PLAYER: 'https://yapgrid.com/embed',
-  FALLBACK_PLAYER: 'https://apiplayer.ru/embed',
-  PLAYER_THEME: 'autoplay=1&theme=dark',
+  PRIMARY_PLAYER: 'https://vidphantom.com',
+  FALLBACK_PLAYER: 'https://ezvidapi.com/embed',
+  PLAYER_THEME: 'primaryColor=910096',
   TMDB_BASE: 'https://api.themoviedb.org/3',
   IMG_BASE: 'https://image.tmdb.org/t/p',
   TMDB_TOKEN: 'eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJhMzQyZWNhZjBjNzNmYzU1NmI1NDk3NzQwYmJmZmE5MiIsIm5iZiI6MTc3NTIyMDE5OS42MDA5OTk4LCJzdWIiOiI2OWNmYjVlNzY4YjcwYWNmYjgyZjc2MmQiLCJzY29wZXMiOlsiYXBpX3JlYWQiXSwidmVyc2lvbiI6MX0.jxycsZVC7uLmewooOKm20BvZUZ5s5H4qPsalI3FBmok',
@@ -59,7 +59,7 @@ const API = {
 
   getPlayerUrls(item, season = 1, episode = 1, pos = 0) {
     return [
-      this._proxyUrl(this._buildPlayerUrl(this.PRIMARY_PLAYER, item, season, episode, pos)),
+      this._buildPlayerUrl(this.PRIMARY_PLAYER, item, season, episode, pos) + '&accentColor=910096&secondaryColor=12121a&autoplay=true',
       this._buildPlayerUrl(this.FALLBACK_PLAYER, item, season, episode, pos),
     ];
   },
