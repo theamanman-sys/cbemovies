@@ -1,9 +1,9 @@
 const API = {
   VIDAPI_BASE: 'https://vidapi.ru',
-  PRIMARY_PLAYER: 'https://vidsrc.sbs/embed',
+  PRIMARY_PLAYER: 'https://vidsrc.wiki/embed',
   FALLBACK_PLAYER: 'https://vidphantom.com',
   FALLBACK_PLAYER_2: 'https://apiplayer.ru/embed',
-  PLAYER_THEME: 'color=910096',
+  PLAYER_THEME: 'color=910096&sub=en',
   TMDB_BASE: 'https://api.themoviedb.org/3',
   IMG_BASE: 'https://image.tmdb.org/t/p',
   TMDB_TOKEN: 'eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJhMzQyZWNhZjBjNzNmYzU1NmI1NDk3NzQwYmJmZmE5MiIsIm5iZiI6MTc3NTIyMDE5OS42MDA5OTk4LCJzdWIiOiI2OWNmYjVlNzY4YjcwYWNmYjgyZjc2MmQiLCJzY29wZXMiOlsiYXBpX3JlYWQiXSwidmVyc2lvbiI6MX0.jxycsZVC7uLmewooOKm20BvZUZ5s5H4qPsalI3FBmok',

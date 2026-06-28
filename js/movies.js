@@ -70,7 +70,7 @@ function startSourceFallbackTimer() {
     } else {
       showToast('All player sources failed', true);
     }
-  }, 30000);
+  }, 60000);
 }
 
 function clearSourceFallbackTimer() {
@@ -82,7 +82,7 @@ function clearSourceFallbackTimer() {
 
 if (dom.playerFrame) {
   dom.playerFrame.addEventListener('load', () => {
-    if (_expectedIframeNav) { _expectedIframeNav = false; return; }
+    if (_expectedIframeNav) { _expectedIframeNav = false; startSourceFallbackTimer(); return; }
     if (!_currentPlayerUrl) return;
     _expectedIframeNav = true;
     dom.playerFrame.src = _currentPlayerUrl;
