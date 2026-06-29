@@ -322,6 +322,32 @@ function renderMovieCards(items, container, { numbered = false } = {}) {
   `).join('');
 }
 
+function renderCarouselItems(items) {
+  return items.map(item => `
+    <div class="movie-card" data-id="${item._id}" data-action="detail">
+      <div class="card-rating">★ ${displayRating(item)}</div>
+      <span class="card-quality ${displayQuality(item).toLowerCase()}">${displayQuality(item)}</span>
+      <img class="movie-card-poster" src="${posterUrl(item)}" alt="${escHtml(displayTitleText(item))}" loading="lazy" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%27300%27 height=%27450%27 fill=%27%231a1a2e%27%3E%3Crect width=%27300%27 height=%27450%27/%3E%3Ctext x=%2750%%25%27 y=%2750%%25%27 text-anchor=%27middle%27 fill=%27%23a0a0b8%27 font-size=%2716%27%3E${escHtml(displayTitleText(item)[0] || '?')}%3C/text%3E%3C/svg%3E'">
+      <button class="play-btn" data-id="${item._id}" data-action="play">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+      </button>
+      <div class="movie-card-overlay">
+        <h3>${displayTitle(item)}</h3>
+        <div class="meta"><span>${displayYear(item)}</span><span>${escHtml(displayGenres(item).split(',')[0])}</span></div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function initCarousels() {
+  document.querySelectorAll('.carousel').forEach(el => {
+    const btnPrev = el.parentElement?.querySelector('.carousel-btn-prev');
+    const btnNext = el.parentElement?.querySelector('.carousel-btn-next');
+    if (btnPrev) btnPrev.onclick = () => el.scrollBy({ left: -el.clientWidth * 0.7, behavior: 'smooth' });
+    if (btnNext) btnNext.onclick = () => el.scrollBy({ left: el.clientWidth * 0.7, behavior: 'smooth' });
+  });
+}
+
 /* ── Featured ── */
 function renderFeatured(items) {
   if (!items.length) return;
@@ -577,6 +603,7 @@ function setupCardTrailers(gridEl) {
       _initCardTrailer(card);
     });
     wrap.addEventListener('mouseleave', () => {
+      clearTimeout(leaveTimer);
       leaveTimer = setTimeout(() => _destroyCardPlayer(card), 500);
     });
     if ('ontouchstart' in window) {
@@ -941,6 +968,7 @@ let _expectedIframeNav = false;
 let _playerSources = [];
 let _playerSourceIndex = 0;
 let _sourceFallbackTimer = null;
+let _playerLoadTimer = null;
 
 function tryNextSource() {
   if (_playerSourceIndex + 1 < _playerSources.length) {
@@ -1010,7 +1038,9 @@ function playItem(item, season = 1, episode = 1) {
   _currentPlayerUrl = _playerSources[_playerSourceIndex];
   state.playerStartTime = 0;
   clearSourceFallbackTimer();
-  setTimeout(() => {
+  if (_playerLoadTimer) { clearTimeout(_playerLoadTimer); _playerLoadTimer = null; }
+  _playerLoadTimer = setTimeout(() => {
+    _playerLoadTimer = null;
     _expectedIframeNav = true;
     dom.playerFrame.src = _currentPlayerUrl;
     state.playerStartTime = performance.now();
@@ -1064,6 +1094,7 @@ function playItem(item, season = 1, episode = 1) {
 
 function closePlayer() {
   clearSourceFallbackTimer();
+  if (_playerLoadTimer) { clearTimeout(_playerLoadTimer); _playerLoadTimer = null; }
   _playerSources = [];
   _playerSourceIndex = 0;
   dom.playerFrame.src = '';
@@ -1564,13 +1595,13 @@ function toggleMobileNav() {
   if (panel) { closeMobileNav(); return; }
   const overlay = document.createElement('div');
   overlay.id = 'mobile-nav-overlay';
-  overlay.style.cssText = 'position:fixed;inset:0;z-index:998;background:rgba(0,0,0,0.6);-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);animation:fadeIn .2s ease';
+    overlay.style.cssText = 'position:fixed;inset:0;z-index:1001;background:rgba(0,0,0,0.6);-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);animation:fadeIn .2s ease';
   overlay.addEventListener('click', closeMobileNav);
   document.body.appendChild(overlay);
   panel = document.createElement('div');
   panel.id = 'mobile-nav-panel';
   const navH = document.querySelector('nav')?.offsetHeight || 88;
-  panel.style.cssText = `position:fixed;top:${navH}px;left:0;right:0;z-index:999;background:rgba(10,10,15,0.98);backdrop-filter:blur(20px);border-bottom:1px solid var(--glass-border);padding:16px 24px;animation:fadeInUp .2s ease;display:flex;flex-direction:column;gap:12px;max-height:calc(100vh - ${navH}px);overflow-y:auto;overscroll-behavior:contain`;
+  panel.style.cssText = `position:fixed;top:${navH}px;left:0;right:0;z-index:1002;background:rgba(10,10,15,0.98);backdrop-filter:blur(20px);border-bottom:1px solid var(--glass-border);padding:16px 24px;animation:fadeInUp .2s ease;display:flex;flex-direction:column;gap:12px;max-height:calc(100vh - ${navH}px);overflow-y:auto;overscroll-behavior:contain`;
   const userLinks = Auth.currentUser && Auth.userDoc ? `
     <hr style="border-color:var(--glass-border);margin:4px 0">
     <a href="profile.html" style="color:var(--text-secondary);font-size:16px;font-weight:500;text-decoration:none;padding:12px 0">👤 ${__('Dashboard')}</a>
