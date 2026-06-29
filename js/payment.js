@@ -268,7 +268,7 @@ const Payment = {
 
     try {
       const idToken = await Auth.currentUser.getIdToken();
-      const initRes = await fetch('/api/chapa-init', {
+      const initRes = await fetch('/api/chapa', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + idToken },
         body: JSON.stringify({ uid: Auth.currentUser.uid, plan: this.plan })
@@ -285,7 +285,7 @@ const Payment = {
 
       const checkInterval = setInterval(async () => {
         try {
-          const verifyRes = await fetch('/api/chapa-verify?txRef=' + initData.txRef);
+          const verifyRes = await fetch('/api/chapa?txRef=' + initData.txRef);
           const verifyData = await verifyRes.json();
           if (verifyData.verified) {
             clearInterval(checkInterval);
@@ -313,7 +313,7 @@ const Payment = {
   async checkChapaVerification(txRef) {
     this.showToast('Verifying your payment...');
     try {
-      const verifyRes = await fetch('/api/chapa-verify?txRef=' + txRef);
+      const verifyRes = await fetch('/api/chapa?txRef=' + txRef);
       const verifyData = await verifyRes.json();
       if (verifyData.verified) {
         this.showPaymentSuccess();
@@ -360,7 +360,7 @@ const Payment = {
     try {
       const txRef = btn.dataset.txRef;
       if (txRef) {
-        const verifyRes = await fetch('/api/chapa-verify?txRef=' + txRef);
+        const verifyRes = await fetch('/api/chapa?txRef=' + txRef);
         const verifyData = await verifyRes.json();
         if (verifyData.verified) {
           this.showPaymentSuccess();
