@@ -133,7 +133,7 @@
       } else if (err.message === 'ACCOUNT_NOT_SUBSCRIBED') {
         errorEl.textContent = 'Please purchase a subscription before signing in.';
         showToast('Subscription required to access content');
-        window.location.href = 'profile.html#subscription';
+        setTimeout(() => { window.location.href = 'profile.html#subscription'; }, 1500);
       } else {
         const msg = err.code === 'auth/user-not-found' ? 'No account found with this email' :
                     err.code === 'auth/wrong-password' ? 'Incorrect password' :
@@ -260,7 +260,8 @@
         phoneError.textContent = 'Account pending admin verification';
       } else if (err.message === 'ACCOUNT_NOT_SUBSCRIBED') {
         phoneError.textContent = 'Subscription required. Please purchase a plan.';
-        window.location.href = 'profile.html#subscription';
+        showToast('Redirecting to subscription...');
+        setTimeout(() => { window.location.href = 'profile.html#subscription'; }, 1500);
       } else {
         phoneError.textContent = 'Invalid OTP. Try again.';
       }

@@ -30,15 +30,20 @@ const Auth = {
       history: [],
       settings: { autoPlay: true, quality: 'auto' }
     };
-    await db.collection('users').doc(uid).set(doc);
-    await db.collection('notifications').add({
-      type: 'new_user',
-      userId: uid,
-      email,
-      username,
-      read: false,
-      createdAt: firebase.firestore.FieldValue.serverTimestamp()
-    });
+    try {
+      await db.collection('users').doc(uid).set(doc);
+      await db.collection('notifications').add({
+        type: 'new_user',
+        userId: uid,
+        email,
+        username,
+        read: false,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+    } catch (e) {
+      await cred.user.delete().catch(() => {});
+      throw new Error('Failed to create profile. Please try again.');
+    }
     await cred.user.sendEmailVerification();
     return cred;
   },
@@ -273,7 +278,12 @@ const Auth = {
 auth.onAuthStateChanged(async (user) => {
   Auth.currentUser = user;
   if (user) {
-    Auth.userDoc = await Auth.getUserDoc(user.uid);
+    try {
+      Auth.userDoc = await Auth.getUserDoc(user.uid);
+    } catch (e) {
+      console.error('Failed to fetch user doc:', e);
+      Auth.userDoc = null;
+    }
   } else {
     Auth.userDoc = null;
   }
