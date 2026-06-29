@@ -91,7 +91,41 @@ WEBHOOK_SECRET=<webhook_secret>
 - `POST /api/cbe-payment` — Sign payment payload (Ed25519 + HMAC-SHA256)
 
 ### Pages Modified
-- `login.html` — CBE SuperApp login button (hidden when SDK unavailable)
+- `login.html` — CBE SuperApp login button (hidden when SDK unavailable); added `getRedirectUrl()` + localStorage redirect support
 - `register.html` — CBE SuperApp register button
-- `profile.html` — Pay with CBE SuperApp button on Subscription tab
+- `profile.html` — Pay with CBE SuperApp button on Subscription tab; "Choose Plan" buttons now redirect to `payment.html?plan=...`
 - `home.html`, `movies.html`, `tv.html`, `youtube.html`, `index.html` — Added `js/cbe-superapp.js`
+
+## Payment System (June 2026)
+
+### Payment Page
+- **`payment.html`** — Dedicated payment page at `/payment.html`
+- Accessed from profile.html "Choose Plan" buttons: `/payment.html?plan=monthly|yearly`
+- Redirects unauthenticated users to login.html, then back after login via localStorage
+
+### Payment Methods
+1. **CBE SuperApp** — In-app payment via native SDK (existing integration)
+2. **Chapa** — Online card/bank/mobile money via Chapa API
+   - `/api/chapa-init.js` — POST: initializes Chapa transaction, returns checkout URL
+   - `/api/chapa-verify.js` — GET|POST: verifies payment via Chapa verify API, activates subscription
+   - Test keys (hardcoded, set `CHAPA_SECRET_KEY` env var for production):
+     - Public: `CHAPUBK_TEST-g9g6GslObE7g7fUssBLKcmStUgcLGaGl`
+     - Secret: `CHASECK_TEST-Gbi7RbSHFgHJlzcdbY1diPpPr7e80uaw`
+     - Encryption: `RTrNeg90APrhdpWMBE7kD6VV`
+3. **Telebirr** — Manual QR-based payment; user sends to Telebirr account, enters reference
+4. **WhatsApp** — Opens WhatsApp with pre-filled plan+ref message; user sends payment screenshot + QR code
+
+### QR Code
+- Generated client-side via `qrcodejs` CDN library
+- Contains: plan, amount, unique ref (CBE-XXXXXXXX), user ID prefix, date
+- Downloadable as PNG; shareable via WhatsApp link
+
+### Firestore Rules Update
+- `payments` collection: user who created payment can now update their own payment record (needed for adding transactionRef and manual verification)
+- Previously required admin role for all updates
+
+### New Files
+- `payment.html` — Payment page UI
+- `js/payment.js` — Payment logic + QR generation
+- `api/chapa-init.js` — Chapa transaction init
+- `api/chapa-verify.js` — Chapa payment verification + webhook handler
