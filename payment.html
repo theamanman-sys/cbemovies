@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Payment — CBE Movies</title>
+  <meta name="theme-color" content="#910096">
+  <link rel="icon" href="img/cbe-logo.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Roboto+Serif:opsz,wght@8..144,400;8..144,500;8..144,600&display=swap">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<nav>
+  <a href="home.html" class="nav-logo">
+    <img src="img/cbe-logo.png" alt="CBE Movies" class="nav-logo-img">
+    <span class="nav-logo-text">CBE Movies</span>
+  </a>
+  <ul class="nav-links">
+    <li><a href="home.html">Home</a></li>
+    <li><a href="movies.html">Movies</a></li>
+    <li><a href="tv.html">TV Shows</a></li>
+    <li><a href="youtube.html">CBE Movies</a></li>
+  </ul>
+  <div class="nav-actions">
+    <div class="nav-user-wrapper" id="nav-user-wrapper">
+      <button class="nav-user-trigger" id="nav-user-trigger">
+        <span class="nav-user-avatar" id="nav-user-avatar">U</span>
+        <span class="nav-user-name" id="nav-user-name">User</span>
+        <span class="nav-user-caret">▼</span>
+      </button>
+      <div class="nav-user-dropdown" id="nav-user-dropdown">
+        <div class="dropdown-header">
+          <div class="name" id="dropdown-name">User</div>
+          <div class="email" id="dropdown-email"></div>
+        </div>
+        <a href="profile.html"> Dashboard</a>
+        <a href="profile.html#watchlist"> Watchlist</a>
+        <a href="profile.html#history"> History</a>
+        <a href="profile.html#subscription"> Subscription</a>
+        <a href="profile.html#settings"> Settings</a>
+        <div class="dropdown-divider"></div>
+        <button class="dropdown-danger" id="nav-logout-btn"> Sign Out</button>
+      </div>
+    </div>
+    <a href="login.html" class="nav-login-btn" id="nav-login-btn" data-i18n="Sign In" style="display:none">Sign In</a>
+    <button class="lang-switch" onclick="toggleLang()" data-i18n-title="Switch Language" title="Switch Language">EN</button>
+    <button class="mobile-menu-btn">☰</button>
+  </div>
+</nav>
+
+<div style="height:88px"></div>
+
+<main class="payment-page">
+  <!-- Step 1: Choose Plan -->
+  <section id="step-plan" class="payment-section">
+    <h1 class="payment-heading">Choose Your Plan</h1>
+    <p class="payment-subheading">Select a subscription plan to continue</p>
+    <div class="payment-plans">
+      <div class="payment-plan-card" data-plan="monthly">
+        <h3>Monthly</h3>
+        <p class="plan-price">299 ETB</p>
+        <ul>
+          <li>HD Streaming</li>
+          <li>Watch on 1 device</li>
+          <li>Cancel anytime</li>
+        </ul>
+        <button class="auth-btn select-plan-btn" data-plan="monthly">Select Monthly</button>
+      </div>
+      <div class="payment-plan-card featured" data-plan="yearly">
+        <span class="plan-badge">Best Value</span>
+        <h3>Yearly</h3>
+        <p class="plan-price">2,999 ETB</p>
+        <ul>
+          <li>HD Streaming</li>
+          <li>Watch on 2 devices</li>
+          <li>Save 16%</li>
+        </ul>
+        <button class="auth-btn select-plan-btn" data-plan="yearly">Select Yearly</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Step 2: Payment Methods -->
+  <section id="step-payment" class="payment-section" style="display:none">
+    <h2 class="payment-heading" style="font-size:22px;margin-bottom:4px">Payment Method</h2>
+    <div class="payment-summary">
+      <span class="summary-label">Plan:</span>
+      <span id="summary-plan-name">Monthly</span>
+      <span class="summary-dash">—</span>
+      <strong id="summary-plan-price">299 ETB</strong>
+      <span class="summary-ref">Ref: <span id="summary-ref-display"></span></span>
+    </div>
+
+    <div class="payment-methods">
+      <div class="payment-method" data-method="cbe_superapp">
+        <div class="pm-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M17 1.01L7 1c-1.1 0-2 .9-2 2v18c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V3c0-1.1-.9-1.99-2-1.99zM17 19H7V5h10v14z"/></svg>
+        </div>
+        <div class="pm-info">
+          <h4>CBE SuperApp</h4>
+          <p>Pay directly in the CBE SuperApp</p>
+        </div>
+        <div class="pm-check">›</div>
+      </div>
+
+      <div class="payment-method" data-method="chapa">
+        <div class="pm-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M20 4H4c-1.11 0-1.99.89-1.99 2L2 18c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zm0 14H4v-6h16v6zm0-10H4V6h16v2z"/></svg>
+        </div>
+        <div class="pm-info">
+          <h4>Chapa</h4>
+          <p>Pay with card, bank transfer, or mobile money</p>
+        </div>
+        <div class="pm-check">›</div>
+      </div>
+
+      <div class="payment-method" data-method="telebirr">
+        <div class="pm-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M17 1.01L7 1c-1.1 0-2 .9-2 2v18c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V3c0-1.1-.9-1.99-2-1.99zM17 19H7V5h10v14zm-5-3.5c.83 0 1.5-.67 1.5-1.5s-.67-1.5-1.5-1.5-1.5.67-1.5 1.5.67 1.5 1.5 1.5z"/></svg>
+        </div>
+        <div class="pm-info">
+          <h4>Telebirr</h4>
+          <p>Pay via Telebirr mobile money</p>
+        </div>
+        <div class="pm-check">›</div>
+      </div>
+
+      <div class="payment-method" data-method="whatsapp">
+        <div class="pm-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M19.05 4.91A9.816 9.816 0 0 0 12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01zm-7.01 15.24c-1.48 0-2.93-.4-4.2-1.15l-.3-.18-3.12.82.83-3.04-.2-.31a8.264 8.264 0 0 1-1.26-4.38c0-4.54 3.7-8.24 8.24-8.24 2.2 0 4.27.86 5.82 2.42a8.183 8.183 0 0 1 2.41 5.83c.02 4.54-3.68 8.23-8.22 8.23zm4.52-6.16c-.25-.12-1.47-.72-1.69-.81-.23-.08-.39-.12-.56.12-.17.25-.64.81-.78.97-.14.17-.29.19-.54.06-.25-.12-1.05-.39-1.99-1.23-.74-.66-1.23-1.47-1.38-1.72-.14-.25-.02-.38.11-.51.11-.11.25-.29.37-.44.12-.15.17-.25.25-.41.08-.17.04-.31-.02-.43-.06-.12-.56-1.35-.77-1.84-.2-.48-.41-.4-.56-.41-.14-.01-.31-.01-.48-.01-.17 0-.44.06-.66.31-.22.25-.86.85-.86 2.07 0 1.22.89 2.4 1.01 2.56.12.17 1.75 2.67 4.23 3.74.59.26 1.05.41 1.41.52.59.19 1.13.16 1.56.1.48-.07 1.47-.6 1.68-1.18.21-.58.21-1.07.15-1.18-.07-.1-.23-.16-.48-.27z"/></svg>
+        </div>
+        <div class="pm-info">
+          <h4>WhatsApp</h4>
+          <p>Contact us via WhatsApp to complete payment</p>
+        </div>
+        <div class="pm-check">›</div>
+      </div>
+    </div>
+
+    <!-- Method Panels -->
+    <div id="method-content">
+
+      <!-- CBE SuperApp -->
+      <div class="method-panel" id="panel-cbe_superapp" style="display:none">
+        <h4 style="margin-bottom:16px;font-size:16px;color:var(--text-primary)">CBE SuperApp Payment</h4>
+        <p style="font-size:14px;color:var(--text-secondary);margin-bottom:16px">You will be redirected to the CBE SuperApp to complete payment.</p>
+        <button class="auth-btn pay-action-btn" id="superapp-pay-btn-pay">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" style="margin-right:8px"><path d="M17 1.01L7 1c-1.1 0-2 .9-2 2v18c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V3c0-1.1-.9-1.99-2-1.99zM17 19H7V5h10v14z"/></svg>
+          Pay with CBE SuperApp
+        </button>
+        <div id="superapp-loading" style="display:none" class="method-loading">
+          <div class="spinner"></div>
+          <p>Processing payment in CBE SuperApp...</p>
+        </div>
+      </div>
+
+      <!-- Chapa -->
+      <div class="method-panel" id="panel-chapa" style="display:none">
+        <h4 style="margin-bottom:16px;font-size:16px;color:var(--text-primary)">Chapa Payment</h4>
+        <p style="font-size:14px;color:var(--text-secondary);margin-bottom:16px">You will be redirected to Chapa's secure checkout page to pay with card, bank transfer, or mobile money.</p>
+        <button class="auth-btn pay-action-btn" id="chapa-pay-btn">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" style="margin-right:8px"><path d="M20 4H4c-1.11 0-1.99.89-1.99 2L2 18c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zm0 14H4v-6h16v6zm0-10H4V6h16v2z"/></svg>
+          Pay with Chapa
+        </button>
+        <div id="chapa-loading" style="display:none" class="method-loading">
+          <div class="spinner"></div>
+          <p>Opening Chapa checkout...</p>
+        </div>
+      </div>
+
+      <!-- Telebirr -->
+      <div class="method-panel" id="panel-telebirr" style="display:none">
+        <h4 style="margin-bottom:16px;font-size:16px;color:var(--text-primary)">Telebirr Payment</h4>
+        <div class="manual-pay-info">
+          <p>Scan the QR code with your Telebirr app or send manually:</p>
+          <div class="account-details">
+            <div class="account-row"><span>Account:</span><strong>+251 90 000 0000</strong></div>
+            <div class="account-row"><span>Name:</span><strong>CBE Movies</strong></div>
+            <div class="account-row"><span>Amount:</span><strong id="telebirr-amount">299 ETB</strong></div>
+            <div class="account-row"><span>Ref:</span><strong id="telebirr-ref-display">CBE-XXXXXXXX</strong></div>
+          </div>
+          <div id="telebirr-qrcode" class="telebirr-qr"></div>
+        </div>
+        <div class="form-group" style="margin-top:16px">
+          <input type="text" id="telebirr-ref" placeholder="Enter Telebirr transaction reference" class="auth-input">
+        </div>
+        <button class="auth-btn" id="telebirr-verify-btn">I've Paid — Verify</button>
+      </div>
+
+      <!-- WhatsApp -->
+      <div class="method-panel" id="panel-whatsapp" style="display:none">
+        <h4 style="margin-bottom:16px;font-size:16px;color:var(--text-primary)">WhatsApp Payment</h4>
+        <p style="font-size:14px;color:var(--text-secondary);margin-bottom:12px">Contact us on WhatsApp to complete your payment. Send the following details along with a screenshot of your payment and the subscription QR code below.</p>
+        <div class="whatsapp-details">
+          <div class="wa-detail"><span>Plan</span><strong id="wa-plan">Monthly</strong></div>
+          <div class="wa-detail"><span>Amount</span><strong id="wa-amount">299 ETB</strong></div>
+          <div class="wa-detail"><span>Reference</span><strong id="wa-ref">CBE-XXXXXXXX</strong></div>
+          <div class="wa-detail"><span>Account</span><strong>+251 90 000 0000</strong></div>
+        </div>
+        <p style="font-size:13px;color:var(--text-secondary);margin:12px 0">After sending payment, share a screenshot along with the QR code below via WhatsApp.</p>
+        <a class="auth-btn wa-btn" id="whatsapp-link" target="_blank" rel="noopener">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" style="margin-right:8px"><path d="M19.05 4.91A9.816 9.816 0 0 0 12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01zm-7.01 15.24c-1.48 0-2.93-.4-4.2-1.15l-.3-.18-3.12.82.83-3.04-.2-.31a8.264 8.264 0 0 1-1.26-4.38c0-4.54 3.7-8.24 8.24-8.24 2.2 0 4.27.86 5.82 2.42a8.183 8.183 0 0 1 2.41 5.83c.02 4.54-3.68 8.23-8.22 8.23zm4.52-6.16c-.25-.12-1.47-.72-1.69-.81-.23-.08-.39-.12-.56.12-.17.25-.64.81-.78.97-.14.17-.29.19-.54.06-.25-.12-1.05-.39-1.99-1.23-.74-.66-1.23-1.47-1.38-1.72-.14-.25-.02-.38.11-.51.11-.11.25-.29.37-.44.12-.15.17-.25.25-.41.08-.17.04-.31-.02-.43-.06-.12-.56-1.35-.77-1.84-.2-.48-.41-.4-.56-.41-.14-.01-.31-.01-.48-.01-.17 0-.44.06-.66.31-.22.25-.86.85-.86 2.07 0 1.22.89 2.4 1.01 2.56.12.17 1.75 2.67 4.23 3.74.59.26 1.05.41 1.41.52.59.19 1.13.16 1.56.1.48-.07 1.47-.6 1.68-1.18.21-.58.21-1.07.15-1.18-.07-.1-.23-.16-.48-.27z"/></svg>
+          Open WhatsApp
+        </a>
+      </div>
+
+    </div>
+
+    <div class="form-error" id="payment-error"></div>
+  </section>
+
+  <!-- QR Code Section -->
+  <section id="section-qr" class="payment-section qr-section" style="display:none">
+    <h3 class="qr-heading">Your Subscription QR Code</h3>
+    <p class="qr-sub">Save this QR code — it contains your unique subscription details. Share it via WhatsApp when making payment.</p>
+    <div class="qr-container">
+      <div id="qrcode"></div>
+    </div>
+    <div class="qr-ref">Ref: <strong id="qr-ref-code">CBE-XXXXXXXX</strong></div>
+    <div class="qr-actions">
+      <button class="auth-btn qr-btn" id="download-qr-btn">Download QR</button>
+      <button class="auth-btn qr-btn wa-share-btn" id="wa-share-btn">Share via WhatsApp</button>
+    </div>
+  </section>
+
+  <!-- Manual Verification -->
+  <section id="section-manual-verify" class="payment-section" style="display:none">
+    <h3 class="qr-heading" style="font-size:18px">Already Made a Payment?</h3>
+    <p class="qr-sub">Enter your transaction reference to verify and activate your subscription.</p>
+    <div class="verify-row">
+      <input type="text" id="manual-ref" placeholder="Transaction reference number" class="auth-input verify-input">
+      <button class="auth-btn" id="manual-verify-btn">Verify Payment</button>
+    </div>
+  </section>
+
+  <!-- Payment Success -->
+  <section id="payment-success" class="payment-section success-section" style="display:none">
+    <div class="success-icon">✓</div>
+    <h2>Payment Successful!</h2>
+    <p>Your subscription has been activated. You will be redirected shortly.</p>
+    <div class="spinner" style="margin:20px auto"></div>
+  </section>
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+<script src="js/firebase-config.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/cbe-superapp.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="js/payment.js"></script>
+<script>
+function toggleLang() {
+  if (typeof i18n !== 'undefined' && i18n.current === 'am') {
+    i18n.setLanguage('en');
+  } else if (typeof i18n !== 'undefined') {
+    i18n.setLanguage('am');
+  }
+}
+function toggleMobileNav() {
+  let panel = document.getElementById('mobile-nav-panel');
+  if (panel) { closeMobileNav(); return; }
+  const overlay = document.createElement('div');
+  overlay.id = 'mobile-nav-overlay';
+  overlay.style.cssText = 'position:fixed;inset:0;z-index:1001;background:rgba(0,0,0,0.6);-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);animation:fadeIn .2s ease';
+  overlay.addEventListener('click', closeMobileNav);
+  document.body.appendChild(overlay);
+  panel = document.createElement('div');
+  panel.id = 'mobile-nav-panel';
+  const navH = document.querySelector('nav')?.offsetHeight || 88;
+  panel.style.cssText = 'position:fixed;top:' + navH + 'px;left:0;right:0;z-index:1002;background:rgba(10,10,15,0.98);backdrop-filter:blur(20px);border-bottom:1px solid var(--glass-border);padding:16px 24px;animation:fadeInUp .2s ease;display:flex;flex-direction:column;gap:12px;max-height:calc(100vh - ' + navH + 'px);overflow-y:auto;overscroll-behavior:contain';
+  panel.innerHTML = '<a href="home.html" style="color:var(--text-primary);font-size:16px;font-weight:500;text-decoration:none;padding:12px 0">Home</a><a href="movies.html" style="color:var(--text-secondary);font-size:16px;font-weight:500;text-decoration:none;padding:12px 0">Movies</a><a href="tv.html" style="color:var(--text-secondary);font-size:16px;font-weight:500;text-decoration:none;padding:12px 0">TV Shows</a><a href="youtube.html" style="color:var(--text-secondary);font-size:16px;font-weight:500;text-decoration:none;padding:12px 0">CBE Movies</a>';
+  document.body.appendChild(panel);
+  lockScroll();
+}
+function closeMobileNav() {
+  document.getElementById('mobile-nav-panel')?.remove();
+  document.getElementById('mobile-nav-overlay')?.remove();
+  unlockScroll();
+}
+function lockScroll() { document.body.style.overflow = 'hidden'; }
+function unlockScroll() { document.body.style.overflow = ''; }
+document.addEventListener('click', function(e) {
+  if (e.target.closest('.mobile-menu-btn')) toggleMobileNav();
+  const panel = document.getElementById('mobile-nav-panel');
+  if (panel) {
+    const link = e.target.closest('a, button');
+    if (link && panel.contains(link)) closeMobileNav();
+  }
+});
+document.addEventListener('click', function(e) {
+  const trigger = document.getElementById('nav-user-trigger');
+  const dropdown = document.getElementById('nav-user-dropdown');
+  if (!trigger || !dropdown) return;
+  if (trigger.contains(e.target)) {
+    e.stopPropagation();
+    dropdown.classList.toggle('open');
+    trigger.classList.toggle('open');
+  } else if (!dropdown.contains(e.target)) {
+    dropdown.classList.remove('open');
+    trigger.classList.remove('open');
+  }
+});
+</script>
+</body>
+</html>

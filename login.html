@@ -148,8 +148,14 @@
     }
   });
 
+  function getRedirectUrl() {
+    const r = localStorage.getItem('redirect_after_login');
+    localStorage.removeItem('redirect_after_login');
+    return r || 'home.html';
+  }
+
   Auth.onAuthStateChanged((user) => {
-    if (user && !isLoggingIn) window.location.href = 'home.html';
+    if (user && !isLoggingIn) window.location.href = getRedirectUrl();
   });
 
   $('resend-verify-btn').addEventListener('click', async function() {
@@ -193,7 +199,7 @@
         }
       }
       sessionStorage.setItem('cbe_welcome', '1');
-      window.location.href = 'home.html';
+      window.location.href = getRedirectUrl();
     } catch (err) {
       errorEl.textContent = err.message;
       showToast(err.message);
@@ -254,7 +260,7 @@
       }
       await Auth.checkPhoneAuthSubscription();
       sessionStorage.setItem('cbe_welcome', '1');
-      window.location.href = 'home.html';
+      window.location.href = getRedirectUrl();
     } catch (err) {
       if (err.message === 'ACCOUNT_NOT_VERIFIED') {
         phoneError.textContent = 'Account pending admin verification';

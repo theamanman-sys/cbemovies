@@ -438,10 +438,7 @@
   document.querySelectorAll('.sub-select-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       const plan = btn.dataset.plan;
-      const amount = plan === 'yearly' ? '2,999 ETB' : '299 ETB';
-      $('pay-amount').textContent = amount;
-      $('payment-info').style.display = 'block';
-      $('payment-info').dataset.plan = plan;
+      window.location.href = 'payment.html?plan=' + plan;
     });
   });
 
