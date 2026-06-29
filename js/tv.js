@@ -1,4 +1,3 @@
-const $ = (s, ctx = document) => ctx.querySelector(s);
 const $$ = (s, ctx = document) => [...ctx.querySelectorAll(s)];
 
 let _cardView = localStorage.getItem('cbemovies_cardview') || 'browse';
@@ -9,8 +8,6 @@ const tvState = {
   filters: { with_genres: '', first_air_date_year: '', sort_by: 'popularity.desc', 'vote_average.gte': '', 'vote_count.gte': '' },
   loading: false, currentItem: null
 };
-
-const dom = {};
 
 function initDOM() {
   dom.grid = $('#browse-grid');
@@ -145,19 +142,6 @@ function closePlayer() {
   }
   dom.playerPage.classList.add('hidden');
   unlockScroll();
-}
-
-function togglePlayerFullscreen() {
-  if (!document.fullscreenElement) {
-    dom.playerPage.requestFullscreen?.();
-  } else {
-    document.exitFullscreen?.();
-  }
-}
-
-function togglePlayerSidebar() {
-  const sb = dom.playerPage.querySelector('.player-sidebar');
-  if (sb) sb.classList.toggle('active');
 }
 
 function renderPlayerSidebar(item) {
@@ -612,7 +596,7 @@ function toggleLang() {
   i18n.setLang(lang);
   document.querySelector('.lang-switch').textContent = lang === 'am' ? '\u12A0\u121B' : 'EN';
   const dt = document.querySelector('[data-i18n]');
-  if (dt) i18n.apply();
+  if (dt) i18n.applyToDOM();
 }
 
 /* ── Init ── */

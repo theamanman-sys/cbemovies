@@ -67,6 +67,18 @@ const dom = {
 };
 window.dom = dom;
 
+const Translator = {
+  async translateItem(item) {
+    if (i18n.current !== 'am') return item;
+    return item;
+  },
+  async translateEpisodes(item, episodes) {
+    if (i18n.current !== 'am') return episodes;
+    return episodes;
+  }
+};
+window.Translator = Translator;
+
 function indexItems(items) {
   return items.map(item => {
     if (!item._id) {
@@ -674,6 +686,7 @@ async function showCompanyMovies(companyId, companyName) {
   document.querySelector('.main-nav .nav-item.active')?.classList.remove('active');
 
   const carousels = document.getElementById('carousels');
+  if (!carousels) return;
   carousels.prepend(section);
 
   const movies = await API.getCompanyMovies(companyId);
@@ -1935,9 +1948,10 @@ document.addEventListener('DOMContentLoaded', () => {
   i18n.init();
   document.querySelector('.lang-switch').textContent = i18n.current === 'am' ? 'አማ' : 'EN';
   setupEventDelegation();
-  initParallax();
-  repositionHeroControls();
-  window.addEventListener('resize', repositionHeroControls);
-  loadContent();
-
+  if (dom.hero) {
+    initParallax();
+    repositionHeroControls();
+    window.addEventListener('resize', repositionHeroControls);
+    loadContent();
+  }
 });
