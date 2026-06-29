@@ -60,7 +60,7 @@ module.exports = async (req, res) => {
     const customToken = await firebaseAuth.createCustomToken(firebaseUid);
 
     const userData = userDoc.empty
-      ? { uid, role: 'user', verified: true, subscribed: false, subscriptionPlan: null, subscriptionEnd: null, settings: { autoPlay: true, quality: 'auto', subtitles: true }, watchlist: [], history: [] }
+      ? { uid, role: 'user', verified: true, subscribed: false, subscriptionPlan: null, subscriptionEnd: null, settings: { autoPlay: true, quality: 'auto' }, watchlist: [], history: [] }
       : (() => { const d = userDoc.docs[0].data(); return { uid, ...d }; })();
 
     res.json({ success: true, customToken, user: userData });

@@ -989,6 +989,7 @@ function playItem(item, season = 1, episode = 1) {
   state.playerSimilarItems = null;
   state._autoPlayTriggered = false;
   state.autoNextDismissed = false;
+  cancelAutoNext();
   dom.playerFrame.src = '';
   const savedPos = 0;
   _playerSources = API.getPlayerUrls(item, season, episode, savedPos);
@@ -1299,6 +1300,9 @@ function togglePlayerSidebar() {
   }
 }
 window.togglePlayerSidebar = togglePlayerSidebar;
+window.togglePlayerFullscreen = togglePlayerFullscreen;
+window.dismissAutoNext = dismissAutoNext;
+window.nextEpisode = nextEpisode;
 
 
 

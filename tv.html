@@ -154,13 +154,20 @@
         <img src="img/cbe-logo.png" alt="CBE Movies" class="nav-logo-img">
         <span class="nav-logo-text">CBE Movies</span>
       </a>
-      <div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <button class="player-sidebar-btn" onclick="togglePlayerSidebar()" title="Info">☰</button>
         <button class="player-close" onclick="closePlayer()">&times;</button>
       </div>
     </div>
     <div class="player-container">
       <div class="player-main">
         <iframe id="player-frame" allow="autoplay; encrypted-media" sandbox="allow-scripts allow-same-origin allow-forms"></iframe>
+        <div id="subtitle-next-banner" class="next-banner hidden">
+          <span id="subtitle-next-text" class="next-banner-text"></span>
+          <span id="subtitle-next-countdown" class="next-banner-countdown"></span>
+          <button class="next-banner-btn" onclick="dismissAutoNext(); nextEpisode()">Next →</button>
+          <button class="next-banner-btn" onclick="dismissAutoNext()">✕</button>
+        </div>
       </div>
       <div class="player-sidebar">
         <button class="ps-close-btn" onclick="togglePlayerSidebar()">&times;</button>
