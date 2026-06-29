@@ -13,12 +13,15 @@ const Auth = {
   },
 
   async register({ email, phone, username, password, firstName, lastName }) {
-    await auth.signOut();
-    const existing = await db.collection('users').where('username', '==', username).get();
-    if (!existing.empty) throw new Error('Username is already taken');
+    if (auth.currentUser) await auth.signOut();
     const cred = await auth.createUserWithEmailAndPassword(email, password);
     await cred.user.getIdTokenResult(true);
     const uid = cred.user.uid;
+    const duplicate = await db.collection('users').where('username', '==', username).get();
+    if (!duplicate.empty) {
+      await cred.user.delete().catch(() => {});
+      throw new Error('Username is already taken');
+    }
     const doc = {
       email, phone, username, firstName, lastName,
       role: 'user',
