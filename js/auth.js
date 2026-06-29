@@ -17,6 +17,7 @@ const Auth = {
     const existing = await db.collection('users').where('username', '==', username).get();
     if (!existing.empty) throw new Error('Username is already taken');
     const cred = await auth.createUserWithEmailAndPassword(email, password);
+    await cred.user.getIdTokenResult(true);
     const uid = cred.user.uid;
     const doc = {
       email, phone, username, firstName, lastName,
