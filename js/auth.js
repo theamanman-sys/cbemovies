@@ -48,14 +48,22 @@ const Auth = {
       await cred.user.delete().catch(() => {});
       throw new Error('Failed to create profile. Please try again.');
     }
-    await cred.user.sendEmailVerification();
+    const actionCodeSettings = {
+      url: 'https://cbemovies.vercel.app/login.html',
+      handleCodeInApp: false
+    };
+    await cred.user.sendEmailVerification(actionCodeSettings);
     return cred;
   },
 
   async resendVerificationEmail() {
     const user = auth.currentUser;
     if (!user) throw new Error('No user logged in');
-    await user.sendEmailVerification();
+    const actionCodeSettings = {
+      url: 'https://cbemovies.vercel.app/login.html',
+      handleCodeInApp: false
+    };
+    await user.sendEmailVerification(actionCodeSettings);
   },
 
   async checkEmailVerified() {
@@ -80,7 +88,15 @@ const Auth = {
     const doc = await db.collection('users').doc(cred.user.uid).get();
     if (!doc.exists) throw new Error('User document not found');
     const data = doc.data();
-    if (!data.verified) throw new Error('ACCOUNT_NOT_VERIFIED');
+    if (!data.verified) {
+      await cred.user.reload();
+      if (cred.user.emailVerified) {
+        await db.collection('users').doc(cred.user.uid).update({ verified: true });
+        data.verified = true;
+      } else {
+        throw new Error('ACCOUNT_NOT_VERIFIED');
+      }
+    }
     if (!this.canAccessContent(data)) throw new Error('ACCOUNT_NOT_SUBSCRIBED');
     return cred;
   },
