@@ -20,6 +20,53 @@ module.exports = async (req, res) => {
     if (req.method === 'POST') {
       const body = req.body || {};
 
+      // Verify-payment flow (called from frontend after manual/telebirr payment)
+      if (req.query.action === 'verify') {
+        const { paymentId } = body;
+        if (!paymentId || typeof paymentId !== 'string' || paymentId.length > 128) {
+          res.status(400).json({ error: 'Invalid paymentId' });
+          return;
+        }
+        const authHeader = req.headers.authorization;
+        if (!authHeader || !authHeader.startsWith('Bearer ')) {
+          res.status(401).json({ error: 'Missing authorization' });
+          return;
+        }
+        const idToken = authHeader.split('Bearer ')[1];
+        const decodedToken = await getFirebase().auth.verifyIdToken(idToken);
+
+        const paymentRef = db.collection('payments').doc(paymentId);
+        const doc = await paymentRef.get();
+        if (!doc.exists) { res.status(404).json({ error: 'Payment not found' }); return; }
+
+        const data = doc.data();
+        if (data.userId !== decodedToken.uid) {
+          res.status(403).json({ error: 'Unauthorized' });
+          return;
+        }
+        if (data.status === 'verified') { res.json({ success: true, message: 'Already verified' }); return; }
+
+        const manualMethods = ['telebirr', 'manual', 'whatsapp', 'pending'];
+        if (!data.transactionRef && (!data.method || manualMethods.includes(data.method))) {
+          res.status(400).json({ error: 'Transaction reference required. Complete your payment first.' });
+          return;
+        }
+
+        const duration = data.plan === 'yearly' ? 365 : 30;
+        const end = new Date();
+        end.setDate(end.getDate() + duration);
+
+        await paymentRef.update({ status: 'verified', verifiedAt: FieldValue.serverTimestamp() });
+        await db.collection('users').doc(data.userId).update({
+          subscribed: true,
+          subscriptionEnd: Timestamp.fromDate(end),
+          subscriptionPlan: data.plan
+        });
+
+        res.json({ success: true, message: 'Subscription activated' });
+        return;
+      }
+
       // Chapa webhook callback (sent by Chapa server to callback_url)
       const chapaSignature = req.headers['x-chapa-signature'];
       if (chapaSignature || (!body.uid && (body.tx_ref || body.data?.tx_ref))) {

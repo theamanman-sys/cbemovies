@@ -275,7 +275,7 @@ const Auth = {
 
   async verifyPayment(paymentId) {
     const idToken = await this.currentUser.getIdToken();
-    const res = await fetch('/api/verify-payment', {
+    const res = await fetch('/api/chapa?action=verify', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + idToken },
       body: JSON.stringify({ paymentId })
