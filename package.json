@@ -2,8 +2,15 @@
   "name": "cbe-movies",
   "version": "1.0.0",
   "private": true,
+  "engines": { "node": ">=18" },
+  "type": "commonjs",
+  "scripts": {
+    "lint": "eslint . --ext .js --ignore-pattern node_modules --ignore-pattern .vercel"
+  },
+  "devDependencies": {
+    "eslint": "^8.56.0"
+  },
   "dependencies": {
-    "adm-zip": "^0.5.16",
     "base64-js": "^1.5.1",
     "firebase-admin": "13.2.0",
     "jose": "^4.15.5",

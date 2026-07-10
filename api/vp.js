@@ -17,22 +17,19 @@ module.exports = async (req, res) => {
     return;
   }
 
-  const firstSlash = target.indexOf('/');
-  if (firstSlash === -1) {
-    res.status(400).json({ error: 'Missing asset path' });
+  const extraParams = { ...req.query };
+  delete extraParams.target;
+  const qs = new URLSearchParams(extraParams).toString();
+  const url = `https://${target}${qs ? '?' + qs : ''}`;
+
+  let parsedUrl;
+  try { parsedUrl = new URL(url); } catch { res.status(400).json({ error: 'Invalid target URL' }); return; }
+  if (!ALLOWED_DOMAINS.includes(parsedUrl.hostname)) {
+    res.status(403).json({ error: 'Domain not allowed' });
     return;
   }
-
-  const hostname = target.slice(0, firstSlash);
-  const assetPath = target.slice(firstSlash);
-
-  // Pass through additional query params (used by VidCore API calls)
-  const { target: _, ...extraParams } = req.query;
-  const qs = new URLSearchParams(extraParams).toString();
-  const url = `https://${hostname}${assetPath}${qs ? '?' + qs : ''}`;
-
-  if (!ALLOWED_DOMAINS.some(d => url.includes(d))) {
-    res.status(403).json({ error: 'Domain not allowed' });
+  if (parsedUrl.port && !['80', '443', ''].includes(parsedUrl.port)) {
+    res.status(403).json({ error: 'Port not allowed' });
     return;
   }
 
@@ -52,7 +49,7 @@ module.exports = async (req, res) => {
     res.setHeader('Cache-Control', 'public, max-age=86400');
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.status(200).send(Buffer.from(buffer));
-  } catch {
-    res.status(502).end();
+  } catch (err) {
+    res.status(502).json({ error: 'Upstream fetch failed' });
   }
 };

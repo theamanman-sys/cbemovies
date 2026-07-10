@@ -9,9 +9,7 @@ const firebaseConfig = {
 };
 
 firebase.initializeApp(firebaseConfig);
-const auth = firebase.auth();
-const db = firebase.firestore();
-const FirebaseAuth = firebase.auth;
-const FirebaseFirestore = firebase.firestore;
+auth = firebase.auth();
+db = firebase.firestore();
 
-db.enablePersistence({ synchronizeTabs: true }).catch(() => {});
+db.enablePersistence({ synchronizeTabs: true }).catch(err => console.warn('Firestore persistence not enabled:', err));

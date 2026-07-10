@@ -1,5 +1,11 @@
 {
   "rewrites": [
     { "source": "/api/vp/(.+)", "destination": "/api/vp?target=$1" }
-  ]
+  ],
+  "functions": {
+    "api/**/*.js": {
+      "runtime": "nodejs20.x",
+      "maxDuration": 10
+    }
+  }
 }

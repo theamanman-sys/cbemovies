@@ -25,16 +25,19 @@ module.exports = async (req, res) => {
 
     const { db, FieldValue } = getFirebase();
     if (req.method === 'GET') {
-      const snap = await db.collection('notifications')
-        .where('read', '==', false)
-        .orderBy('createdAt', 'desc')
-        .limit(20)
-        .get();
-      const notifications = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      const snap = await db.collection('notifications').orderBy('createdAt', 'desc').limit(20).get();
+      const notifications = snap.docs.filter(d => d.data().read === false).map(d => ({ id: d.id, ...d.data() }));
       res.json({ notifications });
     } else {
       const { type, userId, email, username } = req.body;
       if (!type) { res.status(400).json({ error: 'Missing type' }); return; }
+      if ((userId && userId.length > 200) || (email && email.length > 200) || (username && username.length > 200)) {
+        res.status(400).json({ error: 'Invalid input' }); return;
+      }
+      const emailRegex = /.+@.+\..+/;
+      if (email && !emailRegex.test(email)) {
+        res.status(400).json({ error: 'Invalid email format' }); return;
+      }
       await db.collection('notifications').add({
         type, userId: userId || '', email: email || '', username: username || '',
         read: false,
@@ -43,6 +46,6 @@ module.exports = async (req, res) => {
       res.json({ success: true });
     }
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'Internal server error' });
   }
 };

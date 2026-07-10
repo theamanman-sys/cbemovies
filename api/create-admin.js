@@ -8,7 +8,7 @@ module.exports = async (req, res) => {
   if (req.method !== 'POST') { res.status(405).json({ error: 'Method not allowed' }); return; }
 
   const { uid, email, role } = req.body;
-  if (!uid) { res.status(400).json({ error: 'Missing required fields' }); return; }
+  if (!uid || typeof uid !== 'string' || uid.length > 128) { res.status(400).json({ error: 'Invalid uid' }); return; }
 
   try {
     const { db, FieldValue, auth } = getFirebase();
@@ -28,6 +28,10 @@ module.exports = async (req, res) => {
       return;
     }
     const targetRole = role === 'superadmin' ? 'superadmin' : 'admin';
+    if (email && (typeof email !== 'string' || email.length > 254 || !/.+@.+\..+/.test(email))) {
+      res.status(400).json({ error: 'Invalid email' });
+      return;
+    }
     await db.collection('users').doc(uid).update({ role: targetRole, verified: true });
     await db.collection('admins').doc(uid).set({
       uid, email, role: targetRole,
@@ -36,6 +40,6 @@ module.exports = async (req, res) => {
     });
     res.json({ success: true, message: 'Admin created' });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'Internal server error' });
   }
 };

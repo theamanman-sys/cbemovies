@@ -1,6 +1,20 @@
 const crypto = require('crypto');
 const getFirebase = require('./_firebase');
 
+const requestLog = new Map();
+
+function rateLimit(key, maxAttempts = 10, windowMs = 60000) {
+  const now = Date.now();
+  const entry = requestLog.get(key);
+  if (!entry || now - entry.windowStart > windowMs) {
+    requestLog.set(key, { count: 1, windowStart: now });
+    return true;
+  }
+  if (entry.count >= maxAttempts) return false;
+  entry.count++;
+  return true;
+}
+
 module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -8,12 +22,18 @@ module.exports = async (req, res) => {
   if (req.method === 'OPTIONS') { res.status(200).end(); return; }
   if (req.method !== 'POST') { res.status(405).json({ error: 'Method not allowed' }); return; }
 
+  const clientIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'unknown';
+  if (!rateLimit(clientIp, 20, 60000)) {
+    res.status(429).json({ error: 'Too many requests' });
+    return;
+  }
+
   try {
     const { db, FieldValue, auth: firebaseAuth } = getFirebase();
     const { accessToken } = req.body;
 
-    if (!accessToken) {
-      res.status(400).json({ error: 'accessToken is required' });
+    if (!accessToken || typeof accessToken !== 'string' || accessToken.length > 1024) {
+      res.status(400).json({ error: 'Invalid accessToken' });
       return;
     }
 
@@ -25,7 +45,6 @@ module.exports = async (req, res) => {
     if (userDoc.empty) {
       const newUserRef = await db.collection('users').add({
         superappTokenHash: tokenHash,
-        superappAccessToken: accessToken,
         role: 'user',
         verified: true,
         subscribed: false,
@@ -41,7 +60,6 @@ module.exports = async (req, res) => {
     } else {
       uid = userDoc.docs[0].id;
       await db.collection('users').doc(uid).update({
-        superappAccessToken: accessToken,
         lastLogin: FieldValue.serverTimestamp()
       });
     }
@@ -50,21 +68,25 @@ module.exports = async (req, res) => {
     try {
       await firebaseAuth.getUser(firebaseUid);
     } catch {
-      await firebaseAuth.createUser({
-        uid: firebaseUid,
-        displayName: 'CBE User',
-        email: `cbe_${uid}@cbemovies.app`
-      });
+      try {
+        await firebaseAuth.createUser({
+          uid: firebaseUid,
+          displayName: 'CBE User',
+          email: `cbe_${uid}@cbemovies.app`
+        });
+      } catch (createErr) {
+        if (createErr.code !== 'auth/uid-already-exists') throw createErr;
+      }
     }
 
     const customToken = await firebaseAuth.createCustomToken(firebaseUid);
 
     const userData = userDoc.empty
       ? { uid, role: 'user', verified: true, subscribed: false, subscriptionPlan: null, subscriptionEnd: null, settings: { autoPlay: true, quality: 'auto' }, watchlist: [], history: [] }
-      : (() => { const d = userDoc.docs[0].data(); return { uid, ...d }; })();
+      : { uid, ...userDoc.docs[0].data() };
 
     res.json({ success: true, customToken, user: userData });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'Internal server error' });
   }
 };

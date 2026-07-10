@@ -1,25 +1,7 @@
 const crypto = require('crypto');
 const getFirebase = require('./_firebase');
-
-function stableStringify(obj) {
-  function serialize(v) {
-    if (v === null) return 'null';
-    if (typeof v === 'boolean') return v ? 'true' : 'false';
-    if (typeof v === 'number') {
-      if (Number.isNaN(v) || !Number.isFinite(v)) throw new Error('NaN/Infinity');
-      if (Number.isInteger(v) && Math.abs(v) < 1e21) return v.toString();
-      return v.toString();
-    }
-    if (typeof v === 'string') return JSON.stringify(v);
-    if (Array.isArray(v)) return '[' + v.map(serialize).join(',') + ']';
-    if (typeof v === 'object') {
-      const keys = Object.keys(v).sort();
-      return '{' + keys.map(k => JSON.stringify(k) + ':' + serialize(v[k])).join(',') + '}';
-    }
-    return '';
-  }
-  return serialize(obj);
-}
+const nacl = require('tweetnacl');
+const { toByteArray, fromByteArray } = require('base64-js');
 
 module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -49,7 +31,6 @@ module.exports = async (req, res) => {
     const merchantCode = process.env.CBE_MERCHANT_CODE || '';
     const appSecret = process.env.CBE_APP_SECRET || '';
     const privateKeyB64 = process.env.CBE_PRIVATE_KEY || '';
-    const xApiKey = process.env.CBE_X_API_KEY || '';
 
     if (!appCode || !merchantCode || !appSecret) {
       res.status(500).json({ error: 'CBE payment not configured on server' });
@@ -75,7 +56,7 @@ module.exports = async (req, res) => {
       credit_account_number: ''
     };
 
-    const canonicalString = stableStringify(contentToSign);
+    const canonicalString = JSON.stringify(contentToSign, Object.keys(contentToSign).sort());
 
     const hmac = crypto.createHmac('sha256', appSecret);
     hmac.update(canonicalString);
@@ -83,8 +64,6 @@ module.exports = async (req, res) => {
 
     let sign = '';
     if (privateKeyB64) {
-      const nacl = require('tweetnacl');
-      const { toByteArray, fromByteArray } = require('base64-js');
       const sk = toByteArray(privateKeyB64);
       const msgBytes = Buffer.from(canonicalString, 'utf-8');
       const sig = nacl.sign.detached(msgBytes, sk);
@@ -106,12 +85,9 @@ module.exports = async (req, res) => {
       paymentId: paymentRef.id,
       orderPayload: contentToSign,
       sign,
-      confirm_payload: confirmPayload,
-      authPayload: {
-        xApiKey
-      }
+      confirm_payload: confirmPayload
     });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'Internal server error' });
   }
 };

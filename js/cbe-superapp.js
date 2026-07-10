@@ -1,5 +1,5 @@
 const CbeSuperApp = {
-  APP_CODE: '',
+  APP_CODE: 'CBE_MOVIES',
   _callbackId: 0,
 
   get sdk() {

@@ -1,5 +1,3 @@
-const $$ = (s, ctx = document) => [...ctx.querySelectorAll(s)];
-
 let _cardView = localStorage.getItem('cbemovies_cardview') || 'browse';
 
 const tvState = {
@@ -31,22 +29,7 @@ function initDOM() {
   dom.preloader = $('#preloader');
 }
 
-function escHtml(s) {
-  if (!s) return '';
-  const d = document.createElement('div');
-  d.textContent = s;
-  return d.innerHTML;
-}
-
-/* ── Toast ── */
-function showToast(msg, duration = 3000) {
-  const el = document.getElementById('toast');
-  if (!el) return;
-  el.textContent = msg;
-  el.classList.add('active');
-  clearTimeout(el._timer);
-  el._timer = setTimeout(() => el.classList.remove('active'), duration);
-}
+// escHtml is defined in shared.js
 
 /* ── Player ── */
 let _playerSources = [];
@@ -67,7 +50,7 @@ function startSourceFallbackTimer() {
       dom.playerFrame.src = _currentPlayerUrl;
       startSourceFallbackTimer();
     } else {
-      showToast('All player sources failed', true);
+      showToast(__('All player sources failed'), true);
     }
   }, 60000);
 }
@@ -107,7 +90,7 @@ function listenPlayerProgress() {
 
 function openPlayer(item) {
   if (!Auth.currentUser || !Auth.canAccessContent(Auth.userDoc)) {
-    showToast('Subscribe to watch', 'success');
+    showToast(__('Subscribe to watch'));
     setTimeout(() => window.location.href = 'profile.html#subscription', 1500);
     return;
   }
@@ -143,6 +126,7 @@ function closePlayer() {
   dom.playerPage.classList.add('hidden');
   unlockScroll();
 }
+window.closePlayer = closePlayer;
 
 function renderPlayerSidebar(item) {
   return `
@@ -158,19 +142,6 @@ function renderPlayerSidebar(item) {
 }
 
 /* ── Search ── */
-let searchTimeout;
-
-function openSearch() {
-  dom.searchOverlay.classList.add('active');
-  dom.searchInput.focus();
-  lockScroll();
-}
-
-function closeSearch() {
-  dom.searchOverlay.classList.remove('active');
-  unlockScroll();
-}
-
 function onSearchInput() {
   clearTimeout(searchTimeout);
   const q = dom.searchInput.value.trim();
@@ -187,12 +158,12 @@ function onSearchInput() {
       }
       dom.searchResults.innerHTML = results.map((item, i) => searchCard(item, q, i)).join('');
     } catch {
-      dom.searchResults.innerHTML = '<div class="search-empty"><h3>Search failed</h3><p>Check your connection.</p></div>';
+      dom.searchResults.innerHTML = '<div class="search-empty"><h3>' + __('Search failed') + '</h3><p>' + __('Check your connection.') + '</p></div>';
     }
   }, 300);
 }
 
-function searchCard(item, q, idx) {
+function searchCard(item, _q, _idx) {
   const title = escHtml(item.title || '');
   const year = item.year ? `<span>${escHtml(item.year)}</span>` : '';
   const rating = item._rating || item.rating;
@@ -233,7 +204,7 @@ async function openTVDetail(tmdbId) {
   try {
     const item = await API.enrichItem({ tmdb_id: tmdbId, type: 'tv' });
     renderTVModal(item);
-    setTimeout(() => tryAutoPlayTrailer(item), 1000);
+    setTimeout(() => { if (typeof tryAutoPlayTrailer === 'function') tryAutoPlayTrailer(item); }, 1000);
   } catch {
     dom.modal.innerHTML = '<div style="padding:40px;text-align:center;color:var(--text-secondary)">Failed to load details.</div>';
   }
@@ -272,7 +243,7 @@ function renderTVModal(item) {
           <h2>${tDisplayTitle(item)}</h2>
           ${item._tagline ? `<div style="font-size:14px;color:var(--text-secondary);font-style:italic;margin-top:2px">"${escHtml(item._tagline)}"</div>` : ''}
         </div>
-        ${trailer ? `<button class="trailer-btn" onclick="openTrailer('${trailer.key}')" style="flex-shrink:0">
+        ${trailer ? `<button class="trailer-btn" data-trailer="${trailer.key}" style="flex-shrink:0">
           <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
           ${escHtml(trailer.name || 'Trailer')}
         </button>` : ''}
@@ -452,10 +423,12 @@ async function fetchAndRender() {
 }
 
 function renderGrid(items) {
-  _cardPlayers.forEach((entry, card) => {
-    if (entry.player && entry.player.destroy) entry.player.destroy();
-  });
-  _cardPlayers.clear();
+  if (typeof _cardPlayers !== 'undefined' && _cardPlayers) {
+    _cardPlayers.forEach((entry, _card) => {
+      if (entry.player && entry.player.destroy) entry.player.destroy();
+    });
+    _cardPlayers.clear();
+  }
   if (!items.length) {
     dom.grid.innerHTML = '<div class="search-empty"><h3>No TV shows found</h3><p>Try adjusting your filters.</p></div>';
     return;
@@ -536,69 +509,6 @@ function goToPage(p) {
   dom.grid.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
-/* ── Mobile Nav ── */
-function toggleMobileNav() {
-  let panel = document.getElementById('mobile-nav-panel');
-  if (panel) { closeMobileNav(); return; }
-  const overlay = document.createElement('div');
-  overlay.id = 'mobile-nav-overlay';
-  overlay.style.cssText = 'position:fixed;inset:0;z-index:998;background:rgba(0,0,0,0.6);-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);animation:fadeIn .2s ease';
-  overlay.addEventListener('click', closeMobileNav);
-  document.body.appendChild(overlay);
-  panel = document.createElement('div');
-  panel.id = 'mobile-nav-panel';
-  const navH = document.querySelector('nav')?.offsetHeight || 88;
-  panel.style.cssText = `position:fixed;top:${navH}px;left:0;right:0;z-index:999;background:rgba(10,10,15,0.98);backdrop-filter:blur(20px);border-bottom:1px solid var(--glass-border);padding:16px 24px;animation:fadeInUp .2s ease;display:flex;flex-direction:column;gap:12px;max-height:calc(100vh - ${navH}px);overflow-y:auto;overscroll-behavior:contain`;
-  const userLinks = Auth.currentUser && Auth.userDoc ? `
-    <hr style="border-color:var(--glass-border);margin:4px 0">
-    <a href="profile.html" style="color:var(--text-secondary);font-size:16px;font-weight:500;text-decoration:none;padding:12px 0">👤 ${__('Dashboard')}</a>
-    <a href="profile.html#settings" style="color:var(--text-secondary);font-size:16px;font-weight:500;text-decoration:none;padding:12px 0">⚙️ ${__('Settings')}</a>
-    <button style="color:#ff4444;font-size:16px;font-weight:500;background:none;border:none;padding:12px 0;cursor:pointer;font-family:inherit;text-align:left" onclick="Auth.handleLogout('index.html')">🚪 ${__('Sign Out')}</button>
-  ` : `
-    <hr style="border-color:var(--glass-border);margin:4px 0">
-    <a href="login.html" style="color:var(--accent);font-size:16px;font-weight:600;text-decoration:none;padding:12px 0">🔑 ${__('Sign In')}</a>
-  `;
-  panel.innerHTML = `
-    <a href="home.html" style="color:var(--text-primary);font-size:16px;font-weight:500;text-decoration:none;padding:12px 0">${__('Home')}</a>
-    <a href="movies.html" style="color:var(--text-secondary);font-size:16px;font-weight:500;text-decoration:none;padding:12px 0">${__('Movies')}</a>
-    <a href="tv.html" style="color:var(--text-secondary);font-size:16px;font-weight:500;text-decoration:none;padding:12px 0">${__('TV Shows')}</a>
-    <a href="youtube.html" style="color:var(--text-secondary);font-size:16px;font-weight:500;text-decoration:none;padding:12px 0">\uD83C\uDFAC ${__('CBE Movies')}</a>
-    <a href="#" style="color:var(--text-secondary);font-size:16px;font-weight:500;text-decoration:none;padding:12px 0" onclick="openSearch();closeMobileNav();return false">${__('Search')}</a>
-    ${userLinks}
-  `;
-  document.body.appendChild(panel);
-  lockScroll();
-}
-function closeMobileNav() {
-  document.getElementById('mobile-nav-panel')?.remove();
-  document.getElementById('mobile-nav-overlay')?.remove();
-  unlockScroll();
-}
-window.toggleMobileNav = toggleMobileNav;
-window.closeMobileNav = closeMobileNav;
-
-/* ── Keyboard ── */
-document.addEventListener('keydown', e => {
-  if (e.key === 'Escape') {
-    if (!dom.playerPage.classList.contains('hidden')) { closePlayer(); return; }
-    if (dom.modalOverlay.classList.contains('active')) { closeModal(); return; }
-    if (dom.searchOverlay.classList.contains('active')) { closeSearch(); return; }
-  }
-  if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
-    e.preventDefault();
-    openSearch();
-  }
-});
-
-/* ── Language ── */
-function toggleLang() {
-  const lang = i18n.current === 'en' ? 'am' : 'en';
-  i18n.setLang(lang);
-  document.querySelector('.lang-switch').textContent = lang === 'am' ? '\u12A0\u121B' : 'EN';
-  const dt = document.querySelector('[data-i18n]');
-  if (dt) i18n.applyToDOM();
-}
-
 /* ── Init ── */
 (async function init() {
   initDOM();
@@ -616,4 +526,9 @@ function toggleLang() {
   populateFilters();
   await fetchAndRender();
   dom.preloader.classList.add('hidden');
+window.onSearchInput = onSearchInput;
+window.openTVDetail = openTVDetail;
+window.playFromModal = playFromModal;
+window.resetFilters = resetFilters;
+window.goToPage = goToPage;
 })();

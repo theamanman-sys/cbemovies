@@ -124,8 +124,22 @@ WEBHOOK_SECRET=<webhook_secret>
 - `payments` collection: user who created payment can now update their own payment record (needed for adding transactionRef and manual verification)
 - Previously required admin role for all updates
 
-### New Files
-- `payment.html` — Payment page UI
-- `js/payment.js` — Payment logic + QR generation
-- `api/chapa-init.js` — Chapa transaction init
-- `api/chapa-verify.js` — Chapa payment verification + webhook handler
+### Merged
+- `api/chapa.js` — Combined init (POST), verify (GET), webhook (POST) with HMAC-SHA256 signature verification
+- `api/chapa-init.js` and `api/chapa-verify.js` deleted (merged into chapa.js)
+
+## Session 5 (Jun 29) — Full Audit & Security Hardening
+
+### Issues Found (Audit)
+- **10 Critical**: SSRF (3 files), Firestore rules user list leak, hardcoded Chapa key, showToast undefined (2 files), trailerModal null crash (2 files), auth spread order bug
+- **18 Major**: XSS in admin panels (2 files), admin panel delegation, notification mark-read, search race, CbeSuperApp undefined, dead payment form, save button states, delete account reauth, Back to Home button, youtube.html missing i18n (2 files), check-subscription no auth, auth.js race/orphan, cbe-auth token leak, notify composite index, payment.js timeout/timer/race, email verification URL, youtube.js stubs, cbe-superapp APP_CODE
+- **14 Minor**: unused imports, pageYOffset, resize debounce, missing semicolons, dead code, variable shadowing, etc.
+
+### Fixes Applied (via 3 parallel agents)
+- **API Security**: SSRF in stream.js/vp.js/bs.js (new URL().hostname flat matching); Firestore rules (users list→admin only, admins read→superadmin only); Chapa hardcoded key removed (fallback kept for dev)
+- **Frontend JS**: showToast unified in app.js (movies.js/tv.js duplicates removed); trailerModal null guards (app.js, movies.html, tv.html); pageYOffset→scrollY; resize debounce 150ms; CbeSuperApp guard
+- **Auth/Data**: auth.js spread order (id inside item); register() orphaned doc rollback; username atomic create; dynamic email verification URL; cbe-auth token stripped; notify.js composite index fix; check-subscription auth enforcement
+- **Payment**: payment.js init race guard; SuperApp 60s timeout; Telebirr button state; Chapa timer cleanup
+- **Admin**: XSS inline onclick→data attributes+delegation; Make Admin gated by superadmin; notifications not auto-marked; search race guard
+- **Profile**: Dead payment form removed; save button loading states; delete account requires-recent-login handling; Back to Home pill button
+- **Infrastructure**: t.js deleted; package.json adm-zip removed; youtube.js stubs added; cbe-superapp APP_CODE set; payment.html i18n.js loaded

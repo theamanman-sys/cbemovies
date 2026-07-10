@@ -99,6 +99,10 @@ const i18n = {
       'm': 'm',
       'Ep': 'Ep',
       '—': '—',
+      'Subscribe to watch': 'Subscribe to watch',
+      'All player sources failed': 'All player sources failed',
+      'No trailer available': 'No trailer available',
+      'Failed to load trailer': 'Failed to load trailer',
     },
 
     am: {
@@ -196,6 +200,10 @@ const i18n = {
       'm': 'ደ',
       'Ep': 'ክፍ',
       '—': '—',
+      'Subscribe to watch': 'ለመመልከት ደንበኝነት ይመዝገቡ',
+      'All player sources failed': 'ሁሉም የተጫዋች ምንጮች አልተሳኩም',
+      'No trailer available': 'ምንም የማስታወቂያ ቪዲዮ የለም',
+      'Failed to load trailer': 'የማስታወቂያ ቪዲዮ መጫን አልተሳካም',
     }
   },
 

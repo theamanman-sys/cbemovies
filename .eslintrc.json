@@ -1,0 +1,60 @@
+{
+  "env": {
+    "browser": true,
+    "es2021": true,
+    "node": true
+  },
+  "extends": ["eslint:recommended"],
+  "parserOptions": {
+    "ecmaVersion": "latest",
+    "sourceType": "script"
+  },
+  "rules": {
+    "no-unused-vars": ["warn", { "argsIgnorePattern": "^_" }],
+    "no-console": ["warn", { "allow": ["warn", "error"] }],
+    "no-undef": "error",
+    "no-unreachable": "error",
+    "no-constant-condition": "warn",
+    "no-empty": ["error", { "allowEmptyCatch": true }]
+  },
+  "globals": {
+    "firebase": "readonly",
+    "Auth": "writable",
+    "API": "writable",
+    "QRCode": "readonly",
+    "CbeSuperApp": "readonly",
+    "__": "writable",
+    "i18n": "writable",
+    "dom": "writable",
+    "$": "writable",
+    "escHtml": "writable",
+    "db": "writable",
+    "auth": "writable",
+    "state": "writable",
+    "showToast": "writable",
+    "lockScroll": "writable",
+    "unlockScroll": "writable",
+    "closeModal": "writable",
+    "openSearch": "writable",
+    "closeSearch": "writable",
+    "toggleMobileNav": "writable",
+    "closeMobileNav": "writable",
+    "setupCardTrailers": "writable",
+    "playTrailer": "writable",
+    "closeTrailer": "writable",
+    "tryAutoPlayTrailer": "writable",
+    "closePlayer": "writable",
+    "openPlayer": "writable",
+    "openYouTubePlayer": "writable",
+    "closeYouTubePlayer": "writable",
+    "nextEpisode": "writable",
+    "dismissAutoNext": "writable",
+    "playItem": "writable",
+    "openMovieDetail": "writable",
+    "openTVDetail": "writable",
+    "toggleLang": "writable",
+    "_cardPlayers": "writable",
+    "searchTimeout": "writable"
+  },
+  "ignorePatterns": ["node_modules/", ".vercel/"]
+}

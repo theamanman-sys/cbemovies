@@ -26,7 +26,7 @@
   </ul>
   <div class="nav-actions">
     <div class="nav-user-wrapper" id="nav-user-wrapper">
-      <button class="nav-user-trigger" id="nav-user-trigger">
+      <button class="nav-user-trigger" id="nav-user-trigger" aria-haspopup="true" aria-expanded="false">
         <span class="nav-user-avatar" id="nav-user-avatar">U</span>
         <span class="nav-user-name" id="nav-user-name">User</span>
         <span class="nav-user-caret">▼</span>
@@ -47,11 +47,11 @@
     </div>
     <a href="login.html" class="nav-login-btn" id="nav-login-btn" data-i18n="Sign In" style="display:none">Sign In</a>
     <button class="lang-switch" onclick="toggleLang()" data-i18n-title="Switch Language" title="Switch Language">EN</button>
-    <button class="mobile-menu-btn">☰</button>
+    <button class="mobile-menu-btn" aria-label="Toggle navigation menu">☰</button>
   </div>
 </nav>
 
-<div style="height:88px"></div>
+<div class="nav-spacer"></div>
 
 <main class="payment-page">
   <!-- Step 1: Choose Plan -->
@@ -252,16 +252,16 @@
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
 <script src="js/firebase-config.js"></script>
 <script src="js/auth.js"></script>
+<script src="js/i18n.js"></script>
 <script src="js/cbe-superapp.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script src="js/payment.js"></script>
 <script>
 function toggleLang() {
-  if (typeof i18n !== 'undefined' && i18n.current === 'am') {
-    i18n.setLanguage('en');
-  } else if (typeof i18n !== 'undefined') {
-    i18n.setLanguage('am');
-  }
+  if (typeof i18n === 'undefined') return;
+  var lang = i18n.current === 'am' ? 'en' : 'am';
+  i18n.setLang(lang);
+  document.querySelector('.lang-switch').textContent = lang === 'am' ? 'አማ' : 'EN';
 }
 function toggleMobileNav() {
   let panel = document.getElementById('mobile-nav-panel');

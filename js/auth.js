@@ -17,10 +17,21 @@ const Auth = {
     const cred = await auth.createUserWithEmailAndPassword(email, password);
     await cred.user.getIdTokenResult(true);
     const uid = cred.user.uid;
-    const duplicate = await db.collection('users').where('username', '==', username).get();
-    if (!duplicate.empty) {
-      await cred.user.delete().catch(() => {});
+
+    // Check username availability using the usernames collection (single get, not list query)
+    const existingUsername = await db.collection('usernames').doc(username).get();
+    if (existingUsername.exists) {
+      await cred.user.delete().catch(err => console.warn('Auth cleanup error:', err));
       throw new Error('Username is already taken');
+    }
+
+    // Reserve the username before creating the user doc
+    const usernameRef = db.collection('usernames').doc(username);
+    try {
+      await usernameRef.create({ uid, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
+    } catch (e) {
+      await cred.user.delete().catch(err => console.warn('Auth cleanup error:', err));
+      throw new Error('Username already taken');
     }
     const doc = {
       email, phone, username, firstName, lastName,
@@ -45,11 +56,14 @@ const Auth = {
         createdAt: firebase.firestore.FieldValue.serverTimestamp()
       });
     } catch (e) {
-      await cred.user.delete().catch(() => {});
+      await cred.user.delete().catch(err => console.warn('Auth cleanup error:', err));
+      try { await db.collection('users').doc(uid).delete(); } catch (err) { console.warn('Auth delete user doc error:', err); }
       throw new Error('Failed to create profile. Please try again.');
     }
+    const baseUrl = (typeof window !== 'undefined' ? window.location.origin : '') || 'https://cbemovies.vercel.app';
+    const continueUrl = baseUrl + '/login.html';
     const actionCodeSettings = {
-      url: 'https://cbemovies.vercel.app/login.html',
+      url: continueUrl,
       handleCodeInApp: false
     };
     await cred.user.sendEmailVerification(actionCodeSettings);
@@ -59,8 +73,10 @@ const Auth = {
   async resendVerificationEmail() {
     const user = auth.currentUser;
     if (!user) throw new Error('No user logged in');
+    const baseUrl = (typeof window !== 'undefined' ? window.location.origin : '') || 'https://cbemovies.vercel.app';
+    const continueUrl = baseUrl + '/login.html';
     const actionCodeSettings = {
-      url: 'https://cbemovies.vercel.app/login.html',
+      url: continueUrl,
       handleCodeInApp: false
     };
     await user.sendEmailVerification(actionCodeSettings);
@@ -97,7 +113,6 @@ const Auth = {
         throw new Error('ACCOUNT_NOT_VERIFIED');
       }
     }
-    if (!this.canAccessContent(data)) throw new Error('ACCOUNT_NOT_SUBSCRIBED');
     return cred;
   },
 
@@ -111,7 +126,6 @@ const Auth = {
     if (!doc.exists) throw new Error('Account not registered. Please register first.');
     const data = doc.data();
     if (!data.verified) throw new Error('ACCOUNT_NOT_VERIFIED');
-    if (!this.canAccessContent(data)) throw new Error('ACCOUNT_NOT_SUBSCRIBED');
     return cred;
   },
 
@@ -132,7 +146,7 @@ const Auth = {
   async handleLogout(redirectUrl = 'login.html') {
     try {
       await auth.signOut();
-    } catch {}
+    } catch (err) { console.warn('Auth logout error:', err); }
     window.location.href = redirectUrl;
   },
 
@@ -159,7 +173,7 @@ const Auth = {
     const doc = await ref.get();
     const watchlist = doc.data().watchlist || [];
     const idx = watchlist.findIndex(w => w.id === movieId);
-    if (idx > -1) { watchlist.splice(idx, 1); } else { watchlist.push({ id: movieId, ...item, addedAt: Date.now() }); }
+    if (idx > -1) { watchlist.splice(idx, 1); } else { watchlist.push({ ...item, id: movieId, addedAt: Date.now() }); }
     await ref.update({ watchlist });
     await this.refreshUserDoc();
     return idx > -1 ? 'removed' : 'added';
@@ -171,7 +185,7 @@ const Auth = {
     const doc = await ref.get();
     let history = doc.data().history || [];
     history = history.filter(h => h.id !== movieId);
-    history.unshift({ id: movieId, ...item, progress, watchedAt: firebase.firestore.FieldValue.serverTimestamp() });
+    history.unshift({ ...item, id: movieId, progress, watchedAt: firebase.firestore.FieldValue.serverTimestamp() });
     if (history.length > 200) history = history.slice(0, 200);
     await ref.update({ history });
     await this.refreshUserDoc();
@@ -213,7 +227,22 @@ const Auth = {
 
   async getAllUsers() {
     const snap = await db.collection('users').orderBy('createdAt', 'desc').get();
-    return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    return snap.docs.map(d => {
+      const data = d.data();
+      return {
+        id: d.id,
+        uid: data.uid,
+        username: data.username,
+        email: data.email,
+        role: data.role,
+        verified: data.verified,
+        subscribed: data.subscribed,
+        subscriptionPlan: data.subscriptionPlan,
+        subscriptionEnd: data.subscriptionEnd,
+        createdAt: data.createdAt,
+        lastLogin: data.lastLogin
+      };
+    });
   },
 
   async getNotifications() {
@@ -245,19 +274,15 @@ const Auth = {
   },
 
   async verifyPayment(paymentId) {
-    const ref = db.collection('payments').doc(paymentId);
-    const doc = await ref.get();
-    if (!doc.exists) throw new Error('Payment not found');
-    const data = doc.data();
-    const duration = data.plan === 'yearly' ? 365 : 30;
-    const end = new Date();
-    end.setDate(end.getDate() + duration);
-    await ref.update({ status: 'verified', verifiedAt: firebase.firestore.FieldValue.serverTimestamp() });
-    await db.collection('users').doc(data.userId).update({
-      subscribed: true,
-      subscriptionEnd: firebase.firestore.Timestamp.fromDate(end),
-      subscriptionPlan: data.plan
+    const idToken = await this.currentUser.getIdToken();
+    const res = await fetch('/api/verify-payment', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + idToken },
+      body: JSON.stringify({ paymentId })
     });
+    const data = await res.json();
+    if (!data.success) throw new Error(data.error || 'Verification failed');
+    await this.refreshUserDoc();
     return true;
   },
 

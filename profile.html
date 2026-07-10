@@ -25,7 +25,7 @@
     </ul>
     <div class="nav-actions">
       <div class="nav-user-wrapper" id="nav-user-wrapper">
-        <button class="nav-user-trigger" id="nav-user-trigger">
+        <button class="nav-user-trigger" id="nav-user-trigger" aria-haspopup="true" aria-expanded="false">
           <span class="nav-user-avatar" id="nav-user-avatar">U</span>
           <span class="nav-user-name" id="nav-user-name">User</span>
           <span class="nav-user-caret">▼</span>
@@ -46,16 +46,16 @@
       </div>
       <a href="login.html" class="nav-login-btn" id="nav-login-btn" data-i18n="Sign In" style="display:none">Sign In</a>
       <button class="lang-switch" onclick="toggleLang()" data-i18n-title="Switch Language" title="Switch Language">EN</button>
-      <button class="mobile-menu-btn">☰</button>
+      <button class="mobile-menu-btn" aria-label="Toggle navigation menu">☰</button>
     </div>
   </nav>
 
-  <div style="height:88px"></div>
+  <div class="nav-spacer"></div>
 
   <main class="profile-page">
     <div class="profile-topbar">
       <div class="profile-topbar-left">
-        <a href="home.html" class="back-home-btn" title="Back to Home">←</a>
+        <a href="home.html" class="back-home-btn" title="Back to Home">← Back to Home</a>
         <div class="profile-avatar" id="profile-avatar">U</div>
         <div>
           <h2 id="profile-name">User</h2>
@@ -135,38 +135,6 @@
             <button class="auth-btn sub-select-btn" data-plan="yearly">Choose Plan</button>
           </div>
         </div>
-        <div id="payment-info" style="display:none">
-          <div class="profile-card">
-            <h3>Payment</h3>
-            <p>Amount: <strong id="pay-amount">299 ETB</strong></p>
-
-            <div id="cbe-superapp-pay-section">
-              <p style="margin-bottom:12px;font-size:14px;color:var(--text-secondary)">Pay securely via CBE SuperApp:</p>
-              <button class="auth-btn" id="superapp-pay-btn" style="display:flex;align-items:center;justify-content:center;gap:8px">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M17 1.01L7 1c-1.1 0-2 .9-2 2v18c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V3c0-1.1-.9-1.99-2-1.99zM17 19H7V5h10v14z"/></svg>
-                Pay with CBE SuperApp
-              </button>
-            </div>
-
-            <div id="cbe-superapp-pay-loading" style="display:none" class="auth-superapp-loading">
-              <div class="superapp-spinner"></div>
-              <p>Processing payment in CBE SuperApp...</p>
-            </div>
-
-            <hr style="border-color:var(--glass-border);margin:16px 0">
-
-            <p style="font-size:14px;color:var(--text-secondary)">Or send via CBE Birr and enter the reference below:</p>
-            <div class="cbe-pay-info">
-              <p>CBE Account: <strong>1000123456789</strong></p>
-              <p>Name: <strong>CBE Movies Subscription</strong></p>
-            </div>
-            <div class="form-group">
-              <input type="text" id="payment-ref" placeholder="Transaction reference number">
-            </div>
-            <button class="auth-btn" id="confirm-payment-btn">I've Paid — Verify</button>
-            <div class="form-error" id="payment-error"></div>
-          </div>
-        </div>
       </div>
 
       <!-- Watchlist Tab -->
@@ -226,6 +194,7 @@
   <script src="js/firebase-config.js"></script>
   <script src="js/auth.js"></script>
   <script src="js/cbe-superapp.js"></script>
+  <script src="js/i18n.js"></script>
   <script>
   const $ = id => document.getElementById(id);
   let userDoc = null;
@@ -288,6 +257,15 @@
     t.className = 'toast active ' + type;
     setTimeout(() => { t.className = 'toast'; }, 3000);
   }
+
+  function toggleLang() {
+    if (typeof i18n !== 'undefined') {
+      const next = i18n.current === 'am' ? 'en' : 'am';
+      i18n.setLang(next);
+      document.querySelector('.lang-switch').textContent = next.toUpperCase();
+    }
+  }
+  window.toggleLang = toggleLang;
 
   function esc(s) {
     const d = document.createElement('div');
@@ -394,27 +372,47 @@
 
   /* Save Profile */
   $('save-profile-btn').addEventListener('click', async () => {
-    const data = {
-      firstName: $('edit-first').value.trim(),
-      lastName: $('edit-last').value.trim(),
-      username: $('edit-username').value.trim(),
-      phone: $('edit-phone').value.trim()
-    };
-    await Auth.updateProfile(Auth.currentUser.uid, data);
-    showToast('Profile updated', 'success');
-    renderProfile(await Auth.refreshUserDoc());
+    const btn = $('save-profile-btn');
+    btn.disabled = true;
+    btn.textContent = 'Saving...';
+    try {
+      const data = {
+        firstName: $('edit-first').value.trim(),
+        lastName: $('edit-last').value.trim(),
+        username: $('edit-username').value.trim(),
+        phone: $('edit-phone').value.trim()
+      };
+      await Auth.updateProfile(Auth.currentUser.uid, data);
+      showToast('Profile updated', 'success');
+      renderProfile(await Auth.refreshUserDoc());
+    } catch (err) {
+      showToast(err.message);
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Save Changes';
+    }
   });
 
   /* Settings */
   $('save-settings-btn').addEventListener('click', async () => {
-    const data = {
-      settings: {
-        autoPlay: $('setting-autoplay').checked,
-        quality: $('setting-quality').value,
-      }
-    };
-    await Auth.updateProfile(Auth.currentUser.uid, data);
-    showToast('Settings saved', 'success');
+    const btn = $('save-settings-btn');
+    btn.disabled = true;
+    btn.textContent = 'Saving...';
+    try {
+      const data = {
+        settings: {
+          autoPlay: $('setting-autoplay').checked,
+          quality: $('setting-quality').value,
+        }
+      };
+      await Auth.updateProfile(Auth.currentUser.uid, data);
+      showToast('Settings saved', 'success');
+    } catch (err) {
+      showToast(err.message);
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Save Settings';
+    }
   });
 
   /* Subscription */
@@ -443,92 +441,7 @@
     });
   });
 
-  /* ── CBE SuperApp Payment ── */
-  const superappPayBtn = $('superapp-pay-btn');
-  const superappPayLoading = $('cbe-superapp-pay-loading');
-  const superappPaySection = $('cbe-superapp-pay-section');
 
-  if (!CbeSuperApp.isAvailable()) {
-    superappPaySection.style.display = 'none';
-  }
-
-  superappPayBtn.addEventListener('click', async () => {
-    const plan = $('payment-info').dataset.plan || 'monthly';
-    superappPaySection.style.display = 'none';
-    superappPayLoading.style.display = 'block';
-    $('payment-error').textContent = '';
-    try {
-      const idToken = await Auth.currentUser.getIdToken();
-      const signRes = await fetch('/api/cbe-payment', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + idToken },
-        body: JSON.stringify({ uid: Auth.currentUser.uid, plan })
-      });
-      const signData = await signRes.json();
-      if (!signData.success) throw new Error(signData.error || 'Payment setup failed');
-
-      const payResult = await CbeSuperApp.initiatePayment(
-        { ...signData.orderPayload, sign: signData.sign, confirm_payload: signData.confirm_payload },
-        { ...signData.authPayload, xAccessToken: '' },
-        'CBE Movies'
-      );
-
-      if (!payResult || payResult.status !== 'success') {
-        throw new Error(payResult?.error || 'Payment was not completed');
-      }
-
-      await db.collection('payments').doc(signData.paymentId).update({
-        transactionRef: payResult.data?.ft_number || '',
-        status: 'verified',
-        method: 'cbe_superapp',
-        verifiedAt: firebase.firestore.FieldValue.serverTimestamp()
-      });
-
-      const duration = plan === 'yearly' ? 365 : 30;
-      const end = new Date();
-      end.setDate(end.getDate() + duration);
-      await db.collection('users').doc(Auth.currentUser.uid).update({
-        subscribed: true,
-        subscriptionEnd: firebase.firestore.Timestamp.fromDate(end),
-        subscriptionPlan: plan
-      });
-
-      showToast('Payment successful! Subscription activated.', 'success');
-      await Auth.refreshUserDoc();
-      renderSubscription(Auth.userDoc);
-      $('payment-info').style.display = 'none';
-    } catch (err) {
-      $('payment-error').textContent = err.message;
-      showToast(err.message);
-      superappPaySection.style.display = 'block';
-      superappPayLoading.style.display = 'none';
-    }
-  });
-
-  $('confirm-payment-btn').addEventListener('click', async () => {
-    const ref = $('payment-ref').value.trim();
-    if (!ref) { $('payment-error').textContent = 'Enter transaction reference'; return; }
-    const plan = $('payment-info').dataset.plan || 'monthly';
-    $('confirm-payment-btn').disabled = true;
-    $('confirm-payment-btn').textContent = 'Verifying...';
-    try {
-      const payment = await Auth.createPayment(Auth.currentUser.uid, plan);
-      await db.collection('payments').doc(payment.id).update({
-        transactionRef: ref,
-        method: 'cbe_birr'
-      });
-      await Auth.verifyPayment(payment.id);
-      showToast('Payment verified! You now have access.', 'success');
-      await Auth.refreshUserDoc();
-      renderSubscription(Auth.userDoc);
-      $('payment-info').style.display = 'none';
-    } catch (err) {
-      $('payment-error').textContent = err.message;
-    } finally {
-      $('confirm-payment-btn').disabled = false;
-      $('confirm-payment-btn').textContent = "I've Paid — Verify";
-    }
-  });
 
   /* Watchlist */
   async function renderWatchlist(watchlist) {
@@ -586,7 +499,17 @@
     if (!confirm('This cannot be undone. Continue?')) return;
     try {
       const uid = Auth.currentUser.uid;
-      await Auth.currentUser.delete();
+      if (Auth.currentUser.delete) {
+        try {
+          await Auth.currentUser.delete();
+        } catch (e) {
+          if (e.code === 'auth/requires-recent-login') {
+            showToast('Please sign out and sign in again, then try deleting your account.', '');
+            return;
+          }
+          throw e;
+        }
+      }
       await db.collection('users').doc(uid).delete();
       showToast('Account deleted', 'success');
       setTimeout(() => window.location.href = 'login.html', 1500);

@@ -74,16 +74,16 @@ const youtubeVideos = [
 ];
 
 let currentFilter = 'all';
-const dom = {};
+const ytDom = {};
 
 function init() {
-  dom.grid = document.getElementById('video-grid');
-  dom.modalOverlay = document.getElementById('modal-overlay');
-  dom.modal = document.getElementById('modal');
+  ytDom.grid = document.getElementById('video-grid');
+  ytDom.modalOverlay = document.getElementById('modal-overlay');
+  ytDom.modal = document.getElementById('modal');
 
   renderGrid('all');
 
-  document.getElementById('filter-tabs').addEventListener('click', (e) => {
+  document.getElementById('filter-tabs')?.addEventListener('click', (e) => {
     const tab = e.target.closest('.filter-tab');
     if (!tab) return;
     document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
@@ -109,29 +109,25 @@ function init() {
     }
   });
 
-  dom.modalOverlay.addEventListener('click', (e) => {
-    if (e.target === dom.modalOverlay) closeModal();
+  ytDom.modalOverlay.addEventListener('click', (e) => {
+    if (e.target === ytDom.modalOverlay) closeModal();
   });
 
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') { closeYouTubePlayer(); closeModal(); }
   });
 
-  document.getElementById('preloader').classList.add('hidden');
+  document.getElementById('preloader')?.classList.add('hidden');
 }
 
-function escHtml(s) {
-  const d = document.createElement('div');
-  d.textContent = s;
-  return d.innerHTML;
-}
+// escHtml is defined in shared.js
 
 function renderGrid(filter) {
   const items = filter === 'all'
     ? youtubeVideos
     : youtubeVideos.filter(v => v.category === filter);
 
-  dom.grid.innerHTML = items.map(v => `
+  ytDom.grid.innerHTML = items.map(v => `
     <div class="video-card" data-video-id="${v.id}">
       <div class="video-thumb">
         <img src="https://img.youtube.com/vi/${v.id}/mqdefault.jpg" alt="${escHtml(v.title)}" loading="lazy">
@@ -151,7 +147,7 @@ function showDetail(videoId) {
   const v = youtubeVideos.find(x => x.id === videoId);
   if (!v) return;
 
-  dom.modal.innerHTML = `
+  ytDom.modal.innerHTML = `
     <button class="modal-close" data-action="close-modal">✕</button>
     <img class="modal-backdrop" src="https://img.youtube.com/vi/${v.id}/maxresdefault.jpg" alt="${escHtml(v.title)}" onerror="this.style.display='none'">
     <div class="modal-body">
@@ -173,13 +169,13 @@ function showDetail(videoId) {
       </div>
     </div>
   `;
-  dom.modalOverlay.classList.add('active');
+  ytDom.modalOverlay.classList.add('active');
   document.body.style.overflow = 'hidden';
 }
 
 function closeModal() {
-  dom.modalOverlay.classList.remove('active');
-  dom.modal.innerHTML = '';
+  ytDom.modalOverlay.classList.remove('active');
+  ytDom.modal.innerHTML = '';
   document.body.style.overflow = '';
 }
 
@@ -201,11 +197,14 @@ function closeYouTubePlayer() {
 }
 
 /* ── Mobile Nav ── */
+let scrollLockCount = 0;
 function lockScroll() {
-  document.body.style.overflow = 'hidden';
+  scrollLockCount++;
+  if (scrollLockCount === 1) document.body.style.overflow = 'hidden';
 }
 function unlockScroll() {
-  document.body.style.overflow = '';
+  scrollLockCount = Math.max(0, scrollLockCount - 1);
+  if (scrollLockCount === 0) document.body.style.overflow = '';
 }
 function toggleMobileNav() {
   let panel = document.getElementById('mobile-nav-panel');
@@ -221,18 +220,18 @@ function toggleMobileNav() {
   panel.style.cssText = `position:fixed;top:${navH}px;left:0;right:0;z-index:999;background:rgba(10,10,15,0.98);backdrop-filter:blur(20px);border-bottom:1px solid var(--glass-border);padding:16px 24px;animation:fadeInUp .2s ease;display:flex;flex-direction:column;gap:12px;max-height:calc(100vh - ${navH}px);overflow-y:auto;overscroll-behavior:contain`;
   const userLinks = Auth.currentUser && Auth.userDoc ? `
     <hr style="border-color:var(--glass-border);margin:4px 0">
-    <a href="profile.html" style="color:var(--text-secondary);font-size:16px;font-weight:500;text-decoration:none;padding:12px 0">👤 Dashboard</a>
-    <a href="profile.html#settings" style="color:var(--text-secondary);font-size:16px;font-weight:500;text-decoration:none;padding:12px 0">⚙️ Settings</a>
-    <button style="color:#ff4444;font-size:16px;font-weight:500;background:none;border:none;padding:12px 0;cursor:pointer;font-family:inherit;text-align:left" onclick="Auth.handleLogout('index.html')">🚪 Sign Out</button>
+    <a href="profile.html" style="color:var(--text-secondary);font-size:16px;font-weight:500;text-decoration:none;padding:12px 0">👤 ${__('Dashboard')}</a>
+    <a href="profile.html#settings" style="color:var(--text-secondary);font-size:16px;font-weight:500;text-decoration:none;padding:12px 0">⚙️ ${__('Settings')}</a>
+    <button style="color:#ff4444;font-size:16px;font-weight:500;background:none;border:none;padding:12px 0;cursor:pointer;font-family:inherit;text-align:left" onclick="Auth.handleLogout('index.html')">🚪 ${__('Sign Out')}</button>
   ` : `
     <hr style="border-color:var(--glass-border);margin:4px 0">
-    <a href="login.html" style="color:var(--accent);font-size:16px;font-weight:600;text-decoration:none;padding:12px 0">🔑 Sign In</a>
+    <a href="login.html" style="color:var(--accent);font-size:16px;font-weight:600;text-decoration:none;padding:12px 0">🔑 ${__('Sign In')}</a>
   `;
   panel.innerHTML = `
-    <a href="home.html" style="color:var(--text-primary);font-size:16px;font-weight:500;text-decoration:none;padding:12px 0">Home</a>
-    <a href="movies.html" style="color:var(--text-secondary);font-size:16px;font-weight:500;text-decoration:none;padding:12px 0">Movies</a>
-    <a href="tv.html" style="color:var(--text-secondary);font-size:16px;font-weight:500;text-decoration:none;padding:12px 0">TV Shows</a>
-    <a href="youtube.html" style="color:var(--text-secondary);font-size:16px;font-weight:500;text-decoration:none;padding:12px 0">\uD83C\uDFAC CBE Movies</a>
+    <a href="home.html" style="color:var(--text-primary);font-size:16px;font-weight:500;text-decoration:none;padding:12px 0">${__('Home')}</a>
+    <a href="movies.html" style="color:var(--text-secondary);font-size:16px;font-weight:500;text-decoration:none;padding:12px 0">${__('Movies')}</a>
+    <a href="tv.html" style="color:var(--text-secondary);font-size:16px;font-weight:500;text-decoration:none;padding:12px 0">${__('TV Shows')}</a>
+    <a href="youtube.html" style="color:var(--text-secondary);font-size:16px;font-weight:500;text-decoration:none;padding:12px 0">\uD83C\uDFAC ${__('CBE Movies')}</a>
     ${userLinks}
   `;
   document.body.appendChild(panel);
@@ -247,3 +246,11 @@ window.toggleMobileNav = toggleMobileNav;
 window.closeMobileNav = closeMobileNav;
 
 init();
+
+window.toggleLang = window.toggleLang || function() {
+  var btn = document.querySelector('.lang-switch');
+  if (btn) btn.textContent = btn.textContent === 'EN' ? 'አማ' : 'EN';
+};
+window.openSearch = window.openSearch || function() {
+  // No-op on youtube page
+};

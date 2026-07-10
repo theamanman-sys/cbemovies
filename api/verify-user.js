@@ -8,10 +8,10 @@ module.exports = async (req, res) => {
   if (req.method !== 'POST') { res.status(405).json({ error: 'Method not allowed' }); return; }
 
   const { uid } = req.body;
-  if (!uid) { res.status(400).json({ error: 'Missing uid' }); return; }
+  if (!uid || typeof uid !== 'string' || uid.length > 128) { res.status(400).json({ error: 'Invalid uid' }); return; }
 
   try {
-    const { db, auth } = getFirebase();
+    const { db, auth, FieldValue } = getFirebase();
 
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -29,8 +29,14 @@ module.exports = async (req, res) => {
       return;
     }
     await db.collection('users').doc(uid).update({ verified: true });
+    await db.collection('notifications').add({
+      type: 'user_verified',
+      userId: uid,
+      verifiedBy: requesterUid,
+      createdAt: FieldValue.serverTimestamp()
+    });
     res.json({ success: true, message: 'User verified' });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'Internal server error' });
   }
 };

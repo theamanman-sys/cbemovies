@@ -1,3 +1,7 @@
+const WHATSAPP_NUMBER = '251900000000';
+const TELEBIRR_ACCOUNT = '+251900000000';
+// TODO: Move these to Firestore settings document (/settings/payment) so admin can update without redeploying
+//       Replace with: const settings = await db.collection('settings').doc('payment').get(); then settings.data().whatsappNumber
 const PLANS = {
   monthly: { name: 'Monthly', price: 299, priceLabel: '299 ETB', devices: 1, save: null },
   yearly: { name: 'Yearly', price: 2999, priceLabel: '2,999 ETB', devices: 2, save: 'Save 16%' }
@@ -11,6 +15,8 @@ const Payment = {
   chapaWindow: null,
 
   init() {
+    if (this._initted) return;
+    this._initted = true;
     const params = new URLSearchParams(location.search);
     const planParam = params.get('plan');
 
@@ -141,7 +147,7 @@ const Payment = {
         correctLevel: QRCode.CorrectLevel ? QRCode.CorrectLevel.H : undefined
       });
     } else {
-      container.innerHTML = '<p style="color:var(--text-secondary);font-size:14px">QR code library loading... <a href="https://wa.me/2519XXXXXXXX?text=My+ref:+' + this.ref + '" target="_blank" style="color:var(--accent)">Click here for WhatsApp</a></p>';
+      container.innerHTML = '<p style="color:var(--text-secondary);font-size:14px">QR code library loading... <a href="https://wa.me/' + WHATSAPP_NUMBER + '?text=My+ref:+' + this.ref + '" target="_blank" style="color:var(--accent)">Click here for WhatsApp</a></p>';
     }
 
     const refEl = document.getElementById('qr-ref-code');
@@ -154,7 +160,7 @@ const Payment = {
 
     container.innerHTML = '';
 
-    const text = 'TELEBIRR PAY\nMerchant: CBE Movies\nAccount: +251900000000\nRef: ' + this.ref + '\nAmount: ' + (PLANS[this.plan]?.priceLabel || '');
+    const text = 'TELEBIRR PAY\nMerchant: CBE Movies\nAccount: ' + TELEBIRR_ACCOUNT + '\nRef: ' + this.ref + '\nAmount: ' + (PLANS[this.plan]?.priceLabel || '');
 
     if (typeof QRCode !== 'undefined') {
       new QRCode(container, {
@@ -173,10 +179,14 @@ const Payment = {
       this.showToast('Generate the QR code first');
       return;
     }
-    const link = document.createElement('a');
-    link.download = 'CBE-Movies-' + (this.plan || 'subscription') + '-' + this.ref + '.png';
-    link.href = canvas.toDataURL('image/png');
-    link.click();
+    try {
+      const link = document.createElement('a');
+      link.download = 'CBE-Movies-' + (this.plan || 'subscription') + '-' + this.ref + '.png';
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    } catch (err) {
+      this.showToast('Could not download QR. Try taking a screenshot instead.');
+    }
   },
 
   updateWhatsAppLink() {
@@ -188,7 +198,7 @@ const Payment = {
       '\n\nMy Reference: ' + this.ref +
       '\n\nI have attached my payment screenshot and subscription QR code.'
     );
-    link.href = 'https://wa.me/251900000000?text=' + msg;
+    link.href = 'https://wa.me/' + WHATSAPP_NUMBER + '?text=' + msg;
   },
 
   shareViaWhatsApp() {
@@ -212,6 +222,12 @@ const Payment = {
 
     panel.style.display = 'none';
     loading.style.display = 'block';
+
+    this._superAppTimeout = setTimeout(() => {
+      loading.style.display = 'none';
+      panel.style.display = 'block';
+      errorEl.textContent = 'Payment timed out. Please try again.';
+    }, 60000);
 
     try {
       const idToken = await Auth.currentUser.getIdToken();
@@ -249,8 +265,10 @@ const Payment = {
         subscriptionPlan: this.plan
       });
 
+      clearTimeout(this._superAppTimeout);
       this.showPaymentSuccess();
     } catch (err) {
+      clearTimeout(this._superAppTimeout);
       errorEl.textContent = err.message;
       loading.style.display = 'none';
       panel.style.display = 'block';
@@ -289,12 +307,13 @@ const Payment = {
           const verifyData = await verifyRes.json();
           if (verifyData.verified) {
             clearInterval(checkInterval);
+            clearTimeout(this._chapaTimeout);
             this.showPaymentSuccess();
           }
-        } catch {}
+        } catch (e) { console.warn('Chapa poll error:', e); }
       }, 3000);
 
-      setTimeout(() => {
+      this._chapaTimeout = setTimeout(() => {
         clearInterval(checkInterval);
         loading.style.display = 'none';
         panel.style.display = 'block';
@@ -334,6 +353,10 @@ const Payment = {
     const errorEl = document.getElementById('payment-error');
     if (!ref) { errorEl.textContent = 'Enter your Telebirr transaction reference'; return; }
 
+    const btn = document.getElementById('telebirr-verify-btn');
+    btn.disabled = true;
+    btn.textContent = 'Verifying...';
+
     try {
       const payment = await Auth.createPayment(Auth.currentUser.uid, this.plan);
       await db.collection('payments').doc(payment.id).update({
@@ -344,6 +367,9 @@ const Payment = {
       this.showPaymentSuccess();
     } catch (err) {
       errorEl.textContent = err.message;
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Verify Payment';
     }
   },
 
@@ -366,6 +392,8 @@ const Payment = {
           this.showPaymentSuccess();
           return;
         }
+        errorEl.textContent = 'Payment not confirmed on Chapa. Please complete the payment on the Chapa checkout page and try again.';
+        return;
       }
 
       const payment = await Auth.createPayment(Auth.currentUser.uid, this.plan);

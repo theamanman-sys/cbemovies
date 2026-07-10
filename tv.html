@@ -34,7 +34,7 @@
     </ul>
     <div class="nav-actions">
       <div class="nav-user-wrapper" id="nav-user-wrapper">
-        <button class="nav-user-trigger" id="nav-user-trigger">
+        <button class="nav-user-trigger" id="nav-user-trigger" aria-haspopup="true" aria-expanded="false">
           <span class="nav-user-avatar" id="nav-user-avatar">U</span>
           <span class="nav-user-name" id="nav-user-name">User</span>
           <span class="nav-user-caret">▼</span>
@@ -56,7 +56,7 @@
       <button class="nav-search-btn" onclick="openSearch()" title="Search (Ctrl+K)">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
       </button>
-      <button class="mobile-menu-btn">☰</button>
+      <button class="mobile-menu-btn" aria-label="Toggle navigation menu">☰</button>
     </div>
   </nav>
 
@@ -161,7 +161,7 @@
     </div>
     <div class="player-container">
       <div class="player-main">
-        <iframe id="player-frame" allow="autoplay; encrypted-media" sandbox="allow-scripts allow-same-origin allow-forms"></iframe>
+        <iframe id="player-frame" title="Video Player" allow="autoplay; encrypted-media" sandbox="allow-scripts allow-same-origin allow-forms"></iframe>
         <div id="subtitle-next-banner" class="next-banner hidden">
           <span id="subtitle-next-text" class="next-banner-text"></span>
           <span id="subtitle-next-countdown" class="next-banner-countdown"></span>
@@ -189,14 +189,16 @@
   <script src="js/cbe-superapp.js"></script>
   <script src="js/i18n.js"></script>
   <script src="js/api.js"></script>
+  <script src="js/shared.js"></script>
 
-  <script src="js/app.js"></script>
-  <script src="js/tv.js"></script>
   <!-- Trailer Modal -->
   <div class="trailer-modal" id="trailer-modal">
     <button class="trailer-close" onclick="closeTrailer()">✕</button>
-    <iframe id="trailer-frame" allow="autoplay;fullscreen"></iframe>
+    <iframe id="trailer-frame" title="Trailer" allow="autoplay;fullscreen"></iframe>
   </div>
+
+  <script src="js/app.js"></script>
+  <script src="js/tv.js"></script>
 
   <script>
   function setupUserNav(user, doc) {

@@ -1,0 +1,29 @@
+[
+  {
+    "title": "hanami",
+    "year": "2025",
+    "type": "movie"
+  },
+  {
+    "title": "All That's Left of You",
+    "year": "2025",
+    "genre": "Drama",
+    "rating": "7.8",
+    "type": "movie"
+  },
+  {
+    "title": "Sewenetwa",
+    "year": "2019",
+    "genre": "Drama",
+    "actors": ["Eskedar Girmay"],
+    "type": "movie",
+    "description": "Sewinetwa Trailer"
+  },
+  {
+    "title": "Khartoum",
+    "year": "2025",
+    "genre": "Documentary",
+    "rating": "7.0",
+    "type": "movie"
+  }
+]

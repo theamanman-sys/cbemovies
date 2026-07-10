@@ -1,12 +1,12 @@
-const API = {
+window.API = {
   VIDAPI_BASE: 'https://vidapi.ru',
   PRIMARY_PLAYER: 'https://vidsrc.wiki/embed',
   FALLBACK_PLAYER: 'https://vidphantom.com',
   FALLBACK_PLAYER_2: 'https://apiplayer.ru/embed',
   PLAYER_THEME: 'color=910096&sub=en',
-  TMDB_BASE: 'https://api.themoviedb.org/3',
+  TMDB_BASE: '/api/tmdb',
   IMG_BASE: 'https://image.tmdb.org/t/p',
-  TMDB_TOKEN: 'eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJhMzQyZWNhZjBjNzNmYzU1NmI1NDk3NzQwYmJmZmE5MiIsIm5iZiI6MTc3NTIyMDE5OS42MDA5OTk4LCJzdWIiOiI2OWNmYjVlNzY4YjcwYWNmYjgyZjc2MmQiLCJzY29wZXMiOlsiYXBpX3JlYWQiXSwidmVyc2lvbiI6MX0.jxycsZVC7uLmewooOKm20BvZUZ5s5H4qPsalI3FBmok',
+  TMDB_TOKEN: null,
 
   tmdbCache: {},
 
@@ -19,13 +19,10 @@ const API = {
     return JSON.parse(text);
   },
 
-  getTmdbHeaders() {
-    return { Authorization: `Bearer ${this.TMDB_TOKEN}` };
-  },
-
   async tmdbFetch(path) {
-    const url = `${this.TMDB_BASE}${path}${path.includes('?') ? '&' : '?'}language=en-US`;
-    return this.fetchJSON(url, this.getTmdbHeaders());
+    const lang = 'en-US';
+    const url = `${this.TMDB_BASE}?path=${encodeURIComponent(path.replace(/^\//, ''))}&language=${lang}`;
+    return this.fetchJSON(url);
   },
 
   /* ── Image URLs ── */
@@ -59,9 +56,10 @@ const API = {
   },
 
   getPlayerUrls(item, season = 1, episode = 1, pos = 0) {
-    return [
-      this._buildPlayerUrl(this.PRIMARY_PLAYER, item, season, episode, pos) + '&autoplay=1',
-    ];
+    const primary = this._buildPlayerUrl(this.PRIMARY_PLAYER, item, season, episode, pos) + '&autoplay=1';
+    const fallback1 = this._buildPlayerUrl(this.FALLBACK_PLAYER, item, season, episode, pos) + '&autoplay=1';
+    const fallback2 = this._buildPlayerUrl(this.FALLBACK_PLAYER_2, item, season, episode, pos) + '&autoplay=1';
+    return [primary, fallback1, fallback2];
   },
 
   _proxyUrl(embedUrl) {
@@ -216,10 +214,10 @@ const API = {
       this.discoverMovie({ with_original_language: 'am', sort_by: 'popularity.desc', page: 1 }),
       this.searchTmdbMovie('ethiopian')
     ]);
-    const seen = new Set();
+    const seen = new Set(amharic.map(a => a.tmdb_id));
     const merged = [...amharic];
     for (const item of ethSearch) {
-      if (!seen.has(item.tmdb_id) && !amharic.some(a => a.tmdb_id === item.tmdb_id)) {
+      if (!seen.has(item.tmdb_id)) {
         seen.add(item.tmdb_id);
         merged.push(item);
       }
@@ -375,7 +373,7 @@ const API = {
               tvResult._trailer = { key: seasonTrailer.key, name: seasonTrailer.name };
             }
           }
-        } catch {}
+        } catch (err) { console.warn('[API] Season trailer fetch failed:', err); }
       }
 
       return tvResult;
@@ -449,8 +447,8 @@ const API = {
     const key = `${mediaType}_${tmdbId}`;
     if (this.translationCache[key]) return this.translationCache[key];
     try {
-      const url = `${this.TMDB_BASE}/${mediaType}/${tmdbId}/translations`;
-      const data = await this.fetchJSON(url, this.getTmdbHeaders());
+      const url = `${this.TMDB_BASE}?path=${mediaType}/${tmdbId}/translations&language=en-US`;
+      const data = await this.fetchJSON(url);
       this.translationCache[key] = data;
       return data;
     } catch {

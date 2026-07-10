@@ -7,7 +7,14 @@ module.exports = async (req, res) => {
     return;
   }
   const upstreamUrl = decodeURIComponent(url);
-  if (!ALLOWED_DOMAINS.some(d => upstreamUrl.includes(d))) {
+  let parsedUrl;
+  try { parsedUrl = new URL(upstreamUrl); } catch { res.status(400).json({ error: 'Invalid upstream URL' }); return; }
+  if (parsedUrl.protocol !== 'https:' && parsedUrl.protocol !== 'http:') { res.status(403).json({ error: 'Protocol not allowed' }); return; }
+  if (parsedUrl.port && !['80', '443', ''].includes(parsedUrl.port)) { res.status(403).json({ error: 'Port not allowed' }); return; }
+  const hostname = parsedUrl.hostname.toLowerCase();
+  // eslint-disable-next-line no-control-regex
+  if (/[\x00-\x1f\x7f\u2000-\u200f\u2028-\u202f\u205f-\u206f\uff00-\uffef]/.test(hostname)) { res.status(403).json({ error: 'Invalid hostname' }); return; }
+  if (!ALLOWED_DOMAINS.includes(hostname)) {
     res.status(403).json({ error: 'Domain not allowed' });
     return;
   }
@@ -27,7 +34,7 @@ module.exports = async (req, res) => {
       res.status(200).json(data);
       return;
     }
-  } catch {}
+  } catch (err) { /* primary stream failed, try fallback */ }
 
   if (imdb) {
     const cleanImdb = imdb.startsWith('tt') ? imdb : `tt${imdb}`;
@@ -46,7 +53,7 @@ module.exports = async (req, res) => {
         res.status(200).json(data);
         return;
       }
-    } catch {}
+    } catch (err) { /* fallback failed */ }
   }
 
   res.setHeader('Access-Control-Allow-Origin', '*');

@@ -1,3 +1,4 @@
+const crypto = require('crypto');
 const getFirebase = require('./_firebase');
 
 module.exports = async (req, res) => {
@@ -8,10 +9,37 @@ module.exports = async (req, res) => {
   if (req.method !== 'POST') { res.status(405).json({ error: 'Method not allowed' }); return; }
 
   try {
-    const { db, FieldValue, Timestamp } = getFirebase();
-    const { paymentId, transactionRef, secret } = req.body;
-    if (secret !== process.env.WEBHOOK_SECRET) {
-      res.status(403).json({ error: 'Invalid secret' });
+    const { db, FieldValue, Timestamp, auth } = getFirebase();
+    const { paymentId, transactionRef } = req.body;
+    if (!paymentId || typeof paymentId !== 'string' || paymentId.length > 128) {
+      res.status(400).json({ error: 'Invalid paymentId' });
+      return;
+    }
+
+    const webhookSecret = process.env.WEBHOOK_SECRET;
+    const signature = req.headers['x-webhook-signature'];
+    let authenticated = false;
+
+    if (webhookSecret && signature && typeof signature === 'string') {
+      const expectedSig = crypto.createHmac('sha256', webhookSecret).update(paymentId).digest('hex');
+      const sigBuf = Buffer.from(signature);
+      const expBuf = Buffer.from(expectedSig);
+      if (sigBuf.length === expBuf.length && crypto.timingSafeEqual(sigBuf, expBuf)) {
+        authenticated = true;
+      }
+    }
+
+    if (!authenticated) {
+      const authHeader = req.headers.authorization;
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        const idToken = authHeader.split('Bearer ')[1];
+        await auth.verifyIdToken(idToken);
+        authenticated = true;
+      }
+    }
+
+    if (!authenticated) {
+      res.status(401).json({ error: 'Missing or invalid authentication' });
       return;
     }
     const paymentRef = db.collection('payments').doc(paymentId);
@@ -34,6 +62,6 @@ module.exports = async (req, res) => {
     });
     res.json({ success: true, message: 'Subscription activated' });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'Internal server error' });
   }
 };

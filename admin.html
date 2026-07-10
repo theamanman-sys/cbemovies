@@ -127,6 +127,7 @@
   const $ = id => document.getElementById(id);
   let allUsers = [];
   let allPayments = [];
+  let currentUserIsSuper = false;
 
   function toggleMobileNav() {
     let panel = document.getElementById('mobile-nav-panel');
@@ -170,6 +171,7 @@
       setTimeout(() => window.location.href = 'home.html', 1500);
       return;
     }
+    currentUserIsSuper = doc.role === 'superadmin';
     setupUserNav(user, doc);
     await loadData();
   });
@@ -222,38 +224,52 @@
         <td class="action-cell">
           ${!u.verified ? `<button class="admin-btn verify-btn" data-uid="${u.id}" data-name="${esc(u.firstName + ' ' + u.lastName)}">Verify</button>` : ''}
           <button class="admin-btn edit-btn" data-uid="${u.id}" data-first="${esc(u.firstName)}" data-last="${esc(u.lastName)}" data-phone="${esc(u.phone || '')}">Edit</button>
-          ${u.role === 'user' ? `<button class="admin-btn" onclick="openAdminModal('${u.id}','${esc(u.email)}')">Make Admin</button>` : ''}
+          ${currentUserIsSuper && u.role === 'user' ? `<button class="admin-btn make-admin-btn" data-uid="${u.id}" data-email="${esc(u.email)}">Make Admin</button>` : ''}
         </td>
       </tr>
     `).join('');
 
-    $('users-tbody').querySelectorAll('.verify-btn').forEach(b => b.addEventListener('click', async function() {
-      if (!confirm(`Approve ${this.dataset.name}?`)) return;
+  }
+
+  $('users-tbody').addEventListener('click', async (e) => {
+    const btn = e.target.closest('.admin-btn');
+    if (!btn) return;
+    const uid = btn.dataset.uid;
+
+    if (btn.classList.contains('verify-btn')) {
+      if (!confirm(`Approve ${btn.dataset.name}?`)) return;
       try {
-        await verifyUser(this.dataset.uid);
+        await verifyUser(uid);
       } catch (err) {
         showToast(err.message, 'error');
       }
-    }));
-    $('users-tbody').querySelectorAll('.edit-btn').forEach(b => {
-      b.addEventListener('click', async () => {
-        const uid = b.dataset.uid;
-        const first = prompt('First Name:', b.dataset.first);
-        if (first === null) return;
-        const last = prompt('Last Name:', b.dataset.last);
-        if (last === null) return;
-        const phone = prompt('Phone:', b.dataset.phone);
-        if (phone === null) return;
-        try {
-          await Auth.updateProfile(uid, { firstName: first, lastName: last, phone });
-          showToast('User updated', 'success');
-          await loadData();
-        } catch (err) {
-          showToast(err.message, 'error');
-        }
-      });
-    });
-  }
+    } else if (btn.classList.contains('edit-btn')) {
+      const first = prompt('First Name:', btn.dataset.first);
+      if (first === null) return;
+      const last = prompt('Last Name:', btn.dataset.last);
+      if (last === null) return;
+      const phone = prompt('Phone:', btn.dataset.phone);
+      if (phone === null) return;
+      try {
+        await Auth.updateProfile(uid, { firstName: first, lastName: last, phone });
+        showToast('User updated', 'success');
+        await loadData();
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
+    } else if (btn.classList.contains('make-admin-btn')) {
+      const email = btn.dataset.email;
+      const role = prompt(`Assign role for ${btn.dataset.email} (admin or superadmin):`, 'admin');
+      if (!role || (role !== 'admin' && role !== 'superadmin')) return;
+      try {
+        await Auth.createAdminUser(uid, email, role);
+        showToast('Admin created', 'success');
+        await loadData();
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
+    }
+  });
 
   function renderVerification() {
     const pending = allUsers.filter(u => !u.verified);
@@ -310,7 +326,6 @@
         <small>${n.createdAt ? new Date(n.createdAt.toMillis ? n.createdAt.toMillis() : n.createdAt).toLocaleString() : ''}</small>
       </div>
     `).join('');
-    await Promise.all(notifs.filter(n => !n.read).map(n => Auth.markNotificationRead(n.id).catch(() => {})));
   }
 
   async function verifyUser(uid) {
@@ -319,19 +334,9 @@
     await loadData();
   }
 
-  async function openAdminModal(uid, email) {
-    const role = prompt('Assign role (admin or superadmin):', 'admin');
-    if (!role || (role !== 'admin' && role !== 'superadmin')) return;
-    try {
-      await Auth.createAdminUser(uid, email, role);
-      showToast('Admin created', 'success');
-      await loadData();
-    } catch (err) {
-      showToast(err.message, 'error');
-    }
-  }
-
-  $('user-search').addEventListener('input', renderUsers);
+  $('user-search').addEventListener('input', () => {
+    if (allUsers.length) renderUsers();
+  });
 
   /* Sections */
   document.querySelectorAll('.admin-nav-item[data-section]').forEach(btn => {

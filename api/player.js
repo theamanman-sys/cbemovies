@@ -14,7 +14,13 @@ const ALLOWED_DOMAINS = [
 function isAllowedUrl(url) {
   try {
     const parsed = new URL(url);
-    return ALLOWED_DOMAINS.some(d => parsed.hostname === d || parsed.hostname.endsWith('.' + d));
+    if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') return false;
+    if (parsed.port && !['80', '443', ''].includes(parsed.port)) return false;
+    const hostname = parsed.hostname.toLowerCase();
+    // eslint-disable-next-line no-control-regex
+    if (/[\x00-\x1f\x7f\u2000-\u200f\u2028-\u202f\u205f-\u206f\uff00-\uffef]/.test(hostname)) return false;
+    if (hostname !== decodeURIComponent(hostname)) return false;
+    return ALLOWED_DOMAINS.some(d => hostname === d || hostname.endsWith('.' + d));
   } catch { return false; }
 }
 
@@ -46,8 +52,8 @@ module.exports = async (req, res) => {
     if (!response.ok) { res.status(response.status).end(); return; }
     let html = await response.text();
     // Strip anti-embed scripts that detect iframe context
-    html = html.replace(/<script[^>]*>[\s\S]*?(?:die\(|self\.location|top\.location|parent\.location|frameElement|window\.(?:self|top|parent))[\s\S]*?<\/script>/gi, '');
-    html = html.replace(/<script[^>]*>[\s\S]*?disable-devtool[\s\S]*?<\/script>/gi, '');
+    html = html.replace(/<script[\s\S]*?(?:die\s*\(|self\.location|top\.location|parent\.location|frameElement|window\s*\.\s*(?:self|top|parent)|top\s*!==\s*self|self\s*!==\s*top)[\s\S]*?<\/script>/gi, '');
+    html = html.replace(/<script[\s\S]*?disable-devtool[\s\S]*?<\/script>/gi, '');
     // Strip known ad/tracker CDN scripts
     html = html.replace(/<script[^>]*\s+src=["'](?:https?:)?\/\/(?:acscdn\.com|dpjf9a2rbjbvp\.cloudfront\.net|s10\.histats\.com)[^"']*["'][^>]*><\/script>/gi, '');
     // Cloudflare Turnstile may be needed by HLS proxy to serve streams
@@ -57,7 +63,7 @@ module.exports = async (req, res) => {
     html = html.replace('</body>', '<script>\n' +
 '(function(){\n' +
 '  function hook(v){\n' +
-'    function send(){try{parent.postMessage({type:\'cbemovies-progress\',currentTime:v.currentTime},\'*\')}catch(e){}}\n' +
+'    function send(){try{parent.postMessage({type:\'cbemovies-progress\',currentTime:v.currentTime},\'https://cbemovies.vercel.app\')}catch(e){}}\n' +
 '    v.addEventListener(\'timeupdate\',send);\n' +
 '    v.addEventListener(\'play\',send);\n' +
 '    v.addEventListener(\'seeked\',send);\n' +
@@ -73,5 +79,5 @@ module.exports = async (req, res) => {
 '</script></body>');
     res.setHeader('Content-Type', 'text/html');
     res.status(200).send(html);
-  } catch { res.status(502).end(); }
+  } catch (err) { res.status(502).json({ error: 'Upstream fetch failed' }); }
 };
