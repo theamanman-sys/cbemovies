@@ -23,7 +23,7 @@ module.exports = async (req, res) => {
     return;
   }
 
-  const cleanPath = path.replace(/^\/+/, '');
+  const cleanPath = path.replace(/^\/+/, '').split('?')[0];
   if (!isPathAllowed(cleanPath)) {
     res.status(403).json({ error: 'Path not allowed' });
     return;
@@ -31,6 +31,9 @@ module.exports = async (req, res) => {
 
   const qs = new URLSearchParams(req.query);
   qs.delete('path');
+  // Merge any query params embedded in the path value (e.g. ?page=1 in path)
+  const pathQuery = path.includes('?') ? new URLSearchParams(path.split('?')[1]) : new URLSearchParams();
+  for (const [k, v] of pathQuery) { if (!qs.has(k)) qs.set(k, v); }
   qs.set('language', qs.get('language') || 'en-US');
 
   const url = `${TMDB_BASE}/${cleanPath}?${qs.toString()}`;
