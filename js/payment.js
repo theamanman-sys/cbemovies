@@ -230,6 +230,9 @@ const Payment = {
     }, 60000);
 
     try {
+      const accessTokenResult = await CbeSuperApp.fetchAccessToken();
+      const accessToken = accessTokenResult?.access_token || accessTokenResult?.accessToken || '';
+
       const idToken = await Auth.currentUser.getIdToken();
       const signRes = await fetch('/api/cbe-payment', {
         method: 'POST',
@@ -239,9 +242,11 @@ const Payment = {
       const signData = await signRes.json();
       if (!signData.success) throw new Error(signData.error || 'Payment setup failed');
 
+      const authPayload = { ...signData.authPayload, x_access_token: accessToken };
+
       const payResult = await CbeSuperApp.initiatePayment(
         { ...signData.orderPayload, sign: signData.sign, confirm_payload: signData.confirm_payload },
-        { ...signData.authPayload, xAccessToken: '' },
+        { ...authPayload, sign: signData.auth_sign, confirm_payload: signData.auth_confirm_payload },
         'CBE Movies'
       );
 

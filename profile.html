@@ -69,6 +69,7 @@
     <nav class="profile-tabs-nav">
       <button class="profile-tab-btn active" data-tab="account">👤 My Account</button>
       <button class="profile-tab-btn" data-tab="subscription">💳 Subscription</button>
+      <button class="profile-tab-btn" data-tab="superapp">🏦 CBE SuperApp</button>
       <button class="profile-tab-btn" data-tab="watchlist">🤍 Watchlist</button>
       <button class="profile-tab-btn" data-tab="history">🕐 History</button>
       <button class="profile-tab-btn" data-tab="settings">⚙️ Settings</button>
@@ -133,6 +134,29 @@
               <li>Save 16%</li>
             </ul>
             <button class="auth-btn sub-select-btn" data-plan="yearly">Choose Plan</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- CBE SuperApp Tab -->
+      <div class="profile-tab" id="tab-superapp">
+        <h2>CBE SuperApp</h2>
+        <div class="profile-card">
+          <div class="superapp-status" id="superapp-status">
+            <div class="superapp-status-icon" id="superapp-status-icon">⏳</div>
+            <div class="superapp-status-text">
+              <h3 id="superapp-status-title">Checking connection...</h3>
+              <p id="superapp-status-desc">Detecting CBE SuperApp environment</p>
+            </div>
+          </div>
+          <div class="superapp-actions" id="superapp-actions" style="display:none">
+            <button class="auth-btn" id="superapp-pay-btn">Pay with SuperApp</button>
+          </div>
+        </div>
+        <div class="profile-card" style="margin-top:16px">
+          <h3>Payment History</h3>
+          <div id="superapp-payment-history">
+            <p class="empty-state">No SuperApp payments yet.</p>
           </div>
         </div>
       </div>
@@ -348,6 +372,7 @@
     renderSubscription(doc);
     renderWatchlist(doc.watchlist);
     renderHistory(doc.history);
+    renderSuperApp(doc);
   }
 
   function switchTab(name) {
@@ -486,6 +511,47 @@
       </div>
     `).join('');
   }
+
+  /* CBE SuperApp Dashboard */
+  function renderSuperApp(doc) {
+    const icon = $('superapp-status-icon');
+    const title = $('superapp-status-title');
+    const desc = $('superapp-status-desc');
+    const actions = $('superapp-actions');
+    const historyEl = $('superapp-payment-history');
+
+    const isAvailable = typeof CbeSuperApp !== 'undefined' && CbeSuperApp.isAvailable();
+    if (isAvailable) {
+      icon.textContent = '🟢';
+      title.textContent = 'Connected to CBE SuperApp';
+      desc.textContent = 'You can pay for subscriptions directly from your SuperApp wallet.';
+      actions.style.display = 'block';
+    } else {
+      icon.textContent = '⚪';
+      title.textContent = 'Not in SuperApp environment';
+      desc.textContent = 'Open this page inside the CBE SuperApp to use SuperApp payments.';
+      actions.style.display = 'none';
+    }
+
+    if (doc && doc.superappPayments && doc.superappPayments.length > 0) {
+      historyEl.innerHTML = doc.superappPayments.slice(0, 20).map(p => `
+        <div class="wl-item" style="padding:12px">
+          <div class="wl-info">
+            <strong>${esc(p.plan || '')} plan</strong>
+            <span>${p.amount || 0} ETB</span>
+            <span style="font-size:12px;color:${p.status === 'verified' ? '#4caf50' : 'var(--text-secondary)'}">${p.status || 'pending'}</span>
+            <span style="font-size:12px;color:var(--text-secondary)">${p.date ? new Date(p.date).toLocaleDateString() : ''}</span>
+          </div>
+        </div>
+      `).join('');
+    } else {
+      historyEl.innerHTML = '<p class="empty-state">No SuperApp payments yet.</p>';
+    }
+  }
+
+  $('superapp-pay-btn')?.addEventListener('click', () => {
+    window.location.href = 'payment.html?plan=monthly&method=superapp';
+  });
 
   /* Logout */
   $('logout-btn').addEventListener('click', async () => {

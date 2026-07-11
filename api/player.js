@@ -62,8 +62,9 @@ module.exports = async (req, res) => {
     // Inject postMessage progress relay from video element
     html = html.replace('</body>', '<script>\n' +
 '(function(){\n' +
+'  var ORIGIN = ' + JSON.stringify(process.env.BASE_URL || 'https://cbemovies.vercel.app') + ';\n' +
 '  function hook(v){\n' +
-'    function send(){try{parent.postMessage({type:\'cbemovies-progress\',currentTime:v.currentTime},\'https://cbemovies.vercel.app\')}catch(e){}}\n' +
+'    function send(){try{parent.postMessage({type:\'cbemovies-progress\',currentTime:v.currentTime},ORIGIN)}catch(e){}}\n' +
 '    v.addEventListener(\'timeupdate\',send);\n' +
 '    v.addEventListener(\'play\',send);\n' +
 '    v.addEventListener(\'seeked\',send);\n' +

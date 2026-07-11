@@ -5,7 +5,12 @@ async function verifyAdmin(req) {
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith('Bearer ')) return null;
   const idToken = authHeader.split('Bearer ')[1];
-  const decodedToken = await auth.verifyIdToken(idToken);
+  let decodedToken;
+  try {
+    decodedToken = await auth.verifyIdToken(idToken);
+  } catch (err) {
+    return null;
+  }
   const doc = await db.collection('users').doc(decodedToken.uid).get();
   if (!doc.exists) return null;
   const role = doc.data().role;

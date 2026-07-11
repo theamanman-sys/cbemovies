@@ -2,7 +2,8 @@ const crypto = require('crypto');
 const getFirebase = require('./_firebase');
 
 module.exports = async (req, res) => {
-  const allowedOrigins = ['https://cbemovies.vercel.app'];
+  const baseUrl = process.env.BASE_URL || 'https://cbemovies.vercel.app';
+  const allowedOrigins = [baseUrl];
   const origin = req.headers.origin;
   if (origin && allowedOrigins.includes(origin)) {
     res.setHeader('Access-Control-Allow-Origin', origin);

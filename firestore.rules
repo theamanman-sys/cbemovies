@@ -13,10 +13,17 @@ service cloud.firestore {
         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['admin', 'superadmin']
       );
 
-      // User can write their own data
-      allow create: if request.auth != null && request.auth.uid == userId;
+      // User can create their own data (no role/verified/subscribed fields at creation beyond defaults)
+      allow create: if request.auth != null && request.auth.uid == userId
+        && request.resource.data.keys().hasOnly(['email','phone','username','firstName','lastName','role','verified','subscribed','subscriptionEnd','subscriptionPlan','createdAt','watchlist','history','settings','lastLogin','superappTokenHash'])
+        && request.resource.data.role == 'user'
+        && request.resource.data.verified == false
+        && request.resource.data.subscribed == false;
+
+      // Users can update only safe fields on their own doc; admins can update anything
       allow update: if request.auth != null && (
-        request.auth.uid == userId ||
+        (request.auth.uid == userId &&
+         !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role','verified','subscribed','subscriptionEnd','subscriptionPlan'])),
         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['admin', 'superadmin']
       );
 

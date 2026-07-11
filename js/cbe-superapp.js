@@ -10,11 +10,9 @@ const CbeSuperApp = {
     return !!this.sdk;
   },
 
-  _send(functionName, params, callbackName) {
+  _send(functionName, params) {
     if (!this.isAvailable()) return;
-    const msg = { functionName, params };
-    if (callbackName) msg.callbackName = callbackName;
-    this.sdk.send(JSON.stringify(msg));
+    this.sdk.send(JSON.stringify({ functionName, params }));
   },
 
   _makeCallback(timeout = 30000) {
@@ -34,14 +32,14 @@ const CbeSuperApp = {
     return { name, promise };
   },
 
-  async fetchAccessToken(appCode) {
+  async fetchAccessToken(appCode, customerIdentifier) {
     if (!this.isAvailable()) return null;
     const cb = this._makeCallback();
     this._send('fetchAccessToken', {
       appcode: appCode || this.APP_CODE,
-      callbackName: cb.name,
-      customer_identifier: ''
-    }, cb.name);
+      customer_identifier: customerIdentifier || '',
+      callbackName: cb.name
+    });
     return cb.promise;
   },
 
@@ -51,9 +49,9 @@ const CbeSuperApp = {
     this._send('initiatePayment', {
       orderPayload,
       authPayload,
-      callbackName: cb.name,
-      appName: appName || 'CBE Movies'
-    }, cb.name);
+      appName: appName || 'CBE Movies',
+      callbackName: cb.name
+    });
     return cb.promise;
   },
 
@@ -63,7 +61,7 @@ const CbeSuperApp = {
     this._send('requestPermissions', {
       permissions,
       callbackName: cb.name
-    }, cb.name);
+    });
     return cb.promise;
   },
 
@@ -72,7 +70,7 @@ const CbeSuperApp = {
     const cb = this._makeCallback();
     this._send('fetchCurrentLocation', {
       callbackName: cb.name
-    }, cb.name);
+    });
     return cb.promise;
   }
 };

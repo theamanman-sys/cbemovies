@@ -1,4 +1,5 @@
 const crypto = require('crypto');
+const stringify = require('json-stable-stringify');
 const getFirebase = require('./_firebase');
 const nacl = require('tweetnacl');
 const { toByteArray, fromByteArray } = require('base64-js');
@@ -56,7 +57,7 @@ module.exports = async (req, res) => {
       credit_account_number: ''
     };
 
-    const canonicalString = JSON.stringify(contentToSign, Object.keys(contentToSign).sort());
+    const canonicalString = stringify(contentToSign);
 
     const hmac = crypto.createHmac('sha256', appSecret);
     hmac.update(canonicalString);
@@ -80,12 +81,35 @@ module.exports = async (req, res) => {
       createdAt: FieldValue.serverTimestamp()
     });
 
+    const authPayload = {
+      x_access_token: '',
+      app_code: appCode,
+      merchant_code: merchantCode,
+      total_amount: amount,
+      currency: 'ETB'
+    };
+    const authCanonical = stringify(authPayload);
+    const authHmac = crypto.createHmac('sha256', appSecret);
+    authHmac.update(authCanonical);
+    const authConfirmPayload = authHmac.digest('hex');
+
+    let authSign = '';
+    if (privateKeyB64) {
+      const sk = toByteArray(privateKeyB64);
+      const msgBytes = Buffer.from(authCanonical, 'utf-8');
+      const sig = nacl.sign.detached(msgBytes, sk);
+      authSign = fromByteArray(sig);
+    }
+
     res.json({
       success: true,
       paymentId: paymentRef.id,
       orderPayload: contentToSign,
       sign,
-      confirm_payload: confirmPayload
+      confirm_payload: confirmPayload,
+      authPayload,
+      auth_sign: authSign,
+      auth_confirm_payload: authConfirmPayload
     });
   } catch (err) {
     res.status(500).json({ error: 'Internal server error' });

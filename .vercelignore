@@ -1,0 +1,9 @@
+CBE-MOVIES-SESSION.md
+firebase.json
+firestore.rules
+.eslintrc.json
+.kilo/
+.sixth/
+.git/
+.gitignore
+*.md

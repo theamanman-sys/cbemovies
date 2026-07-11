@@ -1,6 +1,34 @@
+const getFirebase = require('./_firebase');
 const ALLOWED_DOMAINS = ['brightpathsignals.com', 'streamdata.vaplayer.ru'];
 
 module.exports = async (req, res) => {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  if (req.method === 'OPTIONS') { res.status(200).end(); return; }
+
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    res.status(401).json({ error: 'Missing authorization' }); return;
+  }
+  try {
+    const { auth, db } = getFirebase();
+    const idToken = authHeader.split('Bearer ')[1];
+    const decoded = await auth.verifyIdToken(idToken);
+    const userDoc = await db.collection('users').doc(decoded.uid).get();
+    if (!userDoc.exists) { res.status(401).json({ error: 'User not found' }); return; }
+    const userData = userDoc.data();
+    if (userData.role !== 'admin' && userData.role !== 'superadmin') {
+      if (!userData.subscribed || !userData.subscriptionEnd) {
+        res.status(403).json({ error: 'Subscription required' }); return;
+      }
+      const end = userData.subscriptionEnd.toDate ? userData.subscriptionEnd.toDate() : new Date(userData.subscriptionEnd);
+      if (end <= new Date()) { res.status(403).json({ error: 'Subscription expired' }); return; }
+    }
+  } catch (err) {
+    res.status(401).json({ error: 'Invalid authorization' }); return;
+  }
+
   const { url, imdb, type = 'movie', season, episode } = req.query;
   if (!url) {
     res.status(400).json({ error: 'Missing url' });
@@ -29,7 +57,6 @@ module.exports = async (req, res) => {
     });
     if (response.ok) {
       const data = await response.json();
-      res.setHeader('Access-Control-Allow-Origin', '*');
       res.setHeader('Cache-Control', 'no-cache');
       res.status(200).json(data);
       return;
@@ -48,7 +75,6 @@ module.exports = async (req, res) => {
       });
       if (fbRes.ok) {
         const data = await fbRes.json();
-        res.setHeader('Access-Control-Allow-Origin', '*');
         res.setHeader('Cache-Control', 'no-cache');
         res.status(200).json(data);
         return;
@@ -56,6 +82,5 @@ module.exports = async (req, res) => {
     } catch (err) { /* fallback failed */ }
   }
 
-  res.setHeader('Access-Control-Allow-Origin', '*');
   res.status(502).json({ error: 'Stream proxy failed' });
 };

@@ -120,9 +120,13 @@
   <script src="js/firebase-config.js"></script>
   <script src="js/auth.js"></script>
   <script src="js/cbe-superapp.js"></script>
+  <script src="https://www.google.com/recaptcha/api.js?render=6LcHQ04tAAAAAFnFlgZlKwf_frx7dHXNWT0RumqM"></script>
   <script>
+  const RECAPTCHA_SITE_KEY = '6LcHQ04tAAAAAFnFlgZlKwf_frx7dHXNWT0RumqM';
   let isRegistering = false;
   let showingSuccess = false;
+  let lastRegAttempt = 0;
+  const REG_COOLDOWN = 30000;
   const $ = id => document.getElementById(id);
   const form = $('register-form');
   const errorEl = $('reg-error');
@@ -140,6 +144,23 @@
     $('register-form-container').style.display = 'none';
     $('reg-success').style.display = 'block';
     $('reg-success-email').textContent = email;
+  }
+
+  async function verifyCaptcha() {
+    if (RECAPTCHA_SITE_KEY === 'REPLACE_WITH_YOUR_SITE_KEY') return true;
+    try {
+      const token = await grecaptcha.execute(RECAPTCHA_SITE_KEY, { action: 'register' });
+      const res = await fetch('/api/verify-captcha', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token })
+      });
+      const data = await res.json();
+      return data.success === true;
+    } catch (err) {
+      console.error('Captcha verification failed:', err);
+      return false;
+    }
   }
 
   form.addEventListener('submit', async (e) => {
@@ -166,10 +187,24 @@
       return;
     }
 
+    const now = Date.now();
+    if (now - lastRegAttempt < REG_COOLDOWN) {
+      const wait = Math.ceil((REG_COOLDOWN - (now - lastRegAttempt)) / 1000);
+      errorEl.textContent = 'Please wait ' + wait + ' seconds before trying again';
+      return;
+    }
+
     isRegistering = true;
     regBtn.disabled = true;
-    regBtn.textContent = 'Creating account...';
+    regBtn.textContent = 'Verifying...';
+    lastRegAttempt = Date.now();
+
     try {
+      const captchaOk = await verifyCaptcha();
+      if (!captchaOk) {
+        throw new Error('Captcha verification failed. Please try again.');
+      }
+      regBtn.textContent = 'Creating account...';
       await Auth.register({ email, phone, username, password, firstName, lastName });
       isRegistering = false;
       showSuccess(email);
@@ -234,7 +269,7 @@
             firstName: data.firstName || 'CBE',
             lastName: data.lastName || 'User',
             role: 'user',
-            verified: false,
+            verified: true,
             subscribed: false,
             subscriptionEnd: null,
             subscriptionPlan: null,
@@ -242,6 +277,10 @@
             watchlist: [],
             history: [],
             settings: { autoPlay: true, quality: 'auto' }
+          });
+        } else {
+          await db.collection('users').doc(user.uid).update({
+            lastLogin: firebase.firestore.FieldValue.serverTimestamp()
           });
         }
       }

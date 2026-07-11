@@ -58,6 +58,7 @@ const Auth = {
     } catch (e) {
       await cred.user.delete().catch(err => console.warn('Auth cleanup error:', err));
       try { await db.collection('users').doc(uid).delete(); } catch (err) { console.warn('Auth delete user doc error:', err); }
+      try { await usernameRef.delete(); } catch (err) { console.warn('Auth delete username error:', err); }
       throw new Error('Failed to create profile. Please try again.');
     }
     const baseUrl = (typeof window !== 'undefined' ? window.location.origin : '') || 'https://cbemovies.vercel.app';
@@ -102,7 +103,10 @@ const Auth = {
   async login(email, password) {
     const cred = await auth.signInWithEmailAndPassword(email, password);
     const doc = await db.collection('users').doc(cred.user.uid).get();
-    if (!doc.exists) throw new Error('User document not found');
+    if (!doc.exists) {
+      await auth.signOut();
+      throw new Error('User document not found');
+    }
     const data = doc.data();
     if (!data.verified) {
       await cred.user.reload();
@@ -110,8 +114,12 @@ const Auth = {
         await db.collection('users').doc(cred.user.uid).update({ verified: true });
         data.verified = true;
       } else {
+        await auth.signOut();
         throw new Error('ACCOUNT_NOT_VERIFIED');
       }
+    }
+    if (!this.canAccessContent(data)) {
+      throw new Error('ACCOUNT_NOT_SUBSCRIBED');
     }
     return cred;
   },

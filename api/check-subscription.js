@@ -16,7 +16,12 @@ module.exports = async (req, res) => {
   }
   const idToken = authHeader.split('Bearer ')[1];
   const { auth } = getFirebase();
-  const decodedToken = await auth.verifyIdToken(idToken);
+  let decodedToken;
+  try {
+    decodedToken = await auth.verifyIdToken(idToken);
+  } catch (err) {
+    res.status(401).json({ error: 'Invalid authorization' }); return;
+  }
   if (decodedToken.uid !== uid) {
     const { db } = getFirebase();
     const requesterDoc = await db.collection('users').doc(decodedToken.uid).get();
