@@ -150,10 +150,10 @@
     if (RECAPTCHA_SITE_KEY === 'REPLACE_WITH_YOUR_SITE_KEY') return true;
     try {
       const token = await grecaptcha.execute(RECAPTCHA_SITE_KEY, { action: 'register' });
-      const res = await fetch('/api/verify-captcha', {
+      const res = await fetch('/api/cbe-auth', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token })
+        body: JSON.stringify({ action: 'verify-captcha', token })
       });
       const data = await res.json();
       return data.success === true;
